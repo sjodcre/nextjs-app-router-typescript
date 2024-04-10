@@ -1,21 +1,15 @@
 "use client";
 // import { useWeb3React } from '@web3-react/core';
 import { useState, MouseEvent, useEffect } from 'react';
-import { Contract, ethers, EthersError, Signer } from 'ethers';
+import { Contract, BrowserProvider, ContractFactory, Signer } from 'ethers';
 import XeniaArtifact from '../../../artifacts/contracts/Xenia.sol/Xenia.json';
 import ERC721Artifact from '../../../artifacts/contracts/ERC721Test.sol/ERC721Test.json';
-// import { Bounce, toast } from 'react-toastify'
+import { useWeb3ModalProvider, useWeb3ModalAccount } from '@web3modal/ethers/react'
 import {toast} from 'sonner'
-import { sign } from 'crypto';
-// import { Provider } from '../utils/provider';
-// import hre from 'hardhat';
- 
+import ConnectButton from "../ui/connect-button";
 
 
-// import {NavBar } from "../../components/NavBar";
-// import { Navigation } from "../components/nav";
-
-export function Deploy() {
+export default function Deploy() {
 	interface FormData {
 		[key: string]: string; // Allows any string to index the type
 		network: string;
@@ -51,6 +45,8 @@ export function Deploy() {
 	});
 
 	const [signer, setSigner] = useState<Signer>();
+	const { address, chainId, isConnected } = useWeb3ModalAccount()
+  	const { walletProvider } = useWeb3ModalProvider()
 	// const context = useWeb3React<Provider>();
     // const provider = new ethers.BrowserProvider(window.ethereum);
 
@@ -211,28 +207,45 @@ export function Deploy() {
 				});
 			return;
 		}
-		console.log("signer: "+ signer)
-		if (!signer) {
-			window.alert(`Please Connect first!`);
+		// console.log("signer: "+ signer)
+		// if (!signer) {
+		// 	window.alert(`Please Connect first!`);
 
-			return;
-		}
+		// 	return;
+		// }
 
 		try {
-			// const accounts = await hre.ethers.getSigners();
-			// const deployer = accounts[0].address;
-			// console.log(`Deploy from account: ${deployer}`);
+			if (!isConnected) throw Error('User disconnected')
 
-			// const bond = await hre.ethers.deployContract('ERC721Artifact', [
-			// 	formData.owner,
-			// 	formData.baseTokenURI,
-			// 	formData.name,
-			// 	formData.symbol,
-			// 	formData.maxSupply
-			//   ]);
-			//   await bond.waitForDeployment();
-			// //   console.log(` -> MCV2_Bond contract deployed at ${bond.target}`);
-			//   window.alert(`Contract deployed to: ${bond.target}`);
+			// const ethersProvider = new BrowserProvider(walletProvider)
+			if (walletProvider) {
+				const ethersProvider = new BrowserProvider(walletProvider);
+				const signer = await ethersProvider.getSigner();
+				// setSigner(signer);
+				const ERC721ConFact = new ContractFactory(
+				ERC721Artifact.abi,
+				ERC721Artifact.bytecode,
+				signer
+			);
+			const ERC721Contract = await ERC721ConFact.deploy(
+				// '0xf759c09456A4170DCb5603171D726C3ceBaDd3D5',
+				// "https://arweave.net/b28dit8OPFADvxA7YJm9ZB1hEfLENkhm8UcLpeXdKMA/",
+				// "DegenDigestAR2",
+				// "DDGR2",
+				formData.owner,
+				formData.baseTokenURI,
+				formData.name,
+				formData.symbol,
+				formData.maxSupply
+			);
+			const contractAddress = await ERC721Contract.getAddress(); // Correctly await the address
+			window.alert(`Contract deployed to: ${contractAddress}`);
+				// Now you can use ethersProvider safely within this block
+			} else {
+				// Handle the case where walletProvider is undefined
+				console.error("Wallet provider is not available.");
+			}
+			
 
 			
 			// const ERC721ConFact = new ethers.ContractFactory(
@@ -299,7 +312,7 @@ export function Deploy() {
 
 
 		<div className=" bg-[#1A2B37] shadow-md px-8 py-8 rounded">
-
+			<ConnectButton/>
 			{/* Form  */}
 			<div className="mb-4">
 				<label className="block text-[#EED12E] text-sm font-bold mb-2" htmlFor="owner">

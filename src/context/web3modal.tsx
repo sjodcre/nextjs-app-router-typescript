@@ -7,12 +7,20 @@ import { ReactNode } from 'react'
 const projectId = 'YOUR_PROJECT_ID'
 
 // 2. Set chains
-const mainnet = {
+const EthMainnet = {
   chainId: 1,
   name: 'Ethereum',
   currency: 'ETH',
   explorerUrl: 'https://etherscan.io',
   rpcUrl: 'https://cloudflare-eth.com'
+}
+
+const SeiEVM = {
+  chainId: 713715,
+  name: 'SEI',
+  currency: 'SEI  ',
+  explorerUrl: 'https://seistream.app/',
+  rpcUrl: 'https://evm-rpc-arctic-1.sei-apis.com'
 }
 
 // 3. Create a metadata object
@@ -43,7 +51,7 @@ interface Props {
 // 5. Create a Web3Modal instance
 createWeb3Modal({
   ethersConfig,
-  chains: [mainnet],
+  chains: [EthMainnet, SeiEVM],
   projectId,
   enableAnalytics: true, // Optional - defaults to your Cloud configuration
   enableOnramp: true // Optional - false as default
