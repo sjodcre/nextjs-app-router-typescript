@@ -20,7 +20,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       
-      <body className={inter.className}>
+      <body className={`bg-black ${inter.className}`}>
         <Web3Modal>{children}</Web3Modal>
         <Toaster />
       </body>

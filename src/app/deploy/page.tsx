@@ -1,19 +1,22 @@
 "use client";
 // import { useWeb3React } from '@web3-react/core';
 import { useState, MouseEvent, useEffect } from 'react';
-import { Contract, BrowserProvider, ContractFactory, Signer } from 'ethers';
-import XeniaArtifact from '../../../artifacts/contracts/Xenia.sol/Xenia.json';
-import ERC721Artifact from '../../../artifacts/contracts/ERC721Test.sol/ERC721Test.json';
+import { Contract, BrowserProvider, ContractFactory, Signer, ethers } from 'ethers';
+import ERC20TestArtifact from '../../../artifacts/contracts/ERCC20Test.sol/ERC20Test.json'
+
 import { useWeb3ModalProvider, useWeb3ModalAccount } from '@web3modal/ethers/react'
 import {toast} from 'sonner'
 import ConnectButton from "../ui/connect-button";
 
+const wei = function (num: string | number | bigint | boolean, decimals = 18) {
+	return BigInt(num) * 10n ** BigInt(decimals);
+  };
 
 export default function Deploy() {
 	interface FormData {
 		[key: string]: string; // Allows any string to index the type
 		network: string;
-		minter: string;
+		owner: string;
 		baseTokenURI: string;
 		name: string;
 		symbol: string;
@@ -27,7 +30,7 @@ export default function Deploy() {
 
 	const [formData, setFormData] = useState<FormData>({
 		network: '',
-		minter: '',
+		owner: '',
 		baseTokenURI: '',
 		name: '',
 		symbol: '',
@@ -36,6 +39,7 @@ export default function Deploy() {
 	});
 
 	const [errors, setErrors] = useState<FormErrors>({
+		network: '',
 		owner: '',
 		baseTokenURI: '',
 		name: '',
@@ -67,60 +71,6 @@ export default function Deploy() {
 
 
 	};
-
-	// useEffect((): void => {
-	// 	if (!library) {
-	// 		setSigner(undefined);
-	// 		return;
-	// 	}
-
-	// 	setSigner(library.getSigner());
-	// }, [library]);
-
-	// useEffect(() => {
-    //     if (!provider.hasSigner) {
-	// 		setSigner(undefined);
-	// 		return;
-	// 	}
-	// 	// async function fetchSigner() {
-	// 	// 	// Assuming `ethers.BrowserProvider` is correct and exists in your ethers version
-	// 	// 	// If it's not available or incorrect, you might need to use `Web3Provider` or another appropriate provider class
-	// 	// 	const provider = new ethers.BrowserProvider(window.ethereum);
-	// 	// 	const signerFromProvider = await provider.getSigner();
-	// 	// 	setSigner(signerFromProvider);
-	// 	// }
-	// 	// try {
-			
-			
-	// 	// 		fetchSigner();
-
-	// 	// } catch (error) {
-	// 	// 	window.alert(`Connection Failed`);
-	// 	// }
-	// 	provider.getSigner()
-    //   	.then(signer => {
-	// 		setSigner(signer);
-
-	// 	})
-	// 	// console.log("signer: "+ signer)
-		
-    //   }, [provider]);
-
-	//   const validateForm = () => {
-	//     // const errors = {};
-
-	//     // Validate owner field
-	//     if (!formData.owner.trim().startsWith('0x')) {
-	//       errors.owner = 'Owner address must start with 0x';
-	//     }
-
-	// 	if (!formData.minter.trim().startsWith('0x')) {
-	// 		errors.minter = 'Minter address must start with 0x';
-	// 	  }
-
-	//     setErrors(errors);
-	//     return Object.keys(errors).length === 0;
-	//   };
 
 	const validateField = (fieldName: string, value: string) => {
 		let error = '';
@@ -221,87 +171,68 @@ export default function Deploy() {
 			if (walletProvider) {
 				const ethersProvider = new BrowserProvider(walletProvider);
 				const signer = await ethersProvider.getSigner();
-				// setSigner(signer);
-				const ERC721ConFact = new ContractFactory(
-				ERC721Artifact.abi,
-				ERC721Artifact.bytecode,
-				signer
-			);
-			const ERC721Contract = await ERC721ConFact.deploy(
-				// '0xf759c09456A4170DCb5603171D726C3ceBaDd3D5',
-				// "https://arweave.net/b28dit8OPFADvxA7YJm9ZB1hEfLENkhm8UcLpeXdKMA/",
-				// "DegenDigestAR2",
-				// "DDGR2",
-				formData.owner,
-				formData.baseTokenURI,
-				formData.name,
-				formData.symbol,
-				formData.maxSupply
-			);
-			const contractAddress = await ERC721Contract.getAddress(); // Correctly await the address
-			window.alert(`Contract deployed to: ${contractAddress}`);
-				// Now you can use ethersProvider safely within this block
+				
+				// ===========erc20 test contract burn===========
+				// const options = {
+				// 	// value: ethers.parseUnits("0.01", 18), // Your transaction value
+				// 	gasLimit: ethers.toBeHex(1000000), // Example gas limit; adjust based on your needs
+				// };
+				// const amountToBurn = ethers.parseUnits("49976265426123", 1);
+				// const ERC20TestContractAddress = "0xe7a3D1A2e108A67b7F678297907eB477f661e8bf"; 
+				// const ERC20TestContract = new Contract(ERC20TestContractAddress, ERC20TestArtifact.abi, signer);
+
+				// const mintTx = await ERC20TestContract.burn( "49928857892001",options);  // Adjust parameters as needed
+				// await mintTx.wait();
+				// console.log(mintTx);
+
+				//==============erc20 test contract query=======
+				const ERC20TestContractAddress = "0xe7a3D1A2e108A67b7F678297907eB477f661e8bf"; 
+				const provider = new ethers.JsonRpcProvider("https://evm-rpc-arctic-1.sei-apis.com")
+				const contractToUse = new ethers.Contract(ERC20TestContractAddress, ERC20TestArtifact.abi, provider);
+				const txResponseTotalSupply = await contractToUse.balanceOf("0x372173ca23790098F17f376F59858a086Cae9Fb0");
+				console.log(txResponseTotalSupply);
+
+				// ===========erc20 test contract mint===========
+				// const options = {
+				// 	value: ethers.parseUnits("0.01", 18), // Your transaction value
+				// 	gasLimit: ethers.toBeHex(1000000), // Example gas limit; adjust based on your needs
+				// };
+				// const ERC20TestContractAddress = "0xe7a3D1A2e108A67b7F678297907eB477f661e8bf"; 
+				// const ERC20TestContract = new Contract(ERC20TestContractAddress, ERC20TestArtifact.abi, signer);
+
+				// const mintTx = await ERC20TestContract.mint( options);  // Adjust parameters as needed
+				// await mintTx.wait();
+				// console.log(mintTx);
+
+
+				//=========erc20 test contract deploy (bancor bonding curve not mint)==================
+				// const options = {
+				// 			// value: ethers.parseUnits("0.01", 18), // Your transaction value
+				// 			gasLimit: ethers.toBeHex(1000000), // Example gas limit; adjust based on your needs
+				// 		};
+				// const ERC20_Token = new ContractFactory(
+				// 	ERC20TestArtifact.abi,
+				// 	ERC20TestArtifact.bytecode,
+				// 	signer
+				// );
+
+				// const ERC20Contract = await ERC20_Token.deploy(
+				// 	50000,
+				// 	"Teacup",
+				// 	"TCP"
+				// );
+				// const contractAddress = await ERC20Contract.getAddress(); // Correctly await the address
+				// window.alert(`Contract deployed to: ${contractAddress}`);
+				
 			} else {
 				// Handle the case where walletProvider is undefined
 				console.error("Wallet provider is not available.");
 			}
-			
-
-			
-			// const ERC721ConFact = new ethers.ContractFactory(
-			// 	ERC721Artifact.abi,
-			// 	ERC721Artifact.bytecode,
-			// 	deployer
-			// );
-			// const ERC721Contract = await ERC721ConFact.deploy(
-			// 	// '0xf759c09456A4170DCb5603171D726C3ceBaDd3D5',
-			// 	// "https://arweave.net/b28dit8OPFADvxA7YJm9ZB1hEfLENkhm8UcLpeXdKMA/",
-			// 	// "DegenDigestAR2",
-			// 	// "DDGR2",
-			// 	formData.owner,
-			// 	formData.baseTokenURI,
-			// 	formData.name,
-			// 	formData.symbol,
-			// 	formData.maxSupply
-			// );
-			// const contractAddress = await ERC721Contract.getAddress(); // Correctly await the address
-			// window.alert(`Contract deployed to: ${contractAddress}`);
-
-			// const ERC404ConFact = new ethers.ContractFactory(
-			// 	XeniaArtifact.abi,
-			// 	XeniaArtifact.bytecode,
-			// 	signer
-			//   );
-
-			// const ERC404Contract = await ERC404ConFact.deploy(
-			// 	formData.owner,
-			// 	formData.name,
-			// 	formData.symbol,
-			// 	formData.baseTokenURI,
-			// 	parseInt(formData.decimals),
-			// 	Number(formData.maxSupply)
-			// 	// '0xf759c09456A4170DCb5603171D726C3ceBaDd3D5',
-			// 	// '0xf759c09456A4170DCb5603171D726C3ceBaDd3D5',
-			// 	// "ipfs://bafybeifs23ww7wkjprvlyrl4zfhizp3bb3qjfkvix5w3zhgyizg2tor6ae/",
-			// 	// "DEF",
-			// 	// "FDE",
-			// 	// 18,
-			// );
-
-				// window.alert(`Greeter deployed to: ${ERC404Contract.address}`);
 
 		} catch (error: any) {
-			// if (error is EthersError) {
-			// 	console.log(ethers.isError);
-			// }
+
 			console.log(error.code);
 			toast.error(`Deployment failed: ` + error.code);
-
-			// if (ethers.isError(error)) {
-			// 	errorCode = error.code; // Extract the error code
-			// }
-
-			// window.alert(`Deployment failed: ${errorCode}`);
 		}	
 	};
 	
@@ -415,7 +346,7 @@ export default function Deploy() {
 						}`}
 					id="maxSupply"
 					type="text"
-					placeholder="0x..."
+					placeholder=""
 					name="maxSupply"
 					value={formData.maxSupply}
 					onChange={handleChange}
