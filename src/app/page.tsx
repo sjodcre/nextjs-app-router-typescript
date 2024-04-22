@@ -30,7 +30,7 @@ const Home: React.FC = () => {
     
     const fetchTokens = async () => {
         try {
-          const response = await fetch(`/api/tokens?sortBy=${sortBy}&order=${order}`);
+          const response = await fetch(`/api?sortBy=${sortBy}&order=${order}`);
           if (!response.ok) {
             throw new Error('Failed to fetch tokens');
           }
