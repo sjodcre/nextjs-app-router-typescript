@@ -1,6 +1,6 @@
 
 
-// pages/token/[id].tsx
+
 
 
 const Profile: React.FC = () => {
