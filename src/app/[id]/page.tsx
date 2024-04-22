@@ -1,101 +1,122 @@
-"use client"
-import { useState, useEffect } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
-import Link from 'next/link';
+import TokenLayout from "../token/page";
 
-interface Token {
-  tokenid: number;
-  tokenname: string;
-  tokensymbol: string;
-  marketcap: number;
-  creator: string;
+// export async function generateStaticParams() {
+//   const posts = await fetch('https://.../posts').then((res) => res.json())
+ 
+//   return posts.map((post: { slug: any }) => ({
+//     slug: post.slug,
+//   }))
+// }
+
+export default function TokenPage({ params }: { params: { tokenAddress: string } }) {
+  // return <div className="text-white">My Post: {params.tokenAddress}</div>
+  return (
+    <div style={{ display: 'grid', height: '100vh', gridTemplateRows: 'auto auto auto 1fr', alignItems: 'start' }}>
+      <TokenLayout />
+    </div>
+  )
 }
 
+// "use client"
+// import { useState, useEffect } from 'react';
+// import { usePathname, useRouter } from 'next/navigation';
+// import Link from 'next/link';
 
-const TokenPage: React.FC = () => {
-  const router = useRouter();
-  const id = usePathname();
+// interface Token {
+//   tokenid: number;
+//   tokenname: string;
+//   tokensymbol: string;
+//   marketcap: number;
+//   creator: string;
+// }
 
-  const [formData, setFormData] = useState<Token>({
-    tokenid: 0,
-    tokenname: '',
-    tokensymbol: '',
-    marketcap: 0,
-    creator: '',
-  });
-  const fetchToken = async () => {
-    try {
-      const response = await fetch(`/api/token${id}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch token');
-      }
-      const tokenData: Token = await response.json();
-      setFormData(tokenData);
-    } catch (error) {
-      console.error('Error fetching token:', error);
-    }
-  };
 
-  useEffect(() => {
+// const TokenPage: React.FC = () => {
+//   const router = useRouter();
+//   const id = usePathname();
+
+//   const [formData, setFormData] = useState<Token>({
+//     tokenid: 0,
+//     tokenname: '',
+//     tokensymbol: '',
+//     marketcap: 0,
+//     creator: '',
+//   });
+//   const fetchToken = async () => {
+//     try {
+//       const response = await fetch(`/api/token${id}`);
+//       if (!response.ok) {
+//         throw new Error('Failed to fetch token');
+//       }
+//       const tokenData: Token = await response.json();
+//       setFormData(tokenData);
+//     } catch (error) {
+//       console.error('Error fetching token:', error);
+//     }
+//   };
+
+//   useEffect(() => {
    
 
     
-      fetchToken();
+//       fetchToken();
 
-  }, [id]);
+//   }, [id]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prevData => ({
-      ...prevData,
-      [name]: value,
-    }));
-  };
+//   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+//     const { name, value } = e.target;
+//     setFormData(prevData => ({
+//       ...prevData,
+//       [name]: value,
+//     }));
+//   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+//   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+//     e.preventDefault();
 
-    try {
-      const response = await fetch('/api/token/update', {
-        method: 'POST',
-        body: JSON.stringify(formData),
-      });
-      if (!response.ok) {
-        throw new Error('Failed to update token');
-      }
-      console.log('Token updated successfully');
-    } catch (error) {
-      console.error('Error updating token:', error);
-    }
-  };
+//     try {
+//       const response = await fetch('/api/token/update', {
+//         method: 'POST',
+//         body: JSON.stringify(formData),
+//       });
+//       if (!response.ok) {
+//         throw new Error('Failed to update token');
+//       }
+//       console.log('Token updated successfully');
+//     } catch (error) {
+//       console.error('Error updating token:', error);
+//     }
+//   };
 
  
 
-  return (
-    <div>
-      <h1>Edit Token</h1>
+//   return (
+//     <div>
+//       <h1>Edit Token</h1>
 
-      <Link href={`/profile/${formData.creator}`}>
-        <h2>Owner : {formData.creator} </h2>
-      </Link>
-      <form onSubmit={handleSubmit}>
-        <label>
-          Token Name:
-          <input type="text" name="tokenname" value={formData.tokenname} onChange={handleChange} />
-        </label>
-        <label>
-          Token Symbol:
-          <input type="text" name="tokensymbol" value={formData.tokensymbol} onChange={handleChange} />
-        </label>
-        <label>
-          Market Cap:
-          <input type="number" name="marketcap" value={formData.marketcap.toString()} onChange={handleChange} />
-        </label>
+//       <Link href={`/profile/${formData.creator}`}>
+//         <h2>Owner : {formData.creator} </h2>
+//       </Link>
+//       <form onSubmit={handleSubmit}>
+//         <label>
+//           Token Name:
+//           <input type="text" name="tokenname" value={formData.tokenname} onChange={handleChange} />
+//         </label>
+//         <label>
+//           Token Symbol:
+//           <input type="text" name="tokensymbol" value={formData.tokensymbol} onChange={handleChange} />
+//         </label>
+//         <label>
+//           Market Cap:
+//           <input type="number" name="marketcap" value={formData.marketcap.toString()} onChange={handleChange} />
+//         </label>
 
-        <button type="submit">Save</button>
-      </form>
-    </div>
-  );
-};
+//         <button type="submit">Save</button>
+//       </form>
+//     </div>
+//   );
+// };
 
-export default TokenPage;
+// export default TokenPage;
+
+

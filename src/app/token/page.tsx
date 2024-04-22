@@ -19,7 +19,7 @@ type TokenDetails = {
   website: string; // Total supply might be large, consider handling big numbers appropriately
 };
 
-export default function Page() {
+export default function TokenLayout () {
 
   const [tokenDetails, setTokenDetails] = useState<TokenDetails | null>({
 		name: 'Cats Have 9 Sols',
