@@ -21,7 +21,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       
-      <body className={inter.className}><ReduxProvider>
+
+      <body className={`bg-black ${inter.className}`}>
+        <ReduxProvider>
+
         <Web3Modal>{children}</Web3Modal>
         <Toaster />
         </ReduxProvider>

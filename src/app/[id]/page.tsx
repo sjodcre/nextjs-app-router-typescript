@@ -1,3 +1,4 @@
+
 "use client"
 import { useState, useEffect } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -14,7 +15,13 @@ interface Token {
   username:string;
   chainid:string;
   
+
 }
+
+// "use client"
+// import { useState, useEffect } from 'react';
+// import { usePathname, useRouter } from 'next/navigation';
+// import Link from 'next/link';
 
 
 const TokenPage: React.FC = () => {
@@ -112,5 +119,3 @@ const TokenPage: React.FC = () => {
     </div>
   );
 };
-
-export default TokenPage;
