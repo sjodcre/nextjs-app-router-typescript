@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Web3Modal } from '../context/web3modal'
 import { Toaster, toast } from 'sonner'
+import { ReduxProvider } from "@/redux/provider";
 
 
 const inter = Inter({ subsets: ["latin"] });
@@ -20,9 +21,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       
-      <body className={inter.className}>
+      <body className={inter.className}><ReduxProvider>
         <Web3Modal>{children}</Web3Modal>
         <Toaster />
+        </ReduxProvider>
       </body>
     </html>
   );

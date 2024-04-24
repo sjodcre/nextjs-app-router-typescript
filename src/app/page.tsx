@@ -1,10 +1,14 @@
 "use client"
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+//redux
+import { logIn, logOut } from "@/redux/features/chain-slice";
+import { useDispatch } from 'react-redux';
+import { AppDispatch, useAppSelector } from '@/redux/store';
 
 
 interface Token {
-    tokenid: number;
+
     tokensymbol: string;
     tokenname: string;
     creator: string;
@@ -13,8 +17,8 @@ interface Token {
     tokenaddress: string;
     marketcap: number;
     repliescount: number;
-    description:string;
-    
+    description: string;
+    username: string;
     // Assuming this is a string representation of a date
     lastactivity: string; // Assuming this is a string representation of a date
     lastreply: string;
@@ -23,29 +27,37 @@ interface Token {
 
 const Home: React.FC = () => {
     const [tokens, setTokens] = useState<Token[]>([]);
-    const [sortBy, setSortBy] = useState<string>('lastUpdatedTime'); // Default sort by market cap
+    const [sortBy, setSortBy] = useState<string>('lastUpdatedTime');
+    const [selectedChain, setSelectedChain] = useState<string>('sei');  // Default sort by market cap
     const [order, setOrder] = useState<string>('desc'); // Default order is descending
     const [currentPage, setCurrentPage] = useState<number>(1);
     const [itemsPerPage] = useState<number>(15); // Number of items to display per page
-    
+    const [isSeiActive, setIsSeiActive] = useState(true);
+    const [isFtmActive, setIsFtmActive] = useState(false);
+
+    //resux
+
+    const dispatch = useDispatch<AppDispatch>();
+    const chainType = useAppSelector((state) => state.authReducer.value.chainType);
+
     const fetchTokens = async () => {
         try {
-          const response = await fetch(`/api?sortBy=${sortBy}&order=${order}`);
-          if (!response.ok) {
-            throw new Error('Failed to fetch tokens');
-          }
-          const data = await response.json();
-          setTokens(data);
+            const response = await fetch(`/api?sortBy=${sortBy}&order=${order}&chain=${selectedChain}`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch tokens');
+            }
+            const data = await response.json();
+            setTokens(data);
         } catch (error) {
-          console.error('Error fetching data:', error);
+            console.error('Error fetching data:', error);
         }
-      };
+    };
 
 
     useEffect(() => {
-
-      fetchTokens();
-    }, [sortBy, order]);
+        dispatch(logIn(selectedChain));
+        fetchTokens();
+    }, [sortBy, order, selectedChain]);
 
     // Calculate pagination
     const indexOfLastToken = currentPage * itemsPerPage;
@@ -60,9 +72,41 @@ const Home: React.FC = () => {
         setOrder(event.target.value);
     };
 
+    const handleClicks = () => {
+        if (isFtmActive === false) {
+            setIsFtmActive(true);
+            setIsSeiActive(false)
+            setSelectedChain("ftm");
+            dispatch(logIn(selectedChain));
+        } else {
+            setIsFtmActive(false);
+            setIsSeiActive(true)
+            setSelectedChain("sei");
+            dispatch(logIn(selectedChain));
+        }
+
+
+    };
+
     return (
         <>
             <label className='text-9xl flex justify-center'>HELLO </label>
+            <label className='text-9xl flex justify-center'>Chain : {chainType} </label>
+            <label htmlFor="sortOptions" className="mr-2">Chain:</label>
+            <div className="inline-flex">
+                <button className={` hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-l ${isSeiActive ? 'bg-blue-500 disable' : 'bg-gray-300'
+                    }`} onClick={handleClicks}>
+                    Sei
+                </button>
+                <button className={` hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-l ${isFtmActive ? 'bg-blue-500' : 'bg-gray-300'
+                    }`} onClick={handleClicks}>
+                    FTM
+                </button>
+
+            </div>
+
+
+
             {/* Sorting dropdowns */}
             <div className="mb-4 flex ">
                 <label htmlFor="sortOptions" className="mr-2">Sort By:</label>
@@ -82,13 +126,13 @@ const Home: React.FC = () => {
             {/* Token list */}
             <div className="grid grid-col-1 md:grid-cols-2 lg:grid-cols-3 text-gray-400 gap-4 px-10 items-center">
                 {currentTokens.map((token: Token, index: number) => (
-                      <Link href={`/${token.tokenaddress}`} key={index}>
+                    <Link href={`/${token.tokenaddress}`} key={index}>
                         {/* Token card */}
                         <div className='max-h-[300px] overflow-hidden h-fit p-2 flex border border-transparent hover:border-white gap-2 w-full'>
                             {/* You can replace this placeholder image with the actual token image */}
                             <img className='mr-4 w-32 h-auto flex' src="https://via.placeholder.com/150" alt="Token Image" />
                             <ul className="text-xs font-normal leading-4 text-gray-500">
-                                <li>Created By: {token.creator}</li>
+                                <li>Created By: {token.username}</li>
                                 <li>Market Cap: {token.marketcap} </li>
                                 <li>Replies: {token.repliescount} </li>
                                 <li>Creation : {token.datetime} </li>

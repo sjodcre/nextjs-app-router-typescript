@@ -8,17 +8,18 @@ export  async function POST(req: Request) {
  
 
   try {
+    const url = new URL(req.url)
     const data = await req.json();
-
-    const { tokenid, marketcap} = data;
+    const chain= url.searchParams.get("chain")
+    const { tokenaddress, marketcap} = data;
     // Update token data in the database
     await query(
-      `UPDATE tokenmarket SET marketcap = $1 WHERE tokenid = $2`,
-      [marketcap, tokenid]
+      `UPDATE tokenmarket_${chain} SET marketcap = ${marketcap} WHERE tokenaddress = '${tokenaddress}'`,
+      []
     );
     await query(
-      `UPDATE tokenlist SET lastactivity = NOW() WHERE tokenid = $1`,
-      [tokenid]
+      `UPDATE tokenlist_${chain} SET lastactivity = NOW() WHERE tokenaddress = '${tokenaddress}'`,
+      []
     );
 
     return new Response(JSON.stringify('Token not found'), { status: 200});
