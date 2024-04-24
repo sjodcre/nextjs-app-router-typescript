@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import "./globals.css";
-import { Web3Modal } from '../context/web3modal'
-import { Toaster, toast } from 'sonner'
-import { ReduxProvider } from "@/redux/provider";
+import "./_styles/globals.css";
+import { Web3Modal } from './_context/web3modal'
+import 'react-toastify/dist/ReactToastify.css'
+import { ToastContainer } from 'react-toastify'
+import { ReduxProvider } from "@/app/_redux/provider";
 
 
 const inter = Inter({ subsets: ["latin"] });
@@ -26,7 +27,18 @@ export default function RootLayout({
         <ReduxProvider>
 
         <Web3Modal>{children}</Web3Modal>
-        <Toaster />
+        <ToastContainer
+              position="bottom-center"
+              autoClose={5000}
+              hideProgressBar={false}
+              newestOnTop={false}
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+              theme="dark"
+            />
         </ReduxProvider>
       </body>
     </html>

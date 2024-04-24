@@ -2,7 +2,7 @@
 import { useEffect, useRef } from "react";
 import { ChartingLibraryWidgetOptions, LanguageCode, ResolutionString, widget } from "../../../public/static/charting_library";
 import React from "react";
-import CustomDatafeed from "../../utils/custom-data-feed";
+import CustomDatafeed from "../_utils/custom-data-feed";
 
 const TVChartContainerBase = (props: Partial<ChartingLibraryWidgetOptions>) => {
 	const chartContainerRef =

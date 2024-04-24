@@ -10,7 +10,7 @@ import {
 
 
 const defaultWidgetProps: Partial<ChartingLibraryWidgetOptions> = {
-  symbol: "BTCUSD",
+  symbol: "0xe7a3D1A2e108A67b7F678297907eB477f661e8bf",
   interval: '5' as ResolutionString,
   library_path: "/static/charting_library/",
   locale: "en",
@@ -28,8 +28,14 @@ const TVChartContainer = dynamic(
   { ssr: false }
 );
 
-export default function CandleChart() {
+export default function CandleChart({ tokenAddress }: { tokenAddress: string }) {
   const [isScriptReady, setIsScriptReady] = useState(false);
+
+  const widgetProps = {
+    ...defaultWidgetProps,
+    symbol: tokenAddress,  // Use the token address as the symbol
+  };
+  
   return (
     <>
       <Head>

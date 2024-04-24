@@ -5,12 +5,12 @@ import { Contract, BrowserProvider, ContractFactory, Signer, ethers } from 'ethe
 import ERC20TestArtifact from '../../../artifacts/contracts/ERCC20Test.sol/ERC20Test.json'
 
 import { useWeb3ModalProvider, useWeb3ModalAccount } from '@web3modal/ethers/react'
-import {toast} from 'sonner'
-import ConnectButton from "../ui/connect-button";
+import { toast } from 'react-toastify'
+import ConnectButton from "../_ui/connect-button";
+import { TokenParams } from '@/app/_utils/types';
+import { deployToken } from '../_services/blockchain';
 
-const wei = function (num: string | number | bigint | boolean, decimals = 18) {
-	return BigInt(num) * 10n ** BigInt(decimals);
-  };
+
 
 export default function Deploy() {
 	interface FormData {
@@ -169,8 +169,20 @@ export default function Deploy() {
 
 			// const ethersProvider = new BrowserProvider(walletProvider)
 			if (walletProvider) {
-				const ethersProvider = new BrowserProvider(walletProvider);
-				const signer = await ethersProvider.getSigner();
+				const tokenParams: TokenParams = {
+					reserveRatio: 50000,
+					name: "Ouutsss",
+					symbol: "OTS"
+				  };
+
+				try {
+					const address = await deployToken(tokenParams);
+					toast.success(`Contract deployed to: ${address}`);
+				} catch (error) {
+					console.log(`Error: ${error}`);
+				}
+				// const ethersProvider = new BrowserProvider(walletProvider);
+				// const signer = await ethersProvider.getSigner();
 				
 				// ===========erc20 test contract burn===========
 				// const options = {
@@ -186,11 +198,11 @@ export default function Deploy() {
 				// console.log(mintTx);
 
 				//==============erc20 test contract query=======
-				const ERC20TestContractAddress = "0xe7a3D1A2e108A67b7F678297907eB477f661e8bf"; 
-				const provider = new ethers.JsonRpcProvider("https://evm-rpc-arctic-1.sei-apis.com")
-				const contractToUse = new ethers.Contract(ERC20TestContractAddress, ERC20TestArtifact.abi, provider);
-				const txResponseTotalSupply = await contractToUse.balanceOf("0x372173ca23790098F17f376F59858a086Cae9Fb0");
-				console.log(txResponseTotalSupply);
+				// const ERC20TestContractAddress = "0xe7a3D1A2e108A67b7F678297907eB477f661e8bf"; 
+				// const provider = new ethers.JsonRpcProvider("https://evm-rpc-arctic-1.sei-apis.com")
+				// const contractToUse = new ethers.Contract(ERC20TestContractAddress, ERC20TestArtifact.abi, provider);
+				// const txResponseTotalSupply = await contractToUse.balanceOf("0x372173ca23790098F17f376F59858a086Cae9Fb0");
+				// console.log(txResponseTotalSupply);
 
 				// ===========erc20 test contract mint===========
 				// const options = {

@@ -54,7 +54,13 @@ createWeb3Modal({
   chains: [EthMainnet, SeiEVM],
   projectId,
   enableAnalytics: true, // Optional - defaults to your Cloud configuration
-  enableOnramp: true // Optional - false as default
+  enableOnramp: true, // Optional - false as default
+  includeWalletIds: [
+    'c57ca95b47569778a828d19178114f4db188b89b763c899ba0be274e97267d96',
+    'a797aa35c0fadbfc1a53e7f675162ed5226968b44a19ee3d24385c64d1d3c393',
+    '2bd8c14e035c2d48f184aaa168559e86b0e3433228d3c4075900a221785019b0'
+  ],
+  allWallets:'HIDE'
 })
 
 export function Web3Modal({ children }: Props) {

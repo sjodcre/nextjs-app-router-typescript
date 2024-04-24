@@ -2,9 +2,9 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 //redux
-import { logIn, logOut } from "@/redux/features/chain-slice";
+import { logIn, logOut } from "@/app/_redux/features/chain-slice";
 import { useDispatch } from 'react-redux';
-import { AppDispatch, useAppSelector } from '@/redux/store';
+import { AppDispatch, useAppSelector } from '@/app/_redux/store';
 
 
 interface Token {

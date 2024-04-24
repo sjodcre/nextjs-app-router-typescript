@@ -1,11 +1,10 @@
 "use client"
 
-import {toast} from "sonner"
-import ConnectButton from "../ui/connect-button";
-import CandleChart  from "../ui/candle-chart";
-import SlippageDialog from "../ui/slippage-dialog";
+import ConnectButton from "../_ui/connect-button";
+import CandleChart  from "../_ui/candle-chart";
+import SlippageDialog from "../_ui/slippage-dialog";
 import { useEffect, useState } from "react";
-import IndeterminateProgressBar from '../ui/indeterminate-progress-bar';
+import IndeterminateProgressBar from '../_ui/indeterminate-progress-bar';
 
 
 type TokenDetails = {
@@ -19,7 +18,7 @@ type TokenDetails = {
   website: string; // Total supply might be large, consider handling big numbers appropriately
 };
 
-export default function TokenLayout () {
+export default function TokenLayout ({ params }: { params: { tokenAddress: string } }) {
 
   const [tokenDetails, setTokenDetails] = useState<TokenDetails | null>({
 		name: 'Cats Have 9 Sols',
@@ -69,6 +68,9 @@ export default function TokenLayout () {
     setNativeToken(!nativeToken);
   };
   
+  if (!params || !params.tokenAddress) {
+    return <div>Loading token information...</div>;  // or "Error: Token not found" if it should never be undefined
+  }
 
   return (
      
@@ -113,7 +115,7 @@ export default function TokenLayout () {
             <div className="h-4/8">
               <div className="grid h-fit gap-2">
                 <div className="chart-container ">
-                  <CandleChart/>
+                  <CandleChart tokenAddress={params.tokenAddress}/>
                   <div className="hidden">
                     <div id="dexscreener-embed">
                     {/* <iframe src="https://dexscreener.com/solana/null?embed=1&amp;theme=dark&amp;trades=0&amp;info=0" style="height: 400px; width: 99%;">

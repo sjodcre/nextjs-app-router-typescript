@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { useAppSelector } from '@/redux/store';
+import { useAppSelector } from '@/app/redux/store';
 
 interface Token {
   tokenid: number;
