@@ -28,12 +28,13 @@ const TVChartContainer = dynamic(
   { ssr: false }
 );
 
-export default function CandleChart({ tokenAddress }: { tokenAddress: string }) {
+export default function CandleChart({ tokenAddress, chainId}: { tokenAddress: string; chainId: string }) {
   const [isScriptReady, setIsScriptReady] = useState(false);
 
   const widgetProps = {
     ...defaultWidgetProps,
-    symbol: tokenAddress,  // Use the token address as the symbol
+    symbol: tokenAddress,
+    chainId: chainId,  // Use the token address as the symbol
   };
   
   return (
@@ -48,7 +49,7 @@ export default function CandleChart({ tokenAddress }: { tokenAddress: string }) 
           setIsScriptReady(true);
         }}
       />
-      {isScriptReady && <TVChartContainer {...defaultWidgetProps} />}
+      {isScriptReady && <TVChartContainer {...widgetProps} />}
     </>
   );
 }

@@ -6,11 +6,14 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "testscript": "npx ts-node src/app/_services/arweave.ts"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.2.3",
     "@web3modal/ethers": "^4.1.6",
+    "arweave": "^1.15.0",
+    "dotenv": "^16.4.5",
     "ethers": "^6.11.1",
     "eventemitter3": "^5.0.1",
     "next": "14.1.4",

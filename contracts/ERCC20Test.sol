@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// Compatible with OpenZeppelin Contracts ^5.0.0
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -7,9 +6,8 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
-import {BancorBondingCurve} from "./BancorBondingCurve.sol";
-import {CappedGasPrice} from "./CappedGasPrice.sol";
-
+import { BancorBondingCurve } from "./BancorBondingCurve.sol";
+import { CappedGasPrice } from "./CappedGasPrice.sol";
 
 contract ERC20Test is BancorBondingCurve, ERC20, CappedGasPrice {
     ERC20 public reserveToken;
@@ -21,6 +19,7 @@ contract ERC20Test is BancorBondingCurve, ERC20, CappedGasPrice {
     error ErrorZeroContinuousTokenProvided();
     error ErrorInsufficientTokensToBurn();
 
+    // Updated event signatures to include timestamp
     event ContinuousMint(address indexed account, uint256 amount, uint256 deposit);
     event ContinuousBurn(address indexed account, uint256 amount, uint256 reimburseAmount);
 
@@ -57,8 +56,8 @@ contract ERC20Test is BancorBondingCurve, ERC20, CappedGasPrice {
 
         uint256 amount = calculateContinuousMintReturn(_deposit);
         _mint(msg.sender, amount);
-        reserveBalance = reserveBalance + _deposit;
-        emit ContinuousMint(msg.sender, amount, _deposit);
+        reserveBalance += _deposit;
+        emit ContinuousMint(msg.sender, amount, _deposit);  // Emitting the event with a timestamp
         return amount;
     }
 
@@ -71,9 +70,9 @@ contract ERC20Test is BancorBondingCurve, ERC20, CappedGasPrice {
         }
 
         uint256 reimburseAmount = calculateContinuousBurnReturn(_amount);
-        reserveBalance = reserveBalance - reimburseAmount;
+        reserveBalance -= reimburseAmount;
         _burn(msg.sender, _amount);
-        emit ContinuousBurn(msg.sender, _amount, reimburseAmount);
+        emit ContinuousBurn(msg.sender, _amount, reimburseAmount);  
         return reimburseAmount;
     }
 }

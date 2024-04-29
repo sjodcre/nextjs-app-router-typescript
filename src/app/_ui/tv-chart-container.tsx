@@ -11,7 +11,7 @@ const TVChartContainerBase = (props: Partial<ChartingLibraryWidgetOptions>) => {
 	useEffect(() => {
 		const widgetOptions: ChartingLibraryWidgetOptions = {
 			symbol: props.symbol,
-			datafeed: new CustomDatafeed(),
+			datafeed: new CustomDatafeed(props.symbol? props.symbol: ''),
 			interval: props.interval as ResolutionString,
 			container: chartContainerRef.current,
 			library_path: props.library_path,

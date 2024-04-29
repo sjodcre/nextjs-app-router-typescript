@@ -4,7 +4,7 @@ import { Contract, ethers } from "ethers";
 import ERC20TestArtifact from '../../../artifacts/contracts/ERCC20Test.sol/ERC20Test.json';
 
 // const provider = new providers.JsonRpcProvider("YOUR_BLOCKCHAIN_RPC_URL");
-const provider = new ethers.JsonRpcProvider("https://evm-rpc-arctic-1.sei-apis.com")
+const provider = new ethers.JsonRpcProvider("https://evm-rpc.arctic-1.seinetwork.io")
 
 const contractAddress = "YOUR_CONTRACT_ADDRESS";
 // const contract = new Contract(contractAddress, ERC20TestABI, provider);

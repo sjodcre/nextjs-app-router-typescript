@@ -53,9 +53,12 @@ const configurationData : DatafeedConfiguration = {
 
 class CustomDatafeed {
     // private data: Bar[];
+    tokenAddress: string;
 
-    constructor() {
-        // this.data = this.generateCandlestickData();
+    constructor(tokenAddress: string) {
+        this.tokenAddress = tokenAddress;
+        
+        
     }
 
     public onReady(callback: OnReadyCallback): void {
@@ -70,70 +73,70 @@ class CustomDatafeed {
         periodParams: PeriodParams,
         onHistoryCallback: HistoryCallback, 
         onErrorCallback: ErrorCallback): void {
-        setTimeout(
+            setTimeout(
             () => {
                 // For this piece of code only we will only return bars for the TEST symbol
-                if (symbolInfo.ticker === 'BTCUSD') {
+                // if (symbolInfo.ticker === 'BTCUSD') {
                     
-                    // const to = periodParams.to;
-                    const { from,to, firstDataRequest, countBack} = periodParams;
-                    const tokenAddress = "0x3d8be50ca75d4";
-                    const chainId = 1;
+                // const to = periodParams.to;
+                const { from,to, firstDataRequest, countBack} = periodParams;
+                // const tokenAddress = "0x3d8be50ca75d4";
+                const chainId = 1;
 
-                    fetch(`http://localhost:3001/ohlc?token_address=${tokenAddress}&chainid=${chainId}&resolution=${resolution}&from=${from}&to=${to}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log(data.length)
-                        if (data.length > 0) {
-                          const correctedData = data.map((d: { time: number; open: any; high: any; low: any; close: any; }) => ({
-                            time: d.time * 1000, // Convert timestamp from seconds to milliseconds
-                            open: d.open,
-                            high: d.high,
-                            low: d.low,
-                            close: d.close
-                          }));
-                          if (data.length < countBack) {
-                            console.log(`Requested ${countBack} bars, but only ${data.length} are available.`);
-                            // onHistoryCallback(correctedData, { noData: length === 0 });
-                            onHistoryCallback(correctedData, { noData: length === 0 });
+                fetch(`http://localhost:3001/ohlc?token_address=${this.tokenAddress}&chainid=${chainId}&resolution=${resolution}&from=${from}&to=${to}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data.length)
+                    if (data.length > 0) {
+                        const correctedData = data.map((d: { time: number; open: any; high: any; low: any; close: any; }) => ({
+                        time: d.time * 1000, // Convert timestamp from seconds to milliseconds
+                        open: d.open,
+                        high: d.high,
+                        low: d.low,
+                        close: d.close
+                        }));
+                        if (data.length < countBack) {
+                        console.log(`Requested ${countBack} bars, but only ${data.length} are available.`);
+                        // onHistoryCallback(correctedData, { noData: length === 0 });
+                        onHistoryCallback(correctedData, { noData: length === 0 });
 
-                          } else {
-                              // Return the last 'countBack' number of bars
-                              const resultBars = correctedData.slice(-countBack);
-                              onHistoryCallback(resultBars, { noData: false });
-                          }
                         } else {
-                          // onHistoryCallback([], { noData: true });
-                          if (firstDataRequest){
-                            console.log("No data available within the requested range, fetching latest time...");
-                            fetch(`http://localhost:3001/data/latest-time?token_address=${tokenAddress}&chainid=${chainId}`)
-                            .then(response => {
-                                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                                return response.json();
-                            })
-                            .then(lastData => {
-                                const nextT = lastData.latestTime; // Convert to milliseconds
-                                console.log(`Next available time: ${nextT}`);
-                                onHistoryCallback([], { noData: true, nextTime: nextT });
-                            }).catch(onErrorCallback);
-                          } else {
-                            onHistoryCallback([], { noData: true });
-
-                          }
+                            // Return the last 'countBack' number of bars
+                            const resultBars = correctedData.slice(-countBack);
+                            onHistoryCallback(resultBars, { noData: false });
                         }
-                    })
-                    .catch(onErrorCallback);
+                    } else {
+                        // onHistoryCallback([], { noData: true });
+                        if (firstDataRequest){
+                        console.log("No data available within the requested range, fetching latest time...");
+                        fetch(`http://localhost:3001/data/latest-time?token_address=${this.tokenAddress}&chainid=${chainId}`)
+                        .then(response => {
+                            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                            return response.json();
+                        })
+                        .then(lastData => {
+                            const nextT = lastData.latestTime; // Convert to milliseconds
+                            console.log(`Next available time: ${nextT}`);
+                            onHistoryCallback([], { noData: true, nextTime: nextT });
+                        }).catch(onErrorCallback);
+                        } else {
+                        onHistoryCallback([], { noData: true });
+
+                        }
+                    }
+                })
+                .catch(onErrorCallback);
                     
-                } else {
-                    // If no result, return an empty array and specify it to the library by changing the value of `noData` to true.
-                    onHistoryCallback([], {
-                        noData: true
-                    });
-                }
+                // } else {
+                //     // If no result, return an empty array and specify it to the library by changing the value of `noData` to true.
+                //     onHistoryCallback([], {
+                //         noData: true
+                //     });
+                // }
             },
             50
-        );
-    }
+            );
+        }
 
 
     public searchSymbols(userInput: string, exchange: string, symbolType: string, onResultReadyCallback: (symbols: Symbol[]) => void) {
@@ -168,45 +171,41 @@ class CustomDatafeed {
         
     public resolveSymbol(symbolName: string, onSymbolResolvedCallback: (symbolInfo: any) => void, onResolveErrorCallback: (error: string) => void) {
       
-    //   try {
-    //     fetch(`http://localhost:3001/token-list?token_address=${symbolName}&chainid=${chainId}`)
-    //     .then(response => {
-    //         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    //         return response.json();
-    //     })
-    //     .then(data => {
-    //         console.log(data);
+        try {
+            fetch(`http://localhost:3001/token-info?token_address=${this.tokenAddress}&chainid=1`)
+            .then(response => response.json())
+            .then(data => {
+                // console.log(data)
+                const symbolInfo: LibrarySymbolInfo = {
+                    listed_exchange: '', 
+                    format:'price', 
+                    name: data[0].token_name,
+                    ticker: data[0].token_ticker,
+                    description: data[0].token_ticker,
+                    type: 'crypto',
+                    session: '24x7',
+                    timezone: 'Etc/UTC',
+                    exchange: 'Example Exchange',
+                    minmov: 1,
+                    pricescale: 100,
+                    has_intraday: true,
+                    visible_plots_set: 'ohlcv',
+                    has_weekly_and_monthly: false,
+                    supported_resolutions: ['1' as ResolutionString, '5' as ResolutionString, '30' as ResolutionString, '60' as ResolutionString, 'D' as ResolutionString],
+                    volume_precision: 2,
+                    data_status: 'streaming',
+                };
+                // onSymbolResolvedCallback(symbolInfo);
+                setTimeout(() => { onSymbolResolvedCallback(symbolInfo); }, 0);
 
-
-    //     });
-    // } catch (error) {
-    //     console.error('Error fetching token list data:', error);
-    // }
-
-      
-      if (symbolName ==="0x3d8be50ca75d4") {
-        const symbolInfo: LibrarySymbolInfo = {
-            listed_exchange: '', 
-            format:'price', 
-            ticker: 'BTCUSD',
-            name: 'BTCUSD',
-            description: 'Bitcoin/USD',
-            type: 'crypto',
-            session: '24x7',
-            timezone: 'Etc/UTC',
-            exchange: 'Example Exchange',
-            minmov: 1,
-            pricescale: 100,
-            has_intraday: true,
-            visible_plots_set: 'ohlcv',
-            has_weekly_and_monthly: false,
-            supported_resolutions: ['1' as ResolutionString, '5' as ResolutionString, '30' as ResolutionString, '60' as ResolutionString, 'D' as ResolutionString],
-            volume_precision: 2,
-            data_status: 'streaming',
-        };
-        setTimeout(() => { onSymbolResolvedCallback(symbolInfo); }, 0);
-          
-      }
+            })
+            .catch(error => {
+                console.error("Failed to fetch symbol info:", error);
+                onResolveErrorCallback("Could not resolve the symbol.");
+            });
+        } catch (error) {
+            console.error('Error fetching token list data:', error);
+        }      
     }
 
     public subscribeBars(symbolInfo: LibrarySymbolInfo, resolution: ResolutionString, onTick: SubscribeBarsCallback, listenerGuid: string, onResetCacheNeededCallback: () => void) {

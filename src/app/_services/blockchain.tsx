@@ -1,7 +1,7 @@
-import { ContractFactory, ethers } from 'ethers'
+import { Contract, ContractFactory, ethers } from 'ethers'
 import address from '@/../contracts/contractAddress.json'
 import ERC20TestArtifact from '@/../artifacts/contracts/ERCC20Test.sol/ERC20Test.json'
-import { TokenParams } from '../_utils/types'
+import { TokenListData, TokenParams } from '../_utils/types'
 import { useWeb3ModalProvider } from '@web3modal/ethers/react'
 
 // import { EventParams, EventStruct, TicketStruct } from '@/utils/type.dt'
@@ -36,7 +36,7 @@ const getEthereumContracts = async () => {
   }
 }
 
-const deployToken = async (token: TokenParams): Promise<string> => {
+const deployToken = async (token: TokenParams, walletProvider: any): Promise<TokenListData> => {
     if (!ethereum) {
       reportError('Please install a browser provider')
       return Promise.reject(new Error('Browser provider not installed'))
@@ -54,12 +54,23 @@ const deployToken = async (token: TokenParams): Promise<string> => {
         const ERC20Contract = await ERC20_Token.deploy(
             Number(token.reserveRatio),
             token.name,
-            token.symbol
+            token.ticker
         );
       
         const contractAddress = await ERC20Contract.getAddress(); // Correctly await the address
         window.alert(`Contract deployed to: ${contractAddress}`);
-        return contractAddress
+
+        const tokenListData: TokenListData = {
+          token_address: contractAddress,
+          token_ticker: token.ticker,
+          token_name: token.name,
+          token_description: '', 
+          image_url:'',
+          creator:signer.address, // Adjust accordingly
+          datetime: Math.floor(Date.now() / 1000) // Current timestamp
+				  };
+
+        return tokenListData
 
     } catch (error) {
       reportError(error)
@@ -67,15 +78,19 @@ const deployToken = async (token: TokenParams): Promise<string> => {
     }
   }
 
-const mintToken = async (): Promise<void> => {
-    if (!ethereum) {
+const mintToken = async (tokenAddress: string,  amount: number, walletProvider: any): Promise<void> => {
+    if (!walletProvider) {
         reportError('Please install a browser provider')
         return Promise.reject(new Error('Browser provider not installed'))
       }
-  
+    const deposit_amt = toWei(amount);
+    const provider = new ethers.BrowserProvider(walletProvider)
+    const signer = await provider.getSigner()
+    const ERC20TestContract = new Contract(tokenAddress, ERC20TestArtifact.abi, signer);
+    
     try {
-      const contract = await getEthereumContracts()
-      tx = await contract.mint()
+      // const contract = await getEthereumContracts()
+      tx = await ERC20TestContract.mint({value: deposit_amt})
 
       await tx.wait()
   
@@ -86,9 +101,57 @@ const mintToken = async (): Promise<void> => {
     }
   }
 
+  const getBalance = async (tokenAddress: string,walletProvider: any): Promise<any> => {
+    if (!walletProvider) {
+      reportError('Please install a browser provider')
+      return Promise.reject(new Error('Browser provider not installed'))
+    }
+    const provider = new ethers.BrowserProvider(walletProvider)
+    const signer = await provider.getSigner()
+    const ERC20TestContract = new Contract(tokenAddress, ERC20TestArtifact.abi, provider);
+    console.log(signer.address)
+    try {
+      // const contract = await getEthereumContracts()
+      tx = await ERC20TestContract.balanceOf(signer.address)
+  
+      console.log(tx)
+      // await tx.wait()
+  
+      return tx
+    } catch (error) {
+      reportError(error)
+      return Promise.reject(error)
+    }
+  }
+  
+  
+  const burnToken = async (tokenAddress: string,  amount: string, walletProvider: any): Promise<void> => {
+    if (!walletProvider) {
+        reportError('Please install a browser provider')
+        return Promise.reject(new Error('Browser provider not installed'))
+      }
+    // const sellTokens = ethers.parseUnits(amount, 1);
+    const provider = new ethers.BrowserProvider(walletProvider)
+    const signer = await provider.getSigner()
+    const ERC20TestContract = new Contract(tokenAddress, ERC20TestArtifact.abi, signer);
+  
+    try {
+      // const contract = await getEthereumContracts()
+      tx = await ERC20TestContract.burn(amount, {gasLimit: ethers.toBeHex(1000000)})
+  
+      await tx.wait()
+  
+      return Promise.resolve(tx)
+    } catch (error) {
+      reportError(error)
+      return Promise.reject(error)
+    }
+  }
 
 
   export {
     deployToken,
-    mintToken
+    mintToken,
+    getBalance,
+    burnToken
   }

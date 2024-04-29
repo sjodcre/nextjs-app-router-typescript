@@ -20,7 +20,7 @@ const SeiEVM = {
   name: 'SEI',
   currency: 'SEI  ',
   explorerUrl: 'https://seistream.app/',
-  rpcUrl: 'https://evm-rpc-arctic-1.sei-apis.com'
+  rpcUrl: 'https://evm-rpc.arctic-1.seinetwork.io'
 }
 
 // 3. Create a metadata object
