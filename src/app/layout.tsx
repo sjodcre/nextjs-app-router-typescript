@@ -37,7 +37,7 @@ export default function RootLayout({
               pauseOnFocusLoss
               draggable
               pauseOnHover
-              theme="dark"
+              
             />
         </ReduxProvider>
       </body>

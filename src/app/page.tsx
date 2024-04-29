@@ -126,7 +126,7 @@ const Home: React.FC = () => {
             {/* Token list */}
             <div className="grid grid-col-1 md:grid-cols-2 lg:grid-cols-3 text-gray-400 gap-4 px-10 items-center">
                 {currentTokens.map((token: Token, index: number) => (
-                    <Link href={`/${token.tokenaddress}`} key={index}>
+                    <Link href={`/token/${token.tokenaddress}`} key={index}>
                         {/* Token card */}
                         <div className='max-h-[300px] overflow-hidden h-fit p-2 flex border border-transparent hover:border-white gap-2 w-full'>
                             {/* You can replace this placeholder image with the actual token image */}
