@@ -187,7 +187,7 @@ class CustomDatafeed {
                     timezone: 'Etc/UTC',
                     exchange: 'Example Exchange',
                     minmov: 1,
-                    pricescale: 100,
+                    pricescale: 1000000000000000,
                     has_intraday: true,
                     visible_plots_set: 'ohlcv',
                     has_weekly_and_monthly: false,

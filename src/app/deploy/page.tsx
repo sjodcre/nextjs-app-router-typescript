@@ -204,6 +204,8 @@ export default function Deploy() {
 				let url = '';
 				//==================================================================
 				try {
+					// const ethersProvider = new BrowserProvider(walletProvider)
+
 					const data = await deployToken(tokenParams, walletProvider);
 					// toast.success(`Token Creation Successful!${address}`);
 					try {
@@ -223,7 +225,7 @@ export default function Deploy() {
 					  };
 										
 					await postTokenData(tokenListData);//done
-					await initOHLCData(data.token_address,data.creator, data.datetime);
+					await initOHLCData(data.token_address,data.creator, data.datetime, data.tx_hash);
 					router.push('/token/' + selectedChain + '/' + data.token_address)
 					
 					// await toast.promise(
