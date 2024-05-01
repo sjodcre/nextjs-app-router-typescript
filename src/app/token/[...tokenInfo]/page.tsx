@@ -13,7 +13,8 @@ import { toast } from "react-toastify";
 
 
 const fetchData = async (chainId: string, tokenAddress: string) => {
-  // const tokenAddress = "0x9AA19CF4849c03a77877CaFBf61003aeDFDA3779";
+   //const tokenAddress = "0x9AA19CF4849c03a77877CaFBf61003aeDFDA3779";
+   tokenAddress = "0xB8a0752e5d286CBeAcD1E0d232BCE965211d7E6f";
   // const chainId = 1;
   console.log("fetching data from database...");
   try {
