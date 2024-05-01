@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { logIn, logOut } from "@/app/_redux/features/chain-slice";
 import { useDispatch } from 'react-redux';
 import { AppDispatch, useAppSelector } from '@/app/_redux/store';
+import Header from './_ui/header';
 
 
 interface Token {
@@ -90,6 +91,7 @@ const Home: React.FC = () => {
 
     return (
         <>
+        <Header/>
             <label className='text-9xl flex justify-center'>HELLO </label>
             <label className='text-9xl flex justify-center'>Chain : {chainType} </label>
             <label htmlFor="sortOptions" className="mr-2">Chain:</label>
