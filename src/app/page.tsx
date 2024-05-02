@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { logIn, logOut } from "@/app/_redux/features/chain-slice";
 import { useDispatch } from 'react-redux';
 import { AppDispatch, useAppSelector } from '@/app/_redux/store';
-import Header from './_ui/header';
+// import Header from './_ui/header';
 
 
 interface Token {
@@ -91,11 +91,11 @@ const Home: React.FC = () => {
 
     return (
         <>
-        <Header/>
+        {/* <Header/> */}
             <label className='text-9xl flex justify-center'>HELLO </label>
             <label className='text-9xl flex justify-center'>Chain : {chainType} </label>
             <label htmlFor="sortOptions" className="mr-2">Chain:</label>
-            <div className="inline-flex">
+            {/* <div className="inline-flex">
                 <button className={` hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-l ${isSeiActive ? 'bg-blue-500 disable' : 'bg-gray-300'
                     }`} onClick={handleClicks}>
                     Sei
@@ -105,7 +105,7 @@ const Home: React.FC = () => {
                     FTM
                 </button>
 
-            </div>
+            </div> */}
 
 
 
@@ -146,7 +146,7 @@ const Home: React.FC = () => {
             </div>
 
             {/* Pagination */}
-            <div className="flex justify-center items-center mt-4">
+            <div className="text-gray-400 flex justify-center items-center mt-4">
                 <button
                     onClick={() => setCurrentPage(currentPage > 1 ? currentPage - 1 : currentPage)}
                     disabled={currentPage === 1}

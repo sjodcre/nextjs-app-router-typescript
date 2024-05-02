@@ -21,16 +21,6 @@ import { fetchSEIPrice } from "@/app/_utils/native-token-pricing";
 
 export default function TokenPage({ params }: { params: { tokenInfo: string } }) {
 
-  // const [tokenDetails, setTokenDetails] = useState<TokenPageDetails | null>({
-	// 	name: 'Cats Have 9 Sols',
-	// 	ticker: '9Lives',
-	// 	description: 'Why cats are often depicted having nine lives can be explained by the fact that during the ancient times, the number nine was considered a mystical and lucky number, the sum total of the "trinity of trinities", also being due to their associations with magic and their tendency to survive considerable falls',
-  //   creator: '',
-  //   img: "https://pump.mypinata.cloud/ipfs/QmbTJoAjP1g7NSKQrpkVouhr78YNqDgQ251LpJsrHE8YY5",
-  //   twitter: 'https://twitter.com/ChristChry84614',
-  //   telegram: 'https://http://t.me/cryptochristt',
-  //   website: '',
-  // });
 
   // const tokenDetails: TokenPageDetails= await fetchData()
   const [tokenDetails, setTokenDetails] = useState<TokenPageDetails>();
@@ -92,7 +82,6 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     const updatePrice = async () => {
         const fetchedPrice = await fetchSEIPrice();
         setnativeTokenPrice(fetchedPrice);
-        console.log("sei token price: ", nativeTokenPrice?.toFixed(4))
     };
 
     updatePrice(); // Initial fetch
@@ -159,14 +148,11 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
         const ethersProvider = new BrowserProvider(walletProvider);
         fetchERC20Balance(ethersProvider, params.tokenInfo[1])
       .then(balance => {
-        console.log(balance)
-        // Handle ERC-20 balance
-        // console.log("balance " + balance)
+
         setUserBalance(prevState => ({
           ...prevState,
           token: Number(balance)  // Replace `newValue` with the actual new value for the token balance
         }));
-        // console.log("user balance: ", userBalance)
 
       })
       .catch(error => {
@@ -231,7 +217,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
       const [tokenInfo, tradesData] = await Promise.all([tokenInfoPromise, tradesDataPromise]);
       setTokenDetails(tokenInfo);
       setTrades(tradesData);
-      console.log(tradesData);
+      // console.log(tradesData);
 
       if (tradesData && tradesData.length > 0 && nativeTokenPrice) {
         const marketCap = tradesData[0].sum * tradesData[0].price_per_token * nativeTokenPrice/1E18;
@@ -440,8 +426,8 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     // <div style={{ display: 'grid', height: '100vh', gridTemplateRows: 'auto auto auto 1fr', alignItems: 'start' }}>
     <div className="grid h-screen custom-grid-rows items-start">
 
-      <main className="h-full overflow-auto">
-        <div className="md:block hidden mt-16 p-4">
+      <main className="h-full">
+        <div className="md:block hidden mt-8 p-4">
           <div className="flex justify-center">
             <a className="inline-flex items-center justify-center whitespace-nowrap rounded-md font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 dark:ring-offset-slate-950 dark:focus-visible:ring-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50 h-10 px-4 py-2 -mt-5 text-2xl text-slate-50 hover:font-bold hover:bg-transparent hover:text-slate-50" href="/">
               [go back]
@@ -612,22 +598,6 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
                     </div>
                     <div className="flex mt-2 bg-[#2e303a] p-1 rounded-lg">
-                      {/* {nativeToken && (
-                        <div>
-                          <button className="text-xs py-1 -ml-1 px-2 rounded bg-black text-gray-400 hover:bg-gray-800 hover:text-gray-300">
-                            reset
-                          </button>
-                          <button className="text-xs py-1 px-2 ml-1 rounded bg-black text-gray-400 hover:bg-gray-800 hover:text-gray-300">
-                            1 SOL
-                          </button>
-                          <button className="text-xs py-1 px-2 ml-1 rounded bg-black text-gray-400 hover:bg-gray-800 hover:text-gray-300">
-                            5 SOL
-                          </button>
-                          <button className="text-xs py-1 px-2 ml-1 rounded bg-black text-gray-400 hover:bg-gray-800 hover:text-gray-300">
-                            10 SOL
-                          </button>
-                        </div>
-                      )} */}
                       {nativeToken && (
                           <div>
                             <button className="text-xs py-1 -ml-1 px-2 rounded bg-black text-gray-400 hover:bg-gray-800 hover:text-gray-300"
