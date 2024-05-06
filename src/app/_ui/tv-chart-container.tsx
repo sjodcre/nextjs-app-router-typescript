@@ -10,8 +10,6 @@ const TVChartContainerBase = (props: ExtendedWidgetOptions) => {
 	const chartContainerRef =
 		useRef<HTMLDivElement>() as React.MutableRefObject<HTMLInputElement>;
 
-	// const chainType = useAppSelector((state) => state.authReducer.value.chainType);
-	// console.log("chaintype:" ,chainType)
 	
 
 	useEffect(() => {

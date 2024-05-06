@@ -22,7 +22,6 @@ import { fetchNativeTokenPrice } from "@/app/_utils/native-token-pricing";
 export default function TokenPage({ params }: { params: { tokenInfo: string } }) {
 
 
-  // const tokenDetails: TokenPageDetails= await fetchData()
   const [tokenDetails, setTokenDetails] = useState<TokenPageDetails>();
   const [tokenAmountToTrade, setTokenAmountToTrade] = useState('');
   const [nativeToken, setNativeToken] = useState(true);
@@ -42,18 +41,20 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   const [nativeTokenPrice, setnativeTokenPrice] = useState<number | null>(null);
   const [nativeTokenInfo, setNativeTokenInfo] = useState({
     chain: '',
+    chainId:0,
     chainLogo: '',
   })
 
   const { isConnected, chainId } = useWeb3ModalAccount()
   const { walletProvider } = useWeb3ModalProvider()
   const seiWebSocket = "wss://evm-ws-arctic-1.sei-apis.com";
+  // const ftmWebSocket = "wss://fantom-testnet.public.blastapi.io/";
   const ERC20TestContractAddress = params.tokenInfo[1]; 
   
 
   
  
-
+//set bonding curve %
   useEffect(() => {
     // Convert marketCap string to number, removing commas and parsing as integer
     const marketCapValue = parseInt(marketCap.replace(/,/g, ''), 10);
@@ -68,11 +69,12 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     }
   }, [marketCap]); 
 
+  //fetch native token price
   useEffect(() => {
     const updatePrice = async () => {
         const fetchedPrice = await fetchNativeTokenPrice(params.tokenInfo[0]);
         setnativeTokenPrice(fetchedPrice);
-        console.log(fetchedPrice)
+        // console.log(fetchedPrice)
     };
 
     updatePrice(); // Initial fetch
@@ -99,6 +101,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     try {
 
       const wsProvider = new ethers.WebSocketProvider(seiWebSocket)
+      // const wsProvider = new ethers.WebSocketProvider(ftmWebSocket)
       const contract = new ethers.Contract(
         ERC20TestContractAddress.toString(), 
         ERC20TestArtifact.abi, 
@@ -106,11 +109,11 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
       // contract.removeAllListeners();
       // console.log("WebSocket provider set up:", wsProvider);
       console.log("Contract initialized and listening for events at address:", ERC20TestContractAddress);
-      contract.on("Transfer", (src, dst, wad, event)=> {
-        console.log("src: ", src);
-        console.log("dst: ", dst)
-        console.log("wad: ", wad)
-        console.log("event: ", event)
+      contract.on("Transfer", (from, to, value)=> {
+        console.log("src: ", from);
+        console.log("dst: ", to)
+        console.log("wad: ", value)
+        // console.log("event: ", event)
 
       })
 
@@ -166,12 +169,15 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
         console.log("provider is not ready to read user")
       }
     }
-  }, [providerReady, transactionDone,chainId]);
+  }, [providerReady, transactionDone,switchNetwork]);
 
+
+  //set native token info, token details, trades, market cap
   useEffect(() => {
     // const chainId = params.tokenInfo[0] === 'sei' ? '1' : '2';
     setNativeTokenInfo({
       chain: params.tokenInfo[0] === 'sei' ? 'SEI' : 'FTM',
+      chainId: params.tokenInfo[0] === 'sei' ? 713715: 64165,
       chainLogo: params.tokenInfo[0] === 'sei' ? '/sei-logo.png' : '/ftm-logo.png'
     });
 
@@ -215,8 +221,10 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   
     // setTokenAmountToTrade(amountToSet.toString()); // Convert to string to match your state expectation
     handleChainChange()
-        .then(() => {
+        .then(async() => {
+            
             // This code executes after successful network change
+            console.log(userBalance.token)
             const fullAmount = userBalance.token; // Assuming `userBalance.token` holds the full token balance as a number
             const amountToSet = (fullAmount * percentage / 100).toFixed(0); // Calculating the percentage and rounding it to the nearest whole number
         
@@ -271,10 +279,31 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
             targetChainId = FTM_CHAIN_ID;
         }
 
-        console.log( targetChainId)
+        // console.log( targetChainId)
         if (targetChainId !== null) {
             switchNetwork(targetChainId)
                 .then(() => {
+                    // if (walletProvider)
+                    // {
+                    //   const ethersProvider = new BrowserProvider(walletProvider);
+                    //   await fetchERC20Balance(ethersProvider, params.tokenInfo[1])
+                    // .then(balance => {
+              
+                    //   setUserBalance(prevState => ({
+                    //     ...prevState,
+                    //     token: Number(balance)  // Replace `newValue` with the actual new value for the token balance
+                    //   }));
+                    //   setTransactionDone(false);
+              
+                    // })
+                    // .catch(error => {
+                    //   // Error handling
+                    //   console.log("fail to fetch user balance:", error)
+              
+                    // });
+                    // } else {
+                    //   console.log("provider is not ready to read user")
+                    // }
                     // resolve(`Switched to ${targetChainId} successfully.`);
                     resolve(targetChainId);
                 })
@@ -356,11 +385,17 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     const contract = new ethers.Contract(tokenAddress, ERC20TestArtifact.abi, signer);
     
     try {
-      const balance = await contract.balanceOf(signer.address.toString());
+      if(chainId === nativeTokenInfo.chainId){
+        // console.log('pass here')
+        const balance = await contract.balanceOf(signer.address.toString());
       // console.log("token address: ", tokenAddress);
       // console.log("signer address: ", signer.address);
       // console.log("Token Balance:", balance.toString());
       return balance;
+      } else {
+        return 0;
+      }
+      
     } catch (error) {
       console.error("Failed to fetch token balance:", error);
       throw error;  // or handle error appropriately
@@ -406,7 +441,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 			if (!isConnected) throw Error('User is not connected')
       let chain: string;
 
-      await handleChainChange().then((updatedChainId)=> {
+      await handleChainChange().then( async (updatedChainId)=> {
         if (updatedChainId === 713715 ){
           chain = "sei"
         } else if (updatedChainId === 64165) {
@@ -415,128 +450,130 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
           toast.error("Chain error! Using unsupported network")
           return
         }
-        // console.log(updatedChainId)
-        // console.log(chainId)
+        if (walletProvider) {
+
+          const ethersProvider = new BrowserProvider(walletProvider);
+          const signer = await ethersProvider.getSigner();
+          const ERC20TestContractAddress = params.tokenInfo[1].toString(); 
+          const ERC20TestContract = new Contract(ERC20TestContractAddress, ERC20TestArtifact.abi, signer);
+  
+          if (buySell === 'buy') {
+            toast.promise(
+              handleBuyToken(walletProvider, tokenAmountToTrade),
+              {
+                pending: 'Processing buy transaction...',
+                success: 'Buy transaction successful! 👌',
+                error: 'Buy transaction failed! 🤯'
+              }
+            ).then(({ result, txHash, ERC20TestContract }) => {
+              if (result.status === 1) {
+              // console.log("Transaction succeeded:", result);
+              const iface = new Interface(ERC20TestArtifact.abi);
+    
+              result.logs.forEach((log: any) => {
+                try {
+                    const parsedLog = iface.parseLog(log);
+                    if (parsedLog?.name === 'ContinuousMint') {
+                      // console.log('ContinuousMint Event Args:', parsedLog.args);
+                      
+                      const info = {
+                          selectedChain: chain,
+                          contractAddress: ERC20TestContractAddress,
+                          account: parsedLog.args[0],
+                          amount: Number(parsedLog.args[1].toString()), // Ensure conversion to string before to Number if BigNumber
+                          deposit: Number(parsedLog.args[2].toString()), // Same conversion as above
+                          timestamp: Math.floor(Date.now() / 1000),
+                          trade: buySell.toString(),
+                          txHash: txHash
+                      };
+                      // console.log("Processed Event Data:", info);
+                      postTransactionAndOHLC(info).then(response => {
+                        console.log('Backend response:', response);
+                      }).catch(error => {
+                          console.error('Error posting data to backend:', error);
+                      });                
+                    }            
+                  } catch (error) {
+                    // This log was not from our contract
+                    console.error("Error parsing log:", error);
+                }
+             });
+            } else {
+              console.log("Transaction failed with receipt:", result);
+              // Handle failure case
+            }
+              // handle success, parse logs, etc.
+              setTokenAmountToTrade('');
+              setTransactionDone(true);
+            }).catch(error => {
+              console.error("Transaction error:", error);
+              setTransactionDone(false);
+            });
+          } else if (buySell === 'sell') {
+            toast.promise(
+              handleSellToken(walletProvider, tokenAmountToTrade),
+              {
+                pending: 'Processing sell transaction...',
+                success: 'Sell transaction successful! 👌',
+                error: 'Sell transaction failed! 🤯'
+              }
+            ).then(({ result, txHash, ERC20TestContract }) => {
+              if (result.status === 1) {
+              // console.log("Transaction succeeded:", result);
+              const iface = new Interface(ERC20TestArtifact.abi);
+    
+              result.logs.forEach((log: any) => {
+                try {
+                    const parsedLog = iface.parseLog(log);
+                    if (parsedLog?.name === 'ContinuousBurn') {
+                      // console.log('ContinuousBurn Event Args:', parsedLog.args);
+                      
+                      const info = {
+                          selectedChain: chain,
+                          contractAddress: ERC20TestContractAddress,
+                          account: parsedLog.args[0],
+                          amount: Number(parsedLog.args[1].toString()), // Ensure conversion to string before to Number if BigNumber
+                          deposit: Number(parsedLog.args[2].toString()), // Same conversion as above
+                          timestamp: Math.floor(Date.now() / 1000),
+                          trade: buySell.toString(),
+                          txHash: txHash  
+                      };
+                      // console.log("Processed Event Data:", info);
+                      postTransactionAndOHLC(info).then(response => {
+                        console.log('Backend response:', response);
+                      }).catch(error => {
+                          console.error('Error posting data to backend:', error);
+                      });                
+                    }
+                  } catch (error) {
+                    // This log was not from our contract
+                    console.error("Error parsing log:", error);
+                }
+             });
+            } else {
+              console.log("Transaction failed with receipt:", result);
+              // Handle failure case
+            }
+              // handle success, parse logs, etc.
+              setTokenAmountToTrade('');
+              setTransactionDone(true);
+            }).catch(error => {
+              console.error("Transaction error:", error);
+              setTransactionDone(false);
+            });
+          }
+  
+          
+          
+        } else {
+          // Handle the case where walletProvider is undefined
+          console.error("Wallet provider is not available.");
+        }
+
       })
       
 
-			if (walletProvider) {
-
-				const ethersProvider = new BrowserProvider(walletProvider);
-				const signer = await ethersProvider.getSigner();
-        const ERC20TestContractAddress = params.tokenInfo[1].toString(); 
-        const ERC20TestContract = new Contract(ERC20TestContractAddress, ERC20TestArtifact.abi, signer);
-
-        if (buySell === 'buy') {
-          toast.promise(
-            handleBuyToken(walletProvider, tokenAmountToTrade),
-            {
-              pending: 'Processing buy transaction...',
-              success: 'Buy transaction successful! 👌',
-              error: 'Buy transaction failed! 🤯'
-            }
-          ).then(({ result, txHash, ERC20TestContract }) => {
-            if (result.status === 1) {
-            // console.log("Transaction succeeded:", result);
-            const iface = new Interface(ERC20TestArtifact.abi);
-  
-            result.logs.forEach((log: any) => {
-              try {
-                  const parsedLog = iface.parseLog(log);
-                  if (parsedLog?.name === 'ContinuousMint') {
-                    // console.log('ContinuousMint Event Args:', parsedLog.args);
-                    
-                    const info = {
-                        selectedChain: chain,
-                        contractAddress: ERC20TestContractAddress,
-                        account: parsedLog.args[0],
-                        amount: Number(parsedLog.args[1].toString()), // Ensure conversion to string before to Number if BigNumber
-                        deposit: Number(parsedLog.args[2].toString()), // Same conversion as above
-                        timestamp: Math.floor(Date.now() / 1000),
-                        trade: buySell.toString(),
-                        txHash: txHash
-                    };
-                    // console.log("Processed Event Data:", info);
-                    postTransactionAndOHLC(info).then(response => {
-                      console.log('Backend response:', response);
-                    }).catch(error => {
-                        console.error('Error posting data to backend:', error);
-                    });                
-                  }            
-                } catch (error) {
-                  // This log was not from our contract
-                  console.error("Error parsing log:", error);
-              }
-           });
-          } else {
-            console.log("Transaction failed with receipt:", result);
-            // Handle failure case
-          }
-            // handle success, parse logs, etc.
-            setTransactionDone(true);
-          }).catch(error => {
-            console.error("Transaction error:", error);
-            setTransactionDone(false);
-          });
-        } else if (buySell === 'sell') {
-          toast.promise(
-            handleSellToken(walletProvider, tokenAmountToTrade),
-            {
-              pending: 'Processing sell transaction...',
-              success: 'Sell transaction successful! 👌',
-              error: 'Sell transaction failed! 🤯'
-            }
-          ).then(({ result, txHash, ERC20TestContract }) => {
-            if (result.status === 1) {
-            // console.log("Transaction succeeded:", result);
-            const iface = new Interface(ERC20TestArtifact.abi);
-  
-            result.logs.forEach((log: any) => {
-              try {
-                  const parsedLog = iface.parseLog(log);
-                  if (parsedLog?.name === 'ContinuousBurn') {
-                    // console.log('ContinuousBurn Event Args:', parsedLog.args);
-                    
-                    const info = {
-                        selectedChain: chain,
-                        contractAddress: ERC20TestContractAddress,
-                        account: parsedLog.args[0],
-                        amount: Number(parsedLog.args[1].toString()), // Ensure conversion to string before to Number if BigNumber
-                        deposit: Number(parsedLog.args[2].toString()), // Same conversion as above
-                        timestamp: Math.floor(Date.now() / 1000),
-                        trade: buySell.toString(),
-                        txHash: txHash  
-                    };
-                    // console.log("Processed Event Data:", info);
-                    postTransactionAndOHLC(info).then(response => {
-                      console.log('Backend response:', response);
-                    }).catch(error => {
-                        console.error('Error posting data to backend:', error);
-                    });                
-                  }
-                } catch (error) {
-                  // This log was not from our contract
-                  console.error("Error parsing log:", error);
-              }
-           });
-          } else {
-            console.log("Transaction failed with receipt:", result);
-            // Handle failure case
-          }
-            // handle success, parse logs, etc.
-            setTransactionDone(true);
-          }).catch(error => {
-            console.error("Transaction error:", error);
-            setTransactionDone(false);
-          });
-        }
-
-        
-				
-      } else {
-				// Handle the case where walletProvider is undefined
-				console.error("Wallet provider is not available.");
-			}
+			
 
 		} catch (error: any) {
 

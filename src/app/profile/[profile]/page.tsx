@@ -43,7 +43,7 @@ const Profile: React.FC = () => {
   const url = usePathname();
   const id = url.substring("/profile/".length);
 
-  const chainType = useAppSelector((state) => state.authReducer.value.chainType);
+  const chainType = useAppSelector((state) => state.chainReducer.value.chainType);
   const [profileData, setProfileData] = useState<Profile>({
     walletaddress: '',
     followerscount: '',

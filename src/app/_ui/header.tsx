@@ -44,7 +44,7 @@ const Header = () => {
         {isConnected && (
           <div>
             <div className='text-sm'>
-              <span className="hidden sm:block">(0.02 SEI)</span>
+              {/* <span className="hidden sm:block">(0.02 SEI)</span> */}
               <span>{address?.slice(-6)}</span>
             </div>
           <Link href={`/profile/${address}`} className="text-sm hover:underline">

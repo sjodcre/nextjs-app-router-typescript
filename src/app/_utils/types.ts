@@ -1,13 +1,7 @@
-import { ChartingLibraryWidgetOptions } from "public/static/charting_library/charting_library";
-
 export interface TokenParams {
   reserveRatio: number;
   name: string;
   ticker: string;
-}
-
-export interface ExtendedWidgetOptions extends ChartingLibraryWidgetOptions {
-  chainId: string; // Adding chainId to the properties
 }
 
 export type TokenPageDetails = {

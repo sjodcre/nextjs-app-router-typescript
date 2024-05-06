@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 //redux
-import { logIn, logOut } from "@/app/_redux/features/chain-slice";
+import { setChain } from "@/app/_redux/features/chain-slice";
 import { useDispatch } from 'react-redux';
 import { AppDispatch, useAppSelector } from '@/app/_redux/store';
 // import Header from './_ui/header';
@@ -39,7 +39,7 @@ const Home: React.FC = () => {
     //resux
 
     const dispatch = useDispatch<AppDispatch>();
-    const chainType = useAppSelector((state) => state.authReducer.value.chainType);
+    const chainType = useAppSelector((state) => state.chainReducer.value.chainType);
 
     const fetchTokens = async () => {
         try {
@@ -56,7 +56,7 @@ const Home: React.FC = () => {
 
 
     useEffect(() => {
-        dispatch(logIn(selectedChain));
+        dispatch(setChain(selectedChain));
         fetchTokens();
     }, [sortBy, order, selectedChain]);
 
@@ -78,12 +78,12 @@ const Home: React.FC = () => {
             setIsFtmActive(true);
             setIsSeiActive(false)
             setSelectedChain("ftm");
-            dispatch(logIn(selectedChain));
+            dispatch(setChain(selectedChain));
         } else {
             setIsFtmActive(false);
             setIsSeiActive(true)
             setSelectedChain("sei");
-            dispatch(logIn(selectedChain));
+            dispatch(setChain(selectedChain));
         }
 
 

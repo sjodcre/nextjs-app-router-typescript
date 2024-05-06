@@ -10,7 +10,7 @@ import { toast } from 'react-toastify'
 import { TokenParams } from '@/app/_utils/types';
 import { burnToken, deployToken, getBalance, mintToken } from '../_services/blockchain';
 import { initOHLCData, postTokenData } from '../_services/db-write';
-import { logIn, logOut } from "@/app/_redux/features/chain-slice";
+import { setChain, resetChain } from "@/app/_redux/features/chain-slice";
 import { useRouter } from 'next/navigation'
 import { useDispatch } from 'react-redux';
 import { AppDispatch, useAppSelector } from '@/app/_redux/store';
@@ -63,14 +63,14 @@ export default function Deploy() {
 	const [file,setFile] = useState<File>();
 	const [selectedChain, setSelectedChain] = useState<string>('sei');  // Default sort by market cap
 	const dispatch = useDispatch<AppDispatch>();
-    const chainType = useAppSelector((state) => state.authReducer.value.chainType);
+    const chainType = useAppSelector((state) => state.chainReducer.value.chainType);
 
 	const toggleOptions = () => setShowOptions(!showOptions);
 	
 	useEffect(() => {
-        dispatch(logIn(selectedChain));
+        dispatch(setChain(selectedChain));
 
-    }, [dispatch, logIn, selectedChain]);
+    }, [dispatch, setChain, selectedChain]);
 
 
 	const handleChange = (e: { target: { name: any; value: any; }; }) => {
@@ -138,7 +138,7 @@ export default function Deploy() {
         if (selectedChain === "ftm") {
             setSelectedChain("sei");
 			setFormData(initialFormData);
-            dispatch(logIn(selectedChain));
+            dispatch(setChain(selectedChain));
         } 
     };
 	const handleFtmChainButton = () => {
@@ -147,7 +147,7 @@ export default function Deploy() {
         if (selectedChain === "sei") {
             setSelectedChain("ftm");
 			setFormData(initialFormData);
-            dispatch(logIn(selectedChain));
+            dispatch(setChain(selectedChain));
         }
     };
 
@@ -165,7 +165,7 @@ export default function Deploy() {
 				targetChainId = FTM_CHAIN_ID;
 			}
 	
-			console.log( targetChainId)
+			console.log("targetchainId: ",  targetChainId)
 			if (targetChainId !== null) {
 				switchNetwork(targetChainId)
 					.then(() => {
@@ -183,38 +183,78 @@ export default function Deploy() {
 		});
 	  }
 
-	  async function deployTokenWithUIFeedback(tokenParams: TokenParams, walletProvider: any, file: File | undefined) {
-		try {
-			await handleChainChange();
+	//   async function deployTokenWithUIFeedback(tokenParams: TokenParams, walletProvider: any, file: File | undefined) {
+	// 	try {
+	// 		await handleChainChange();
 	
-			const data = await deployToken(tokenParams, walletProvider);
-			let url = '';
-			try {
-				url = await handleUploadImage(file);
-				console.log('Uploaded Image URL:', url);
-			} catch (error) {
-				console.error('Failed to upload image:', error);
-			}
-			toast.success(`Contract deployed to: ${data.token_address}`);
+	// 		console.log("chainId", chainId)
+	// 		const data = await deployToken(tokenParams, walletProvider);
+	// 		let url = '';
+	// 		try {
+	// 			url = await handleUploadImage(file);
+	// 			console.log('Uploaded Image URL:', url);
+	// 		} catch (error) {
+	// 			console.error('Failed to upload image:', error);
+	// 		}
+	// 		toast.success(`Contract deployed to: ${data.token_address}`);
 
 	
-			const tokenListData = {
-				...data,
-				chainid: selectedChain,
-				image_url: url,
-				token_description: formData.description,
-				twitter: formData.twitter, // Include Twitter data from formData.
-				telegram: formData.telegram, // Include Telegram data from formData.
-				website: formData.website, // Include Website data from formData.
-			};
+	// 		const tokenListData = {
+	// 			...data,
+	// 			chainid: selectedChain,
+	// 			image_url: url,
+	// 			token_description: formData.description,
+	// 			twitter: formData.twitter, // Include Twitter data from formData.
+	// 			telegram: formData.telegram, // Include Telegram data from formData.
+	// 			website: formData.website, // Include Website data from formData.
+	// 		};
 	
-			await postTokenData(tokenListData);
-			await initOHLCData(selectedChain, data.token_address, data.creator, data.datetime, data.tx_hash);
-			return tokenListData; // Resolve the promise with token list data
-		} catch (error) {
-			console.error(`Error in deployment: ${error}`);
-			throw error; // Rethrow the error to handle it in toast.promise's error section
-		}
+	// 		await postTokenData(tokenListData);
+	// 		await initOHLCData(selectedChain, data.token_address, data.creator, data.datetime, data.tx_hash);
+	// 		return tokenListData; // Resolve the promise with token list data
+	// 	} catch (error) {
+	// 		console.error(`Error in deployment: ${error}`);
+	// 		throw error; // Rethrow the error to handle it in toast.promise's error section
+	// 	}
+	// }
+
+	async function deployTokenWithUIFeedback(tokenParams: TokenParams, walletProvider: any, file: File | undefined): Promise<{ chainid: string; token_address: string }> {
+		return handleChainChange()  // This promise's resolution starts the next steps
+			.then(async () => {
+				// Assuming chain change is successful, proceed with deployment
+				const data = await deployToken(tokenParams, walletProvider);
+				let url = '';
+				try {
+					url = await handleUploadImage(file);
+					console.log('Uploaded Image URL:', url);
+				} catch (error) {
+					console.error('Failed to upload image:', error);
+					// Consider whether you want to continue or throw an error here
+				}
+				toast.success(`Contract deployed to: ${data.token_address}`);
+	
+				const tokenListData = {
+					...data,
+					chainid: selectedChain,
+					image_url: url,
+					token_description: formData.description,
+					twitter: formData.twitter,
+					telegram: formData.telegram,
+					website: formData.website,
+				};
+	
+				await postTokenData(tokenListData);
+				await initOHLCData(selectedChain, data.token_address, data.creator, data.datetime, data.tx_hash);
+				// return tokenListData;  // Successful deployment, resolve with this data
+				return {
+					chainid: selectedChain,
+					token_address: data.token_address
+				};
+			})
+			.catch((error) => {
+				console.error(`Error in deployment process: ${error}`);
+				throw error;  // Ensure this error propagates to reject the promise
+			});
 	}
 
 	const handleDeploy = async () => {

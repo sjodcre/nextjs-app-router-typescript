@@ -30,7 +30,7 @@ const TokenPage: React.FC = () => {
   const id = usePathname();
   
 
-  const chainType = useAppSelector((state) => state.authReducer.value.chainType);
+  const chainType = useAppSelector((state) => state.chainReducer.value.chainType);
   const [formData, setFormData] = useState<Token>({
     tokenid: 0,
     tokenname: '',

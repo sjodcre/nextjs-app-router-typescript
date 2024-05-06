@@ -20,13 +20,13 @@ const initialState = {
 
 export const chain = createSlice({
 
-    name: "auth",
+    name: "chain",
     initialState,
     reducers: {
-        logOut: () =>{
+        resetChain: () =>{
             return initialState;
         },
-        logIn: (state, action: PayloadAction<string>) =>{
+        setChain: (state, action: PayloadAction<string>) =>{
 
             return{
                 value:{
@@ -40,5 +40,5 @@ export const chain = createSlice({
 
 });
 
-export const {logIn,logOut} = chain.actions;
+export const {setChain,resetChain} = chain.actions;
 export default chain.reducer;
