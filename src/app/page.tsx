@@ -91,11 +91,19 @@ const Home: React.FC = () => {
 
     return (
         <>
-        {/* <Header/> */}
-            <label className='text-9xl flex justify-center'>HELLO </label>
-            <label className='text-9xl flex justify-center'>Chain : {chainType} </label>
-            <label htmlFor="sortOptions" className="mr-2">Chain:</label>
-            {/* <div className="inline-flex">
+            <Header />
+            <div className='grid gap-8 item-start justify-center '>
+               
+                    <div className='  relative text-9xl justify-center bg-black text-white border-2 font-mono font-semibold rounded-lg border-green-400 shadow-[0_0_2px_#00ff00,inset_0_0_2px_#00ff00,0_0_5px_#00ff00,0_0_15px_#00ff00,0_0_30px_#08f]'>
+
+
+                        HELLO
+
+                    </div>
+                    {/*  <label className='text-9xl flex justify-center'>Chain : {chainType} </label> */}
+                    {/* <label htmlFor="sortOptions" className="mr-2 text-white">Chain:</label> */}
+                    {/*   <div className="inline-flex">
+
                 <button className={` hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-l ${isSeiActive ? 'bg-blue-500 disable' : 'bg-gray-300'
                     }`} onClick={handleClicks}>
                     Sei
@@ -105,35 +113,55 @@ const Home: React.FC = () => {
                     FTM
                 </button>
 
-            </div> */}
+
+
+                </div>
+            
+            <div className='py-6  grid gap-8 item-start justify-center'>
+                <div className='relative'>
+                    <div className='absolute -inset-1 bg-gradient-to-r  from-green-400 to-green-950 rounded-lg blur'></div>
+                    <div className='relative px-7 py-4  bg-black rounded-lg leading-none flex items-center divide-x divide-gray-600'>
+
+                        <button className='pr-6 font-semibold text-gray-100'>SEI</button>
+                        <button className='pl-6 font-semibold text-purple-600'>FTM</button>
+
+
+
+
+                    </div>
+                </div>
+
+
+            </div>
+
 
 
 
             {/* Sorting dropdowns */}
-            <div className="mb-4 flex ">
+            <div className="mb-4 flex  font-semibold ">
                 <label htmlFor="sortOptions" className="mr-2">Sort By:</label>
-                <select id="sortOptions" value={sortBy} onChange={handleSortChange} className="px-2 py-1 border border-gray-300 rounded-md">
+                <select id="sortOptions" value={sortBy} onChange={handleSortChange} className="px-2 py-1 ">
                     <option value="lastUpdatedTime">Bump Order</option>
                     <option value="lastReplyTime">Last Reply</option>
                     <option value="replies">Replies</option>
                     <option value="marketcap">Market Cap</option>
                     <option value="creationTime">Creation Time</option>
                 </select>
-                <select id="orderOptions" value={order} onChange={handleOrderChange} className="ml-2 px-2 py-1 border border-gray-300 rounded-md">
+                <select id="orderOptions" value={order} onChange={handleOrderChange} className="ml-2 px-2 py-1 ">
                     <option value="asc">Ascending</option>
                     <option value="desc">Descending</option>
                 </select>
             </div>
 
             {/* Token list */}
-            <div className="grid grid-col-1 md:grid-cols-2 lg:grid-cols-3 text-gray-400 gap-4 px-10 items-center">
+            <div className="grid grid-col-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-10 items-center border-green-950 border-8 border-double " >
                 {currentTokens.map((token: Token, index: number) => (
                     <Link href={`/token/${token.tokenaddress}`} key={index}>
                         {/* Token card */}
-                        <div className='max-h-[300px] overflow-hidden h-fit p-2 flex border border-transparent hover:border-white gap-2 w-full'>
+                        <div className='max-h-[300px] overflow-hidden h-fit p-2 flex border border-transparent hover:border-green-700 gap-2 w-full'>
                             {/* You can replace this placeholder image with the actual token image */}
                             <img className='mr-4 w-32 h-auto flex' src="https://via.placeholder.com/150" alt="Token Image" />
-                            <ul className="text-xs font-normal leading-4 text-gray-500">
+                            <ul className="text-xs leading-4 text-green-500 font-semibold">
                                 <li>Created By: {token.username}</li>
                                 <li>Market Cap: {token.marketcap} </li>
                                 <li>Replies: {token.repliescount} </li>
@@ -146,7 +174,8 @@ const Home: React.FC = () => {
             </div>
 
             {/* Pagination */}
-            <div className="text-gray-400 flex justify-center items-center mt-4">
+            <div className="flex justify-center items-center mt-4  text-green-500 font-semibold">
+
                 <button
                     onClick={() => setCurrentPage(currentPage > 1 ? currentPage - 1 : currentPage)}
                     disabled={currentPage === 1}
@@ -164,7 +193,9 @@ const Home: React.FC = () => {
                 >
                     Next &gt;
                 </button>
+
             </div>
+
         </>
     );
 };

@@ -12,6 +12,7 @@ const Header = () => {
   // const profile = "0x742d35cc6634c0532925a3b844bc454e4438f44e"; 
   // const otherProfile = "21SY6TNeVgm23crGFMRdLoifTmQxMknNUpZf44YXPLj2";
   return (
+
     <div className="bg-black text-white py-4 px-10 flex justify-end items-center">
       <div className="flex items-center gap-4">
         {/* <button 
