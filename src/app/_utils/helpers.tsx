@@ -40,3 +40,11 @@
 //     }
 //     return { exchange: match[1], fromSymbol: match[2], toSymbol: match[3] };
 // }
+
+export const extractFirstSixCharac = (input: string): string => {
+    // Check if the input starts with '0x' and has at least 8 characters
+    if (input.startsWith('0x') && input.length >= 8) {
+        return input.substring(2, 8);  // Skip '0x' and take the next six characters
+    }
+    return '';  // Return an empty string if conditions are not met
+};

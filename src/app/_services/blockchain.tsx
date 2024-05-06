@@ -37,46 +37,66 @@ const getEthereumContracts = async () => {
 }
 
 const deployToken = async (token: TokenParams, walletProvider: any): Promise<TokenListData> => {
-    if (!ethereum) {
-      reportError('Please install a browser provider')
-      return Promise.reject(new Error('Browser provider not installed'))
-    }
-
-    const provider = new ethers.BrowserProvider(ethereum)
-    const signer = await provider.getSigner()
-    const ERC20_Token = new ContractFactory(
-        ERC20TestArtifact.abi,
-        ERC20TestArtifact.bytecode,
-        signer
-    );
-  
-    try {
-        const ERC20Contract = await ERC20_Token.deploy(
-            Number(token.reserveRatio),
-            token.name,
-            token.ticker
-        );
-      
-        const contractAddress = await ERC20Contract.getAddress(); // Correctly await the address
-        window.alert(`Contract deployed to: ${contractAddress}`);
-
-        const tokenListData: TokenListData = {
-          token_address: contractAddress,
-          token_ticker: token.ticker,
-          token_name: token.name,
-          token_description: '', 
-          image_url:'',
-          creator:signer.address, // Adjust accordingly
-          datetime: Math.floor(Date.now() / 1000) // Current timestamp
-				  };
-
-        return tokenListData
-
-    } catch (error) {
-      reportError(error)
-      return Promise.reject(error)
-    }
+  if (!walletProvider) {
+    reportError('Please install a browser provider')
+    return Promise.reject(new Error('Browser provider not installed'))
   }
+
+  const provider = new ethers.BrowserProvider(walletProvider)
+  const signer = await provider.getSigner()
+  const ERC20_Token = new ContractFactory(
+      ERC20TestArtifact.abi,
+      ERC20TestArtifact.bytecode,
+      signer
+  );
+
+  try {
+      const ERC20Contract = await ERC20_Token.deploy(
+          Number(token.reserveRatio),
+          token.name,
+          token.ticker
+      );
+      console.log("finding tx id...")
+      // console.log(ERC20Contract)
+      await ERC20Contract.deploymentTransaction()?.wait(1); // Wait for at least one confirmation
+
+      const txHash = ERC20Contract.deploymentTransaction()?.hash;
+      // const contractAddress = ERC20Contract.address;  // Contract address can be retrieved directly
+      // const txHash = ERC20Contract.deploymentTransaction(); 
+      const contractAddress = await ERC20Contract.getAddress(); // Correctly await the address
+      window.alert(`Contract deployed to: ${contractAddress}`);
+      // console.log(`Transaction hash: ${receipt}`);
+
+      // console.log(`Transaction hash: `, JSON.stringify(receipt,null,4));
+      // console.log(`Transaction hash: `, JSON.stringify(txHash,null,4));
+
+
+      const tokenListData: TokenListData = {
+        token_address: contractAddress,
+        token_ticker: token.ticker,
+        token_name: token.name,
+        token_description: '', 
+        image_url:'',
+        creator:signer.address, // Adjust accordingly
+        datetime: Math.floor(Date.now() / 1000),
+        tx_hash: txHash?.toString() || '' // Current timestamp
+        };
+      // await postTokenData({
+      //   token_address: contractAddress,
+      //   token_symbol: token.symbol,
+      //   token_name: token.name,
+      //   token_description: "Test deploy store backend 1", // Add more details if necessary
+      //   creator:signer.address, // Adjust accordingly
+      //   datetime: Math.floor(Date.now() / 1000) // Current timestamp
+      // });
+
+      return tokenListData
+
+  } catch (error) {
+    reportError(error)
+    return Promise.reject(error)
+  }
+}
 
 const mintToken = async (tokenAddress: string,  amount: number, walletProvider: any): Promise<void> => {
     if (!walletProvider) {

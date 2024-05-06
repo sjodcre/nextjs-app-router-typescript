@@ -37,6 +37,10 @@
   100% { transform: translateX(100%); }
 }
 
+.custom-grid-rows {
+  grid-template-rows: auto auto auto 1fr;
+}
+
 .indeterminate-bar {
   animation: slide 2s infinite linear;
 }

@@ -1,28 +1,42 @@
 export interface TokenParams {
-    reserveRatio: number;
-    name: string;
-    ticker: string;
-  }
+  reserveRatio: number;
+  name: string;
+  ticker: string;
+}
 
-  export type TokenPageDetails = {
-    token_address: string;
-    token_ticker: string;
-    token_name: string;
-    token_description: string;
-    image_url: string; 
-    creator: string;
-    twitter:string;
-    telegram: string;
-    website: string;
-    datetime: number; // Total supply might be large, consider handling big numbers appropriately
-  };
+export type TokenPageDetails = {
+  token_address: string;
+  token_ticker: string;
+  token_name: string;
+  token_description: string;
+  image_url: string; 
+  creator: string;
+  twitter:string;
+  telegram: string;
+  website: string;
+  datetime: number; // Total supply might be large, consider handling big numbers appropriately
+};
 
-  export type TokenListData = {
-    token_address: string;
-    token_ticker: string;
-    token_name: string;
-    token_description: string;
-    image_url: string;
-    creator: string;
-    datetime: number; 
-  }
+export type TokenListData = {
+  token_address: string;
+  token_ticker: string;
+  token_name: string;
+  token_description: string;
+  image_url: string;
+  creator: string;
+  datetime: number;
+  tx_hash: string;
+}
+
+export interface TradeData {
+  txid: number;
+  token_address: string;
+  account: string;
+  token_amount: number;
+  native_amount: number;
+  price_per_token: number;
+  timestamp: number;
+  trade: 'buy' | 'sell';
+  sum: number;
+  tx_hash: string
+}

@@ -5,6 +5,7 @@ import { Web3Modal } from './_context/web3modal'
 import 'react-toastify/dist/ReactToastify.css'
 import { ToastContainer } from 'react-toastify'
 import { ReduxProvider } from "@/app/_redux/provider";
+import Header from "./_ui/header";
 
 
 const inter = Inter({ subsets: ["latin"] });
@@ -22,11 +23,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       
-
+      {/* <Header/> */}
       <body className={`bg-black ${inter.className}`}>
+
         <ReduxProvider>
 
-        <Web3Modal>{children}</Web3Modal>
+        <Web3Modal>
+          <Header/>
+          {children}
+        </Web3Modal>
         <ToastContainer
               position="bottom-center"
               autoClose={5000}
@@ -43,4 +48,27 @@ export default function RootLayout({
       </body>
     </html>
   );
+  // return (
+  //   <>
+  //     <div className={`min-h-screen bg-black ${inter.className}`}>
+  //       {/* <Header /> */}
+  //       <ReduxProvider>
+  //         <Web3Modal>
+  //           {children}
+  //         </Web3Modal>
+  //         <ToastContainer
+  //           position="bottom-center"
+  //           autoClose={5000}
+  //           hideProgressBar={false}
+  //           newestOnTop={false}
+  //           closeOnClick
+  //           rtl={false}
+  //           pauseOnFocusLoss
+  //           draggable
+  //           pauseOnHover
+  //         />
+  //       </ReduxProvider>
+  //     </div>
+  //   </>
+  // );
 }

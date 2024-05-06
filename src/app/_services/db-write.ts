@@ -24,20 +24,22 @@ export const postTokenData = async (data: any) => {
 };
 
 
-export const initOHLCData = async (tokenAddress: string, creator: string, datetime:number) => {
+export const initOHLCData = async (tokenAddress: string, creator: string, datetime:number, txHash: string) => {
     try {
         const transactionData = {
             chainid: '1', // Example static chain ID
             tokenAddress: tokenAddress, // Replace with actual token address
             account: creator,
-            amount:0,
-            deposit: 0,
+            token_amount:1E16,
+            native_amount: 0,
             time: datetime,
-            price :3E-15,
-            volume: 0
+            price :1E-15,
+            volume: 0,
+            trade: 'init',
+            tx_hash: txHash
         };
 
-        const response = await fetch('http://localhost:3001/transaction-and-ohlc', {
+        const response = await fetch('http://localhost:3001/initialize-ohlc', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -56,20 +58,20 @@ export const initOHLCData = async (tokenAddress: string, creator: string, dateti
 
 }
 
-export const postTransactionAndOHLC = async (transactionData: any) => {
-    const { account, amount, deposit, timestamp } = transactionData;
 
-    const normalizedAmount = normalizeValue(parseFloat(amount.toString())); // Ensuring number type if needed
-    const normalizedDeposit = normalizeValue(parseFloat(deposit.toString()));
+
+export const postTransactionAndOHLC = async (transactionData: any) => {
+    const { contractAddress, account, amount, deposit, timestamp, trade, txHash } = transactionData;
+
+    // const normalizedAmount = normalizeValue(parseFloat(amount.toString())); // Ensuring number type if needed
+    // const normalizedDeposit = normalizeValue(parseFloat(deposit.toString()));
     
     // Calculate price and volume using normalized values
-    const price = normalizedDeposit / normalizedAmount; // Price per token in ether
-    const volume = normalizedAmount; // Volume in ether
+    // const price = normalizedDeposit / normalizedAmount; // Price per token in ether
+    // const volume = normalizedAmount; // Volume in ether
     // Calculate price and volume (assumes amount and deposit are already in the smallest unit)
-    // const price = parseFloat(deposit) / parseFloat(amount); // This assumes both values are normalized to the same scale
-    // const volume = parseFloat(amount);
-
-
+    const price = parseFloat(deposit) / parseFloat(amount); // This assumes both values are normalized to the same scale
+    const volume = parseFloat(amount);
 
     try {
         const response = await fetch('http://localhost:3001/transaction-and-ohlc', {
@@ -79,13 +81,15 @@ export const postTransactionAndOHLC = async (transactionData: any) => {
             },
             body: JSON.stringify({
                 chainid: '1', // Example static chain ID
-                tokenAddress: '0xda8C4b55679AA98cBe36d4f67093247D5B93c40C', // Replace with actual token address
+                tokenAddress: contractAddress, 
                 account,
-                amount: normalizedAmount,
-                deposit: normalizedDeposit,
+                token_amount: amount,
+                native_amount: deposit,
                 time: timestamp,
                 price,
-                volume
+                volume,
+                trade: trade,
+                tx_hash: txHash
             })
         });
 
@@ -99,7 +103,7 @@ export const postTransactionAndOHLC = async (transactionData: any) => {
     }
 };
 
-// export const fetchData = async (tokenAddress: string, chainId: string) => {
+// export const queryDataUpdates = async (tokenAddress: string, chainId: string) => {
 //     // const tokenAddress = "0x3d8be50ca75d4";
 //     // const chainId = 1;
 //     console.log("fetching...");
@@ -114,4 +118,37 @@ export const postTransactionAndOHLC = async (transactionData: any) => {
 //         console.error("Failed to fetch data:", error);
 //         return null;  // Or handle error appropriately depending on your application requirements
 //     }
-// };  
+// };
+
+export const getTokenTrades = async (tokenAddress: string, chainId: string) => {
+    // console.log("fetching...");
+    try {
+        const response = await fetch(`http://localhost:3001/get-trades?tokenAddress=${tokenAddress}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error("Failed to fetch data:", error);
+        return null;  // Or handle error appropriately depending on your application requirements
+    }
+};
+
+export const fetchTokenInfo = async (chainId: string, tokenAddress: string) => {
+    // const tokenAddress = "0x9AA19CF4849c03a77877CaFBf61003aeDFDA3779";
+    // const chainId = 1;
+    // console.log("fetching data from database...");
+    try {
+        const response = await fetch(`http://localhost:3001/token-info?token_address=${tokenAddress}&chainid=${chainId}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        // console.log(data[0])
+        return data[0];
+    } catch (error) {
+        console.error("Failed to fetch data:", error);
+        return null;  // Or handle error appropriately depending on your application requirements
+    }
+  };  

@@ -1,65 +1,43 @@
 "use client"
 
 import { useEffect, useState } from "react";
-import { TokenPageDetails } from "@/app/_utils/types";
+import { TokenPageDetails, TradeData } from "@/app/_utils/types";
 import CandleChart from "@/app/_ui/candle-chart";
 import SlippageDialog from "@/app/_ui/slippage-dialog";
 import IndeterminateProgressBar from "@/app/_ui/indeterminate-progress-bar";
 import { BrowserProvider, Contract, ethers, Interface } from "ethers";
 import ERC20TestArtifact from '../../../../artifacts/contracts/ERCC20Test.sol/ERC20Test.json'
-import { postTransactionAndOHLC } from "@/app/_services/db-write";
+import { fetchTokenInfo, getTokenTrades, postTransactionAndOHLC } from "@/app/_services/db-write";
 import { useWeb3ModalAccount, useWeb3ModalProvider } from "@web3modal/ethers/react";
 import { toast } from "react-toastify";
+import TradeItem from "@/app/_ui/trade-list";
+import { extractFirstSixCharac } from "@/app/_utils/helpers";
+import { fetchSEIPrice } from "@/app/_utils/native-token-pricing";
 
 
-const fetchData = async (chainId: string, tokenAddress: string) => {
-   //const tokenAddress = "0x9AA19CF4849c03a77877CaFBf61003aeDFDA3779";
-   tokenAddress = "0xB8a0752e5d286CBeAcD1E0d232BCE965211d7E6f";
-  // const chainId = 1;
-  console.log("fetching data from database...");
-  try {
-      const response = await fetch(`http://localhost:3001/token-info?token_address=${tokenAddress}&chainid=${chainId}`);
-      if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      // console.log(data[0])
-      return data[0];
-  } catch (error) {
-      console.error("Failed to fetch data:", error);
-      return null;  // Or handle error appropriately depending on your application requirements
-  }
-};  
+
 
 
 
 export default function TokenPage({ params }: { params: { tokenInfo: string } }) {
 
-  // const [tokenDetails, setTokenDetails] = useState<TokenPageDetails | null>({
-	// 	name: 'Cats Have 9 Sols',
-	// 	ticker: '9Lives',
-	// 	description: 'Why cats are often depicted having nine lives can be explained by the fact that during the ancient times, the number nine was considered a mystical and lucky number, the sum total of the "trinity of trinities", also being due to their associations with magic and their tendency to survive considerable falls',
-  //   creator: '',
-  //   img: "https://pump.mypinata.cloud/ipfs/QmbTJoAjP1g7NSKQrpkVouhr78YNqDgQ251LpJsrHE8YY5",
-  //   twitter: 'https://twitter.com/ChristChry84614',
-  //   telegram: 'https://http://t.me/cryptochristt',
-  //   website: '',
-  // });
 
   // const tokenDetails: TokenPageDetails= await fetchData()
   const [tokenDetails, setTokenDetails] = useState<TokenPageDetails>();
-  const [tokenAmount, setTokenAmount] = useState('');
+  const [tokenAmountToTrade, setTokenAmountToTrade] = useState('');
   const [nativeToken, setNativeToken] = useState(true);
   const [activeTab, setActiveTab] = useState('thread');
   const [buySell, setBuySell] = useState('buy');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [marketCap, setMarketCap] = useState<string>('0');
   const [providerReady, setProviderReady] = useState(false);
+  const [trades, setTrades] = useState<TradeData[]>([]);
   const [userBalance, setUserBalance] = useState({
     token: 0,
     native: 0,
   });
-
+  const [nativeTokenPrice, setnativeTokenPrice] = useState<number | null>(null);
   const [nativeTokenInfo, setNativeTokenInfo] = useState({
     chain: '',
     chainLogo: '',
@@ -72,19 +50,47 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
   
   //demo for progress bar
+  // useEffect(() => {
+  //   const timer = setInterval(() => {
+  //     setProgress((prevProgress) => {
+  //       const newProgress = prevProgress + 10;
+  //       if (newProgress > 100) {
+  //         clearInterval(timer);
+  //         return 100;
+  //       }
+  //       return newProgress;
+  //     });
+  //   }, 1000);
+  //   return () => clearInterval(timer);
+  // }, [marketCap]);  
+
   useEffect(() => {
-    const timer = setInterval(() => {
-      setProgress((prevProgress) => {
-        const newProgress = prevProgress + 10;
-        if (newProgress > 100) {
-          clearInterval(timer);
-          return 100;
-        }
-        return newProgress;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);  
+    // Convert marketCap string to number, removing commas and parsing as integer
+    const marketCapValue = parseInt(marketCap.replace(/,/g, ''), 10);
+    // Calculate the new progress as a fraction of marketCap to 50,000
+    const newProgress = (marketCapValue / 50000) * 100;
+  
+    // Ensure the progress doesn't exceed 100%
+    if (newProgress > 100) {
+      setProgress(100);
+    } else {
+      setProgress(newProgress);
+    }
+  }, [marketCap]); 
+
+  useEffect(() => {
+    const updatePrice = async () => {
+        const fetchedPrice = await fetchSEIPrice();
+        setnativeTokenPrice(fetchedPrice);
+    };
+
+    updatePrice(); // Initial fetch
+    const intervalId = setInterval(updatePrice, 86400000); // Update every 24 hours
+
+    return () => clearInterval(intervalId); // Cleanup interval on component unmount
+  }, []);
+
+
 
   //web socket listener
   useEffect(() => {
@@ -142,14 +148,11 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
         const ethersProvider = new BrowserProvider(walletProvider);
         fetchERC20Balance(ethersProvider, params.tokenInfo[1])
       .then(balance => {
-        console.log(typeof balance)
-        // Handle ERC-20 balance
-        console.log("balance " + balance)
-        // setUserBalance(prevState => ({
-        //   ...prevState,
-        //   token: Number(balance)  // Replace `newValue` with the actual new value for the token balance
-        // }));
-        // console.log("user balance: ", userBalance)
+
+        setUserBalance(prevState => ({
+          ...prevState,
+          token: Number(balance)  // Replace `newValue` with the actual new value for the token balance
+        }));
 
       })
       .catch(error => {
@@ -164,40 +167,87 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   }, [providerReady]);
 
   //load data
-  useEffect(() => {    
-    let chainId;
-    if (params.tokenInfo[0] === 'sei'){
-      setNativeTokenInfo({
-        chain: 'SEI',
-        chainLogo: '/sei-logo.png'
-      })
-      chainId = '1';
-    } else {
-      setNativeTokenInfo({
-        chain: 'FTM',
-        chainLogo: '/ftm-logo.png'
-      })
-      chainId = '2';
-    }
-    // const test =  await fetchData()
-    fetchData(chainId,params.tokenInfo[1]).then(setTokenDetails);
+  // useEffect(() => {    
+  //   let chainId;
+  //   if (params.tokenInfo[0] === 'sei'){
+  //     setNativeTokenInfo({
+  //       chain: 'SEI',
+  //       chainLogo: '/sei-logo.png'
+  //     })
+  //     chainId = '1';
+  //   } else {
+  //     setNativeTokenInfo({
+  //       chain: 'FTM',
+  //       chainLogo: '/ftm-logo.png'
+  //     })
+  //     chainId = '2';
+  //   }
+  //   // const test =  await fetchData()
+  //   fetchTokenInfo(chainId,params.tokenInfo[1]).then(setTokenDetails);
+    
+  //   const fetchTradesData = async () => {
+  //     const data = await getTokenTrades(params.tokenInfo[1], chainId);
+  //     if (data) {
+  //         setTrades(data);
+  //         console.log(data[0].price_per_token)
+  //         if (nativeTokenPrice){
+  //           setMarketCap(data[0].sum * data[0].price_per_token * nativeTokenPrice)
+  //         }
+  //     } else {
+  //         console.log("No data or error occurred");
+  //     }
+  // };
+
+  // fetchTradesData();
     
     
-  },[])
+  // },[])
+
+  useEffect(() => {
+    const chainId = params.tokenInfo[0] === 'sei' ? '1' : '2';
+    setNativeTokenInfo({
+      chain: params.tokenInfo[0] === 'sei' ? 'SEI' : 'FTM',
+      chainLogo: params.tokenInfo[0] === 'sei' ? '/sei-logo.png' : '/ftm-logo.png'
+    });
+
+    const fetchData = async () => {
+      const tokenInfoPromise = fetchTokenInfo(chainId, params.tokenInfo[1]);
+      const tradesDataPromise = getTokenTrades(params.tokenInfo[1], chainId);
+
+      const [tokenInfo, tradesData] = await Promise.all([tokenInfoPromise, tradesDataPromise]);
+      setTokenDetails(tokenInfo);
+      setTrades(tradesData);
+      // console.log(tradesData);
+
+      if (tradesData && tradesData.length > 0 && nativeTokenPrice) {
+        const marketCap = tradesData[0].sum * tradesData[0].price_per_token * nativeTokenPrice/1E18;
+        // marketCap = 10000;
+        const formattedMarketCap = marketCap.toLocaleString('en-US', {
+          style: 'decimal',
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+        setMarketCap(formattedMarketCap);
+      }
+    };
+
+    fetchData();
+  }, [params.tokenInfo, nativeTokenPrice]);
   
   //slippage dialog
   const toggleDialog = () => setDialogOpen(!dialogOpen);
 
   //tokena mount to buy/sell
   const handleSetAmount = (amount: string) => {
-    setTokenAmount(amount);  // Assuming tokenAmount is a string, if not, convert appropriately
+    setTokenAmountToTrade(amount);  // Assuming tokenAmount is a string, if not, convert appropriately
   };
 
   const handleSetPercentage = (percentage: number) => {
+    console.log(userBalance.token)
     const fullAmount = userBalance.token; // Assuming `userBalance.token` holds the full token balance as a number
     const amountToSet = (fullAmount * percentage / 100).toFixed(0); // Calculating the percentage and rounding it to the nearest whole number
   
-    setTokenAmount(amountToSet.toString()); // Convert to string to match your state expectation
+    setTokenAmountToTrade(amountToSet.toString()); // Convert to string to match your state expectation
   };
 
   // threads/trades tab change
@@ -208,7 +258,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   //buy sell tab change
   const handleBuySellChange = (tab: string) => {
     setBuySell(tab);
-    setTokenAmount('');
+    setTokenAmountToTrade('');
   }
 
   //switch to native/erc20 token
@@ -223,9 +273,9 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     
     try {
       const balance = await contract.balanceOf(signer.address.toString());
-      console.log("token address: ", tokenAddress);
-      console.log("signer address: ", signer.address);
-      console.log("Token Balance:", balance.toString());
+      // console.log("token address: ", tokenAddress);
+      // console.log("signer address: ", signer.address);
+      // console.log("Token Balance:", balance.toString());
       return balance;
     } catch (error) {
       console.error("Failed to fetch token balance:", error);
@@ -240,21 +290,12 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
 			if (walletProvider) {
 
-				// const ethersProvider = new BrowserProvider(walletProvider);
-				// const signer = await ethersProvider.getSigner();
-				
-				// ===========erc20 test contract burn===========
-				// const options = {
-				// 	// value: ethers.parseUnits("0.01", 18), // Your transaction value
-				// 	gasLimit: ethers.toBeHex(1000000), // Example gas limit; adjust based on your needs
-				// };
-				// const amountToBurn = ethers.parseUnits("49976265426123", 1);
-				// const ERC20TestContractAddress = "0xe7a3D1A2e108A67b7F678297907eB477f661e8bf"; 
-				// const ERC20TestContract = new Contract(ERC20TestContractAddress, ERC20TestArtifact.abi, signer);
+				const ethersProvider = new BrowserProvider(walletProvider);
+				const signer = await ethersProvider.getSigner();
+        const ERC20TestContractAddress = params.tokenInfo[1].toString(); 
+        const ERC20TestContract = new Contract(ERC20TestContractAddress, ERC20TestArtifact.abi, signer);
 
-				// const mintTx = await ERC20TestContract.burn( "49928857892001",options);  // Adjust parameters as needed
-				// await mintTx.wait();
-				// console.log(mintTx);
+
 
 				//==============erc20 test contract query=======
 				// const ERC20TestContractAddress = "0x9AA19CF4849c03a77877CaFBf61003aeDFDA3779"; 
@@ -265,100 +306,130 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
 				// ===========erc20 test contract mint===========
         // console.log(buySell);
-				const ethersProvider = new BrowserProvider(walletProvider);
-				const signer = await ethersProvider.getSigner();
+				// const ethersProvider = new BrowserProvider(walletProvider);
+				// const signer = await ethersProvider.getSigner();
+        console.log(buySell)
+        if (buySell==='buy') {
+          const options = {
+            value: ethers.parseUnits(tokenAmountToTrade.toString(), 18), // Your transaction value
+            gasLimit: ethers.toBeHex(1000000), // Example gas limit; adjust based on your needs
+          };
+  
+          const mintTx = await ERC20TestContract.mint( options);  // Adjust parameters as needed
+          const txHash = mintTx.hash;
+          
+          const result = await mintTx.wait();
+  
+          if (result.status === 1) {
+            console.log("Transaction succeeded:", result);
+            const iface = new Interface(ERC20TestArtifact.abi);
+  
+            result.logs.forEach((log: any) => {
+              try {
+                  const parsedLog = iface.parseLog(log);
+                  if (parsedLog?.name === 'ContinuousMint') {
+                    console.log('ContinuousMint Event Args:', parsedLog.args);
+                    
+                    const info = {
+                        contractAddress: ERC20TestContractAddress,
+                        account: parsedLog.args[0],
+                        amount: Number(parsedLog.args[1].toString()), // Ensure conversion to string before to Number if BigNumber
+                        deposit: Number(parsedLog.args[2].toString()), // Same conversion as above
+                        timestamp: Math.floor(Date.now() / 1000),
+                        trade: buySell.toString(),
+                        txHash: txHash
+                    };
+                    console.log("Processed Event Data:", info);
+                    postTransactionAndOHLC(info).then(response => {
+                      console.log('Backend response:', response);
+                    }).catch(error => {
+                        console.error('Error posting data to backend:', error);
+                    });                
+                  }            
+                } catch (error) {
+                  // This log was not from our contract
+                  console.error("Error parsing log:", error);
+              }
+           });
+          } else {
+            console.log("Transaction failed with receipt:", result);
+            // Handle failure case
+          }
+        } else {
+          // ===========erc20 test contract burn===========
+          const options = {
+          	// value: ethers.parseUnits("0.01", 18), // Your transaction value
+          	gasLimit: ethers.toBeHex(1000000), // Example gas limit; adjust based on your needs
+          };
+          const amountToBurn = ethers.parseUnits("49976265426123", 1);
 
-				const options = {
-					value: ethers.parseUnits(tokenAmount.toString(), 18), // Your transaction value
-					gasLimit: ethers.toBeHex(1000000), // Example gas limit; adjust based on your needs
-				};
-				const ERC20TestContractAddress = params.tokenInfo[1].toString(); 
-				const ERC20TestContract = new Contract(ERC20TestContractAddress, ERC20TestArtifact.abi, signer);
+          const burnTx = await ERC20TestContract.burn( tokenAmountToTrade.toString(),options);  // Adjust parameters as needed
+          const txHash = burnTx.hash;
+          const result = await burnTx.wait();
+          console.log(burnTx);
 
-				const mintTx = await ERC20TestContract.mint( options);  // Adjust parameters as needed
-				const result = await mintTx.wait();
-        if (result.status === 1) {
-          console.log("Transaction succeeded:", result);
-
-        const iface = new Interface(ERC20TestArtifact.abi);
-
-        result.logs.forEach((log: any) => {
-            try {
-                const parsedLog = iface.parseLog(log);
-                if (parsedLog?.name === 'ContinuousMint') {
-                  console.log('ContinuousMint Event Args:', parsedLog.args);
-                  
-                  const info = {
-                      account: parsedLog.args[0],
-                      amount: Number(parsedLog.args[1].toString()), // Ensure conversion to string before to Number if BigNumber
-                      deposit: Number(parsedLog.args[2].toString()), // Same conversion as above
-                      timestamp: Math.floor(Date.now() / 1000)
-                  };
-                  console.log("Processed Event Data:", info);
-                  postTransactionAndOHLC(info).then(response => {
-                    console.log('Backend response:', response);
-                  }).catch(error => {
-                      console.error('Error posting data to backend:', error);
-                  });
-                  
-                  
-                  
-                  
-                  // Now you can use `info` object to do further processing, like sending to a backend or updating state
-                  // Example: postTransactionAndOHLC(info);
-                }            
-              } catch (error) {
-                // This log was not from our contract
-                console.error("Error parsing log:", error);
-            }
-        });
-        //   const info = {
-        //     account:result.to,
-        //     amount: Number(amount),
-        //     deposit: Number(result.value),
-        //     timestamp: Math.floor(Date.now() / 1000)
-        // };
-        // console.log(JSON.stringify(info,null,4));
-        // // console.log(Math.floor(Date.now() / 1000));
-
-
-        // // Call the handleTransactionData function with the event data
-        // postTransactionAndOHLC(info).then(response => {
-        //     console.log('Backend response:', response);
-        // }).catch(error => {
-        //     console.error('Error posting data to backend:', error);
-        // });
-          // Perform actions based on success
-      } else {
-          console.log("Transaction failed with receipt:", result);
-          // Handle failure case
-      }
-
-				// console.log(Math.floor(Date.now() / 1000));
+          if (result.status === 1) {
+            console.log("Transaction succeeded:", result);
+            const iface = new Interface(ERC20TestArtifact.abi);
+  
+            result.logs.forEach((log: any) => {
+              try {
+                  const parsedLog = iface.parseLog(log);
+                  if (parsedLog?.name === 'ContinuousBurn') {
+                    console.log('ContinuousBurn Event Args:', parsedLog.args);
+                    
+                    const info = {
+                        contractAddress: ERC20TestContractAddress,
+                        account: parsedLog.args[0],
+                        amount: Number(parsedLog.args[1].toString()), // Ensure conversion to string before to Number if BigNumber
+                        deposit: Number(parsedLog.args[2].toString()), // Same conversion as above
+                        timestamp: Math.floor(Date.now() / 1000),
+                        trade: buySell.toString(),
+                        txHash: txHash  
+                    };
+                    console.log("Processed Event Data:", info);
+                    postTransactionAndOHLC(info).then(response => {
+                      console.log('Backend response:', response);
+                    }).catch(error => {
+                        console.error('Error posting data to backend:', error);
+                    });                
+                  }            
+                } catch (error) {
+                  // This log was not from our contract
+                  console.error("Error parsing log:", error);
+              }
+           });
+          } else {
+            console.log("Transaction failed with receipt:", result);
+            // Handle failure case
+          }
+        }
 				
-			} else {
+
+				
+      } else {
 				// Handle the case where walletProvider is undefined
 				console.error("Wallet provider is not available.");
 			}
 
 		} catch (error: any) {
 
-			console.log(error);
 			toast.error(`Deployment failed: ` + error);
 		}	
 	};
 
   
-  // console.log('token address: '+ params.tokenInfo[1])
   if (!params.tokenInfo[1] || params.tokenInfo[1] === "") {
     return <div>Error: Token not found</div>;  // Display error if tokenAddress is undefined or empty
   }
   return (
-    <div style={{ display: 'grid', height: '100vh', gridTemplateRows: 'auto auto auto 1fr', alignItems: 'start' }}>
+    // <div style={{ display: 'grid', height: '100vh', gridTemplateRows: 'auto auto auto 1fr', alignItems: 'start' }}>
+    <div className="grid h-screen custom-grid-rows items-start">
+
       <main className="h-full">
-        <div className="md:block hidden mt-16 p-4">
+        <div className="md:block hidden mt-8 p-4">
           <div className="flex justify-center">
-            <a className="inline-flex items-center justify-center whitespace-nowrap rounded-md font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 dark:ring-offset-slate-950 dark:focus-visible:ring-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50 h-10 px-4 py-2 -mt-5 text-2xl text-slate-50 hover:font-bold hover:bg-transparent hover:text-slate-50" href="/board">
+            <a className="inline-flex items-center justify-center whitespace-nowrap rounded-md font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 dark:ring-offset-slate-950 dark:focus-visible:ring-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50 h-10 px-4 py-2 -mt-5 text-2xl text-slate-50 hover:font-bold hover:bg-transparent hover:text-slate-50" href="/">
               [go back]
             </a>
           </div>
@@ -373,7 +444,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                     Ticker: {tokenDetails?.token_ticker}
                   </div>
                   <div>
-                    Market cap: $38,703.96
+                    Market cap: ${marketCap}
                   </div>
                   <div>
                     Virtual liquidity: $29,384
@@ -381,14 +452,14 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                 </div>
                 <div className="inline-flex items-center gap-2 text-xs">
                 <span>
-                  created by {tokenDetails?.creator ? `${tokenDetails.creator.slice(-6)}` : 'Unknown'}
+                  created by 
                 </span>
-                  <a href="/profile/8Af5Gs3KnKsnT7SnscyDucLuHWJaeKnsG29SA5exKAx9">
+                  <a href="/profile/{tokenDetails?.creator ? `${tokenDetails.creator.slice(-6)}` : 'Unknown'}">
                     <div className="flex gap-1 items-center">
                       {/* <img src="/pepe.png" className="w-4 h-4 rounded"></img> */}
-                      {/* <div className="px-1 rounded hover:underline flex gap-1 text-black" style="background-color: rgb(227, 135, 209);">
-                        8Af5Gs 
-                      </div> */}
+                      <div className="px-1 rounded hover:underline flex gap-1 text-black bg-pink-400" >
+                        {extractFirstSixCharac(tokenDetails?.creator || 'unknown')} 
+                      </div>
                     </div>
                   </a>
                 </div>
@@ -407,39 +478,59 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                 </div>
               </div>
               <div className="flex gap-2 h-fit">
-              <div
-                className={`cursor-pointer px-1 rounded ${activeTab === 'thread' ? 'bg-green-300 text-black': 'hover:bg-gray-800 text-gray-500' }`}
-                onClick={() => handleTabChange('thread')}
-              >
-                Thread
-              </div>
-              <div
-                className={`cursor-pointer px-1 rounded ${activeTab === 'trades' ? 'bg-green-300 text-black' : 'hover:bg-gray-800 text-gray-500'}`}
-                onClick={() => handleTabChange('trades')}
-              >
-                Trades
-              </div>
-              <div className="mt-4 text-white">
-                {activeTab === 'thread' ? 'Thread Page' : 'Trades Page'}
-              </div>
-                {/* <div className="cursor-pointer px-1 rounded bg-green-300 text-black">
+                <div
+                  className={`cursor-pointer px-1 rounded ${activeTab === 'thread' ? 'bg-green-300 text-black': 'hover:bg-gray-800 text-gray-500' }`}
+                  onClick={() => handleTabChange('thread')}
+                >
                   Thread
                 </div>
-                <div className="cursor-pointer px-1 rounded hover:bg-gray-800 text-gray-500">
+                <div
+                  className={`cursor-pointer px-1 rounded ${activeTab === 'trades' ? 'bg-green-300 text-black' : 'hover:bg-gray-800 text-gray-500'}`}
+                  onClick={() => handleTabChange('trades')}
+                >
                   Trades
+                </div>
+                {/* <div className="mt-4 text-white">
+                  {activeTab === 'thread' ? 'Thread Page' : 'Trades Page'}
                 </div> */}
               </div>
+              {activeTab === 'trades' && (
+                <div className="w-full text-xs text-gray-400 bg-transparent rounded-lg">
+                  <div className="bg-[#2e303a] rounded-lg grid grid-cols-4 sm:grid-cols-6">
+                    <div className="col-span-1 p-3 font-normal text-left">Account</div>
+                    <div className="col-span-1 p-3 font-normal text-left hidden sm:block">Type</div>
+                    <div className="col-span-1 p-3 font-normal text-left sm:hidden">txn</div>
+                    <div className="col-span-1 p-3 font-normal text-left">{nativeTokenInfo.chain}</div>
+                    <div className="col-span-1 p-3 font-normal text-left">{tokenDetails?.token_ticker}</div>
+                    <div className="col-span-1 p-3 font-normal text-left hidden md:block">
+                      <div className="flex items-center">
+                      Date 
+                        {/* <span className="ml-1 inline-block align-middle hover:text-gray-300">
+                          <svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 24 24" className="cursor-pointer relative top-0" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg" >
+                            <path d="M12 4C14.7486 4 17.1749 5.38626 18.6156 7.5H16V9.5H22V3.5H20V5.99936C18.1762 3.57166 15.2724 2 12 2C6.47715 2 2 6.47715 2 12H4C4 7.58172 7.58172 4 12 4ZM20 12C20 16.4183 16.4183 20 12 20C9.25144 20 6.82508 18.6137 5.38443 16.5H8V14.5H2V20.5H4V18.0006C5.82381 20.4283 8.72764 22 12 22C17.5228 22 22 17.5228 22 12H20Z"></path>
+                          </svg>
+                        </span> */}
+                      </div>
+                    </div>
+                    <div className="col-span-1 p-3 font-normal text-right hidden sm:block">Transaction</div>
+                  </div>
+                  {trades.length > 0 ? (
+                  <div>
+                      {trades.map(trade => (
+                          <TradeItem key={trade.txid} trade={trade} />
+                      ))}
+                  </div>
+                    ) : (
+                        <p>No trades found.</p>
+                    )}
+                </div>
+              )}
+              
             </div>
             <div className="w-1/3 grid gap-4 h-fit w-fit">
               <div className="w-[350px] grid gap-4">
                 <div className="bg-[#2e303a] p-4 rounded-lg border border-none text-gray-400 grid gap-4">
                   <div className="grid grid-cols-2 gap-2 mb-4">
-                    {/* <button className="p-2 text-center rounded bg-green-400 text-primary">
-                      Buy
-                    </button>
-                    <button className="p-2 text-center rounded bg-gray-800 text-grey-600">
-                      Sell
-                    </button> */}
                     <button
                       className={`p-2 text-center rounded ${buySell === 'buy' ? 'bg-green-400 text-black': 'bg-gray-800 text-grey-600' }`}
                       onClick={() => handleBuySellChange('buy')}
@@ -484,8 +575,8 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                       id="tokenAmount" 
                       placeholder="0.0" 
                       type="number"
-                      value={tokenAmount}
-                      onChange={e => setTokenAmount(e.target.value)}/>
+                      value={tokenAmountToTrade}
+                      onChange={e => setTokenAmountToTrade(e.target.value)}/>
                         <div className="flex items-center ml-2 absolute right-2">
                         <span className="text-white mr-2">
                           {buySell === 'sell' ? tokenDetails?.token_ticker : (nativeToken ? nativeTokenInfo.chain : tokenDetails?.token_ticker)}
@@ -507,22 +598,6 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
                     </div>
                     <div className="flex mt-2 bg-[#2e303a] p-1 rounded-lg">
-                      {/* {nativeToken && (
-                        <div>
-                          <button className="text-xs py-1 -ml-1 px-2 rounded bg-black text-gray-400 hover:bg-gray-800 hover:text-gray-300">
-                            reset
-                          </button>
-                          <button className="text-xs py-1 px-2 ml-1 rounded bg-black text-gray-400 hover:bg-gray-800 hover:text-gray-300">
-                            1 SOL
-                          </button>
-                          <button className="text-xs py-1 px-2 ml-1 rounded bg-black text-gray-400 hover:bg-gray-800 hover:text-gray-300">
-                            5 SOL
-                          </button>
-                          <button className="text-xs py-1 px-2 ml-1 rounded bg-black text-gray-400 hover:bg-gray-800 hover:text-gray-300">
-                            10 SOL
-                          </button>
-                        </div>
-                      )} */}
                       {nativeToken && (
                           <div>
                             <button className="text-xs py-1 -ml-1 px-2 rounded bg-black text-gray-400 hover:bg-gray-800 hover:text-gray-300"
@@ -624,7 +699,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
                 </div>
                 <div className="text-xs text-gray-400">
-                  when the market cap reaches $71,372 all the liquidity from the bonding curve will be deposited into Raydium and burned. progression increases as the price goes up.<br/><br/>there are 99,485,219 tokens still available for sale in the bonding curve and there is 54.848 {nativeTokenInfo.chain} in the bonding curve.
+                  when the market cap reaches $50,000 all the liquidity from the bonding curve will be deposited into Raydium and burned. progression increases as the price goes up.<br/><br/>there are 99,485,219 tokens still available for sale in the bonding curve and there is 54.848 {nativeTokenInfo.chain} in the bonding curve.
                 </div>
                   <div className="text-yellow-500 font-bold">
                     👑 Crowned king of the hill on 12/04/2024, 12:20:58
@@ -641,6 +716,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
             </div>
           </div>
         </div>
+        
       </main>
     </div>
   )

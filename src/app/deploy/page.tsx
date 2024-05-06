@@ -6,7 +6,7 @@ import ERC20TestArtifact from '../../../artifacts/contracts/ERCC20Test.sol/ERC20
 
 import { useWeb3ModalProvider, useWeb3ModalAccount } from '@web3modal/ethers/react'
 import { toast } from 'react-toastify'
-import ConnectButton from "../_ui/connect-button";
+// import ConnectButton from "../_ui/connect-button";
 import { TokenParams } from '@/app/_utils/types';
 import { burnToken, deployToken, getBalance, mintToken } from '../_services/blockchain';
 import { initOHLCData, postTokenData } from '../_services/db-write';
@@ -204,6 +204,8 @@ export default function Deploy() {
 				let url = '';
 				//==================================================================
 				try {
+					// const ethersProvider = new BrowserProvider(walletProvider)
+
 					const data = await deployToken(tokenParams, walletProvider);
 					// toast.success(`Token Creation Successful!${address}`);
 					try {
@@ -223,7 +225,7 @@ export default function Deploy() {
 					  };
 										
 					await postTokenData(tokenListData);//done
-					await initOHLCData(data.token_address,data.creator, data.datetime);
+					await initOHLCData(data.token_address,data.creator, data.datetime, data.tx_hash);
 					router.push('/token/' + selectedChain + '/' + data.token_address)
 					
 					// await toast.promise(
@@ -327,19 +329,9 @@ export default function Deploy() {
 	return (
 
 		
-		<div className=" bg-[#1A2B37] shadow-md px-8 py-8 rounded">
-			<ConnectButton/>
-			<div className="inline-flex">
-                <button className={` hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-l ${selectedChain==="sei" ? 'bg-blue-500 disable' : 'bg-gray-300'
-                    }`} onClick={handleSeiChainButton}>
-                    Sei
-                </button>
-                <button className={` hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-l ${selectedChain==="ftm" ? 'bg-blue-500' : 'bg-gray-300'
-                    }`} onClick={handleFtmChainButton}>
-                    FTM
-                </button>
-
-            </div>
+		<div className=" bg-[#1A2B37] shadow-md px-8 py-8 rounded sm:w-full md:w-1/2 mx-auto">
+			{/* <ConnectButton/> */}
+			
 			{/* Form  */}
 			<div className="mb-4">
 				<label className="block text-[#EED12E] text-sm font-bold mb-2" htmlFor="name">
