@@ -4,7 +4,7 @@ import { useState, MouseEvent, useEffect } from 'react';
 import { Contract, BrowserProvider, ContractFactory, Signer, ethers } from 'ethers';
 import ERC20TestArtifact from '../../../artifacts/contracts/ERCC20Test.sol/ERC20Test.json'
 
-import { useWeb3ModalProvider, useWeb3ModalAccount } from '@web3modal/ethers/react'
+import { useWeb3ModalProvider, useWeb3ModalAccount, useSwitchNetwork } from '@web3modal/ethers/react'
 import { toast } from 'react-toastify'
 // import ConnectButton from "../_ui/connect-button";
 import { TokenParams } from '@/app/_utils/types';
@@ -20,7 +20,6 @@ import { AppDispatch, useAppSelector } from '@/app/_redux/store';
 export default function Deploy() {
 	interface FormData {
 		[key: string]: string | File | undefined;
-		network: string;
 		name: string;
 		ticker: string;
 		description: string;
@@ -33,20 +32,20 @@ export default function Deploy() {
 	interface FormErrors {
 		[key: string]: string; // Allows indexing with a string
 	}
-
-	const [formData, setFormData] = useState<FormData>({
-		network: '',
+	const initialFormData = {
 		name: '',
 		ticker: '',
 		description: '',
 		twitter: '',
-		telegram:'',
+		telegram: '',
 		website: '',
+	};
 
-	});
+	const [formData, setFormData] = useState<FormData>(initialFormData);
+
+	
 
 	const [errors, setErrors] = useState<FormErrors>({
-		network: '',
 		name: '',
 		ticker: '',
 		description: '',
@@ -59,15 +58,15 @@ export default function Deploy() {
 	const router = useRouter()
 	const { address, chainId, isConnected } = useWeb3ModalAccount()
   	const { walletProvider } = useWeb3ModalProvider()
+	const { switchNetwork} = useSwitchNetwork()
 	const [showOptions, setShowOptions] = useState(false);
 	const [file,setFile] = useState<File>();
 	const [selectedChain, setSelectedChain] = useState<string>('sei');  // Default sort by market cap
-
 	const dispatch = useDispatch<AppDispatch>();
     const chainType = useAppSelector((state) => state.authReducer.value.chainType);
 
 	const toggleOptions = () => setShowOptions(!showOptions);
-
+	
 	useEffect(() => {
         dispatch(logIn(selectedChain));
 
@@ -134,22 +133,87 @@ export default function Deploy() {
 	}
 
 	const handleSeiChainButton = () => {
-        if (selectedChain === "ftm") {
+		console.log(chainType)
 
+        if (selectedChain === "ftm") {
             setSelectedChain("sei");
+			setFormData(initialFormData);
             dispatch(logIn(selectedChain));
         } 
-
-
     };
 	const handleFtmChainButton = () => {
-        if (selectedChain === "sei") {
+		console.log(chainType)
 
+        if (selectedChain === "sei") {
             setSelectedChain("ftm");
+			setFormData(initialFormData);
             dispatch(logIn(selectedChain));
         }
-
     };
+
+	async function handleChainChange() {
+		return new Promise((resolve, reject) => {
+			// Assuming chain IDs for 'sei' and 'ftm' as constants for clarity
+			const SEI_CHAIN_ID = 713715;
+			const FTM_CHAIN_ID = 64165;
+	
+			let targetChainId = null;
+	
+			if (selectedChain === "sei" && chainId !== SEI_CHAIN_ID) {
+				targetChainId = SEI_CHAIN_ID;
+			} else if (selectedChain === "ftm" && chainId !== FTM_CHAIN_ID) {
+				targetChainId = FTM_CHAIN_ID;
+			}
+	
+			console.log( targetChainId)
+			if (targetChainId !== null) {
+				switchNetwork(targetChainId)
+					.then(() => {
+						// resolve(`Switched to ${targetChainId} successfully.`);
+						resolve(targetChainId);
+					})
+					.catch((error) => {
+						reject(`Failed to switch to ${targetChainId}: ${error}`);
+					});
+			} else {
+				// Resolve immediately if no switch is needed
+				// resolve("No network switch needed.");
+				resolve(chainId);
+			}
+		});
+	  }
+
+	  async function deployTokenWithUIFeedback(tokenParams: TokenParams, walletProvider: any, file: File | undefined) {
+		try {
+			await handleChainChange();
+	
+			const data = await deployToken(tokenParams, walletProvider);
+			let url = '';
+			try {
+				url = await handleUploadImage(file);
+				console.log('Uploaded Image URL:', url);
+			} catch (error) {
+				console.error('Failed to upload image:', error);
+			}
+	
+			const tokenListData = {
+				...data,
+				chainid: selectedChain,
+				image_url: url,
+				token_description: formData.description,
+				twitter: formData.twitter, // Include Twitter data from formData.
+				telegram: formData.telegram, // Include Telegram data from formData.
+				website: formData.website, // Include Website data from formData.
+			};
+	
+			await postTokenData(tokenListData);
+			await initOHLCData(selectedChain, data.token_address, data.creator, data.datetime, data.tx_hash);
+			return tokenListData; // Resolve the promise with token list data
+		} catch (error) {
+			console.error(`Error in deployment: ${error}`);
+			throw error; // Rethrow the error to handle it in toast.promise's error section
+		}
+	}
 
 	const handleDeploy = async () => {
 		// Prevent deploying the Greeter contract multiple times or if signer is not defined
@@ -202,114 +266,19 @@ export default function Deploy() {
 					ticker: formData.ticker
 				  };
 				let url = '';
-				//==================================================================
-				try {
-					// const ethersProvider = new BrowserProvider(walletProvider)
 
-					const data = await deployToken(tokenParams, walletProvider);
-					// toast.success(`Token Creation Successful!${address}`);
-					try {
-						url = await handleUploadImage(file);
-						console.log('Uploaded Image URL:', url);
-					} catch (error) {
-						console.error('Failed to upload image:', error);
+				toast.promise(
+					deployTokenWithUIFeedback(tokenParams, walletProvider, file),
+					{
+						pending: 'Deploying token...',
+						success: 'Token deployment successful! 👌',
+						error: 'Deployment failed! 🤯'
 					}
-					
-					const tokenListData = {
-						...data,
-						image_url: url,
-						token_description: formData.description,
-						twitter: formData.twitter, // Include Twitter data from formData.
-						telegram: formData.telegram, // Include Telegram data from formData.
-						website: formData.website, // Include Website data from formData.
-					  };
-										
-					await postTokenData(tokenListData);//done
-					await initOHLCData(data.token_address,data.creator, data.datetime, data.tx_hash);
-					router.push('/token/' + selectedChain + '/' + data.token_address)
-					
-					// await toast.promise(
-					// 	new Promise(async (resolve, reject) => {
-					// 		mintToken("0x83b7d56507b0C0F50161D8E49Bb1186E7262d4CE",0.01,walletProvider)
-					// 		.then((tx) => {
-					// 		//   dispatch(setTicketModal('scale-0'))
-					// 		//   setTickets('')
-					// 		  console.log(tx)
-					// 		  resolve(tx)
-					// 		})
-					// 		.catch((error) => reject(error))
-					// 	}),
-					// 	{
-					// 	  pending: 'Minting...',
-					// 	  success: 'Mint successful! 👌',
-					// 	  error: 'Encountered error 🤯',
-					// 	}
-					//   )
-
-					// const balance = await getBalance("0x83b7d56507b0C0F50161D8E49Bb1186E7262d4CE" ,walletProvider);
-					// console.log(balance)
-
-					// await toast.promise(
-					// 	new Promise(async (resolve, reject) => {
-					// 		burnToken("0x83b7d56507b0C0F50161D8E49Bb1186E7262d4CE","47768820872059",walletProvider)
-					// 		.then((tx) => {
-					// 		//   dispatch(setTicketModal('scale-0'))
-					// 		//   setTickets('')
-					// 		  console.log(tx)
-					// 		  resolve(tx)
-					// 		})
-					// 		.catch((error) => reject(error))
-					// 	}),
-					// 	{
-					// 	  pending: 'Selling...',
-					// 	  success: 'Selling Done! 👌',
-					// 	  error: 'Encountered error 🤯',
-					// 	}
-					//   )
-					
-				} catch (error) {
-					console.log(`Error: ${error}`);
-				}
-				//===============================================================================
-
-				// const ethersProvider = new BrowserProvider(walletProvider);
-				// const signer = await ethersProvider.getSigner();
-				
-				// ===========erc20 test contract burn===========
-				// const options = {
-				// 	// value: ethers.parseUnits("0.01", 18), // Your transaction value
-				// 	gasLimit: ethers.toBeHex(1000000), // Example gas limit; adjust based on your needs
-				// };
-				// const amountToBurn = ethers.parseUnits("49976265426123", 1);
-				// const ERC20TestContractAddress = "0xe7a3D1A2e108A67b7F678297907eB477f661e8bf"; 
-				// const ERC20TestContract = new Contract(ERC20TestContractAddress, ERC20TestArtifact.abi, signer);
-
-				// const mintTx = await ERC20TestContract.burn( "49928857892001",options);  // Adjust parameters as needed
-				// await mintTx.wait();
-				// console.log(mintTx);
-
-				//==============erc20 test contract query=======
-				const ethersProvider = new BrowserProvider(walletProvider);
-				const signer = await ethersProvider.getSigner();
-				const ERC20TestContractAddress = "0x9AA19CF4849c03a77877CaFBf61003aeDFDA3779"; 
-				const provider = new ethers.JsonRpcProvider("https://evm-rpc-arctic-1.sei-apis.com")
-				const contractToUse = new ethers.Contract(ERC20TestContractAddress, ERC20TestArtifact.abi, provider);
-				const txResponseTotalSupply = await contractToUse.balanceOf("0x372173ca23790098F17f376F59858a086Cae9Fb0");
-				console.log(txResponseTotalSupply);
-
-				// ===========erc20 test contract mint===========
-				// const ethersProvider = new BrowserProvider(walletProvider);
-				// const signer = await ethersProvider.getSigner();
-				// const options = {
-				// 	value: ethers.parseUnits("0.01", 18), // Your transaction value
-				// 	gasLimit: ethers.toBeHex(1000000), // Example gas limit; adjust based on your needs
-				// };
-				// const ERC20TestContractAddress = "0xda8C4b55679AA98cBe36d4f67093247D5B93c40C"; 
-				// const ERC20TestContract = new Contract(ERC20TestContractAddress, ERC20TestArtifact.abi, signer);
-
-				// const mintTx = await ERC20TestContract.mint( options);  // Adjust parameters as needed
-				// await mintTx.wait();
-				// console.log(Math.floor(Date.now() / 1000));
+				).then(tokenListData => {
+					router.push('/token/' + tokenListData.chainid + '/' + tokenListData.token_address);
+				}).catch(error => {
+					console.error("Failed to deploy token:", error);
+				});
 				
 			} else {
 				// Handle the case where walletProvider is undefined
@@ -331,7 +300,24 @@ export default function Deploy() {
 		
 		<div className=" bg-[#1A2B37] shadow-md px-8 py-8 rounded sm:w-full md:w-1/2 mx-auto">
 			{/* <ConnectButton/> */}
-			
+			 <div className="inline-flex shadow-md rounded-full overflow-hidden h-8 leading-5">
+ 				<button 
+ 					className={`hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 
+ 								${selectedChain === "sei" ? 'bg-blue-500 text-white' : 'bg-gray-300'}
+ 								focus:outline-none focus:ring-2 focus:ring-blue-500`}
+ 					onClick={handleSeiChainButton}
+ 					disabled={selectedChain === "sei"}>
+ 					Sei
+ 				</button>
+ 				<button 
+ 					className={`hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 
+ 								${selectedChain === "ftm" ? 'bg-blue-500 text-white' : 'bg-gray-300'}
+ 								focus:outline-none focus:ring-2 focus:ring-blue-500`}
+ 					onClick={handleFtmChainButton}
+ 					disabled={selectedChain === "ftm"}>
+ 					FTM
+ 				</button>
+ 			</div> 
 			{/* Form  */}
 			<div className="mb-4">
 				<label className="block text-[#EED12E] text-sm font-bold mb-2" htmlFor="name">
@@ -390,22 +376,7 @@ export default function Deploy() {
 
 				{/* Add similar input fields for other items */}
 			</div>
-			<div className="mb-4">
-				<label className="block text-[#EED12E] text-sm font-bold mb-2" htmlFor="network">
-					Network
-				</label>
-				<select
-					className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-					id="network"
-					name="network"
-					value={formData.network}
-					onChange={handleChange} // Make sure to implement this function to handle changes
-				>
-					{/* <option value="">Select Network</option> */}
-					<option value="SeiEVM">SeiEVM</option>
-					{/* <option value="Blast">Blast</option> */}
-				</select>
-			</div>
+			
 			<div className="mb-4">
 				<label className="block text-[#EED12E] text-sm font-bold mb-2" htmlFor="image">
 					Image

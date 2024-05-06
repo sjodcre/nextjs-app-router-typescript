@@ -51,10 +51,15 @@ const deployToken = async (token: TokenParams, walletProvider: any): Promise<Tok
   );
 
   try {
+
+      
       const ERC20Contract = await ERC20_Token.deploy(
           Number(token.reserveRatio),
           token.name,
-          token.ticker
+          token.ticker,
+          {
+            gasLimit: 5000000  // Adjust this number based on your needs
+          }
       );
       console.log("finding tx id...")
       // console.log(ERC20Contract)

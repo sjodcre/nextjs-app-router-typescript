@@ -23,6 +23,14 @@ const SeiEVM = {
   rpcUrl: 'https://evm-rpc.arctic-1.seinetwork.io'
 }
 
+const FtmEVM = {
+  chainId: 64165,
+  name: 'FTM',
+  currency: 'FTM  ',
+  explorerUrl: 'https://sonicscan.io',
+  rpcUrl: 'https://rpc.sonic.fantom.network/'
+}
+
 // 3. Create a metadata object
 const metadata = {
   name: 'My Website',
@@ -51,7 +59,7 @@ interface Props {
 // 5. Create a Web3Modal instance
 createWeb3Modal({
   ethersConfig,
-  chains: [EthMainnet, SeiEVM],
+  chains: [EthMainnet, SeiEVM, FtmEVM],
   projectId,
   enableAnalytics: true, // Optional - defaults to your Cloud configuration
   enableOnramp: true, // Optional - false as default

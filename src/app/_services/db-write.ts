@@ -24,10 +24,10 @@ export const postTokenData = async (data: any) => {
 };
 
 
-export const initOHLCData = async (tokenAddress: string, creator: string, datetime:number, txHash: string) => {
+export const initOHLCData = async (selectedChain: string, tokenAddress: string, creator: string, datetime:number, txHash: string) => {
     try {
         const transactionData = {
-            chainid: '1', // Example static chain ID
+            chainid: selectedChain, // Example static chain ID
             tokenAddress: tokenAddress, // Replace with actual token address
             account: creator,
             token_amount:1E16,
@@ -61,7 +61,7 @@ export const initOHLCData = async (tokenAddress: string, creator: string, dateti
 
 
 export const postTransactionAndOHLC = async (transactionData: any) => {
-    const { contractAddress, account, amount, deposit, timestamp, trade, txHash } = transactionData;
+    const { selectedChain, contractAddress, account, amount, deposit, timestamp, trade, txHash } = transactionData;
 
     // const normalizedAmount = normalizeValue(parseFloat(amount.toString())); // Ensuring number type if needed
     // const normalizedDeposit = normalizeValue(parseFloat(deposit.toString()));
@@ -80,7 +80,7 @@ export const postTransactionAndOHLC = async (transactionData: any) => {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                chainid: '1', // Example static chain ID
+                chainid: selectedChain, // Example static chain ID
                 tokenAddress: contractAddress, 
                 account,
                 token_amount: amount,

@@ -8,11 +8,11 @@ import IndeterminateProgressBar from "@/app/_ui/indeterminate-progress-bar";
 import { BrowserProvider, Contract, ethers, Interface } from "ethers";
 import ERC20TestArtifact from '../../../../artifacts/contracts/ERCC20Test.sol/ERC20Test.json'
 import { fetchTokenInfo, getTokenTrades, postTransactionAndOHLC } from "@/app/_services/db-write";
-import { useWeb3ModalAccount, useWeb3ModalProvider } from "@web3modal/ethers/react";
+import { useSwitchNetwork, useWeb3ModalAccount, useWeb3ModalProvider } from "@web3modal/ethers/react";
 import { toast } from "react-toastify";
 import TradeItem from "@/app/_ui/trade-list";
 import { extractFirstSixCharac } from "@/app/_utils/helpers";
-import { fetchSEIPrice } from "@/app/_utils/native-token-pricing";
+import { fetchNativeTokenPrice } from "@/app/_utils/native-token-pricing";
 
 
 
@@ -33,6 +33,8 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   const [marketCap, setMarketCap] = useState<string>('0');
   const [providerReady, setProviderReady] = useState(false);
   const [trades, setTrades] = useState<TradeData[]>([]);
+  const [transactionDone, setTransactionDone] = useState(false);
+  const { switchNetwork} = useSwitchNetwork()
   const [userBalance, setUserBalance] = useState({
     token: 0,
     native: 0,
@@ -43,26 +45,14 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     chainLogo: '',
   })
 
-  const { isConnected } = useWeb3ModalAccount()
+  const { isConnected, chainId } = useWeb3ModalAccount()
   const { walletProvider } = useWeb3ModalProvider()
   const seiWebSocket = "wss://evm-ws-arctic-1.sei-apis.com";
   const ERC20TestContractAddress = params.tokenInfo[1]; 
+  
 
   
-  //demo for progress bar
-  // useEffect(() => {
-  //   const timer = setInterval(() => {
-  //     setProgress((prevProgress) => {
-  //       const newProgress = prevProgress + 10;
-  //       if (newProgress > 100) {
-  //         clearInterval(timer);
-  //         return 100;
-  //       }
-  //       return newProgress;
-  //     });
-  //   }, 1000);
-  //   return () => clearInterval(timer);
-  // }, [marketCap]);  
+ 
 
   useEffect(() => {
     // Convert marketCap string to number, removing commas and parsing as integer
@@ -80,8 +70,9 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
   useEffect(() => {
     const updatePrice = async () => {
-        const fetchedPrice = await fetchSEIPrice();
+        const fetchedPrice = await fetchNativeTokenPrice(params.tokenInfo[0]);
         setnativeTokenPrice(fetchedPrice);
+        console.log(fetchedPrice)
     };
 
     updatePrice(); // Initial fetch
@@ -90,29 +81,39 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     return () => clearInterval(intervalId); // Cleanup interval on component unmount
   }, []);
 
-
-
   //web socket listener
   useEffect(() => {
+    // try {
+    //   let provider = new ethers.WebSocketProvider(createWebSocket());
+    //   startListening(provider);
+      
+
+    //   return () => {
+    //     stopListening(provider);
+    // };
+    // } catch (error) {
+    //   console.error("Failed to set up contract listeners:", error);
+
+    // }
 
     try {
 
-      // const provider = new ethers.JsonRpcProvider("https://evm-rpc-arctic-1.sei-apis.com")
       const wsProvider = new ethers.WebSocketProvider(seiWebSocket)
-      const contract = new ethers.Contract(ERC20TestContractAddress.toString(), ERC20TestArtifact.abi, wsProvider);
+      const contract = new ethers.Contract(
+        ERC20TestContractAddress.toString(), 
+        ERC20TestArtifact.abi, 
+        wsProvider);
+      // contract.removeAllListeners();
       // console.log("WebSocket provider set up:", wsProvider);
-      // console.log("Contract initialized and listening for events at address:", ERC20TestContractAddress);
-      // contract.on("Transfer", (src, dst, wad, event)=> {
-      //   console.log("src: ", src);
-      //   console.log("dst: ", dst)
-      //   console.log("wad: ", wad)
-      //   console.log("event: ", event)
+      console.log("Contract initialized and listening for events at address:", ERC20TestContractAddress);
+      contract.on("Transfer", (src, dst, wad, event)=> {
+        console.log("src: ", src);
+        console.log("dst: ", dst)
+        console.log("wad: ", wad)
+        console.log("event: ", event)
 
-      // })
-  //   wsProvider.on("close", () => {
-  //     console.log("WebSocket connection closed. Attempting to reconnect...");
-  //     // initializeWebSocketConnection();  // Re-initialize or create a function that reconnects
-  // });
+      })
+
       const handleEvent = (account:any, amount:any, deposit:any) => {
         console.log(`Event - Account: ${account}, Amount: ${amount.toString()}, Deposit: ${deposit.toString()} `);
 
@@ -120,8 +121,8 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
     contract.on("ContinuousMint", (account, amount, deposit) => handleEvent(account, amount, deposit));
     contract.on("ContinuousBurn", (account, amount, reimburseAmount) => handleEvent(account, amount, reimburseAmount));
-
-      return () => {
+    
+    return () => {
         contract.removeAllListeners();
     };
     } catch (error) {
@@ -153,6 +154,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
           ...prevState,
           token: Number(balance)  // Replace `newValue` with the actual new value for the token balance
         }));
+        setTransactionDone(false);
 
       })
       .catch(error => {
@@ -164,55 +166,18 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
         console.log("provider is not ready to read user")
       }
     }
-  }, [providerReady]);
-
-  //load data
-  // useEffect(() => {    
-  //   let chainId;
-  //   if (params.tokenInfo[0] === 'sei'){
-  //     setNativeTokenInfo({
-  //       chain: 'SEI',
-  //       chainLogo: '/sei-logo.png'
-  //     })
-  //     chainId = '1';
-  //   } else {
-  //     setNativeTokenInfo({
-  //       chain: 'FTM',
-  //       chainLogo: '/ftm-logo.png'
-  //     })
-  //     chainId = '2';
-  //   }
-  //   // const test =  await fetchData()
-  //   fetchTokenInfo(chainId,params.tokenInfo[1]).then(setTokenDetails);
-    
-  //   const fetchTradesData = async () => {
-  //     const data = await getTokenTrades(params.tokenInfo[1], chainId);
-  //     if (data) {
-  //         setTrades(data);
-  //         console.log(data[0].price_per_token)
-  //         if (nativeTokenPrice){
-  //           setMarketCap(data[0].sum * data[0].price_per_token * nativeTokenPrice)
-  //         }
-  //     } else {
-  //         console.log("No data or error occurred");
-  //     }
-  // };
-
-  // fetchTradesData();
-    
-    
-  // },[])
+  }, [providerReady, transactionDone,chainId]);
 
   useEffect(() => {
-    const chainId = params.tokenInfo[0] === 'sei' ? '1' : '2';
+    // const chainId = params.tokenInfo[0] === 'sei' ? '1' : '2';
     setNativeTokenInfo({
       chain: params.tokenInfo[0] === 'sei' ? 'SEI' : 'FTM',
       chainLogo: params.tokenInfo[0] === 'sei' ? '/sei-logo.png' : '/ftm-logo.png'
     });
 
     const fetchData = async () => {
-      const tokenInfoPromise = fetchTokenInfo(chainId, params.tokenInfo[1]);
-      const tradesDataPromise = getTokenTrades(params.tokenInfo[1], chainId);
+      const tokenInfoPromise = fetchTokenInfo(params.tokenInfo[0], params.tokenInfo[1]);
+      const tradesDataPromise = getTokenTrades(params.tokenInfo[1], params.tokenInfo[0]);
 
       const [tokenInfo, tradesData] = await Promise.all([tokenInfoPromise, tradesDataPromise]);
       setTokenDetails(tokenInfo);
@@ -243,11 +208,24 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   };
 
   const handleSetPercentage = (percentage: number) => {
-    console.log(userBalance.token)
-    const fullAmount = userBalance.token; // Assuming `userBalance.token` holds the full token balance as a number
-    const amountToSet = (fullAmount * percentage / 100).toFixed(0); // Calculating the percentage and rounding it to the nearest whole number
+    // handleChainChange()
+    // // console.log(userBalance.token)
+    // const fullAmount = userBalance.token; // Assuming `userBalance.token` holds the full token balance as a number
+    // const amountToSet = (fullAmount * percentage / 100).toFixed(0); // Calculating the percentage and rounding it to the nearest whole number
   
-    setTokenAmountToTrade(amountToSet.toString()); // Convert to string to match your state expectation
+    // setTokenAmountToTrade(amountToSet.toString()); // Convert to string to match your state expectation
+    handleChainChange()
+        .then(() => {
+            // This code executes after successful network change
+            const fullAmount = userBalance.token; // Assuming `userBalance.token` holds the full token balance as a number
+            const amountToSet = (fullAmount * percentage / 100).toFixed(0); // Calculating the percentage and rounding it to the nearest whole number
+        
+            setTokenAmountToTrade(amountToSet.toString()); // Convert to string to match your state expectation
+        })
+        .catch(error => {
+            // Handle error if network change fails
+            console.error("Network change failed:", error);
+        });
   };
 
   // threads/trades tab change
@@ -266,6 +244,112 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     setNativeToken(!nativeToken);
   };
 
+  // function handleChainChange() {
+  //   if (params.tokenInfo[0] === "sei" ){
+  //     if (chainId !== 713715) {
+  //       switchNetwork(713715);
+  //       return
+  //     }
+  //   } else if (params.tokenInfo[0] === "ftm") {
+  //     if (chainId !== 64165) {
+  //       switchNetwork(64165)
+  //       return
+  //     }
+  //   }
+  // }
+  async function handleChainChange() {
+    return new Promise((resolve, reject) => {
+        // Assuming chain IDs for 'sei' and 'ftm' as constants for clarity
+        const SEI_CHAIN_ID = 713715;
+        const FTM_CHAIN_ID = 64165;
+
+        let targetChainId = null;
+
+        if (params.tokenInfo[0] === "sei" && chainId !== SEI_CHAIN_ID) {
+            targetChainId = SEI_CHAIN_ID;
+        } else if (params.tokenInfo[0] === "ftm" && chainId !== FTM_CHAIN_ID) {
+            targetChainId = FTM_CHAIN_ID;
+        }
+
+        console.log( targetChainId)
+        if (targetChainId !== null) {
+            switchNetwork(targetChainId)
+                .then(() => {
+                    // resolve(`Switched to ${targetChainId} successfully.`);
+                    resolve(targetChainId);
+                })
+                .catch((error) => {
+                    reject(`Failed to switch to ${targetChainId}: ${error}`);
+                });
+        } else {
+            // Resolve immediately if no switch is needed
+            // resolve("No network switch needed.");
+            resolve(chainId);
+        }
+    });
+  }
+
+  function createWebSocket() {
+    const ws = new WebSocket (process.env.NEXT_PUBLIC_WSS_PROVIDER || '');
+    ws.addEventListener("close", () => {
+      console.log("Disconnected. Reconnecting...");
+      setTimeout(() => {
+        let provider = new ethers.WebSocketProvider(createWebSocket());
+        startListening();
+      }, 3000);
+    });
+  
+    ws.addEventListener("error", (error) => {
+      console.log("WebSocket error: ", error);
+    });
+  
+    // ws.close();
+    return ws;
+  }
+
+  function startListening() {
+    const wsProvider = new ethers.WebSocketProvider(seiWebSocket)
+    const contract = new ethers.Contract(ERC20TestContractAddress.toString(), ERC20TestArtifact.abi, wsProvider);
+    
+    // let contract = new ethers.Contract(
+    //   params.tokenInfo[1],
+    //   ERC20TestArtifact.abi,
+    //   wsProvider
+    // );
+    console.log("listener started...")
+    contract.removeAllListeners();
+  
+    const handleEvent = (account:any, amount:any, deposit:any) => {
+      console.log(`Event - Account: ${account}, Amount: ${amount.toString()}, Deposit: ${deposit.toString()} `);
+
+    };
+    contract.on("Transfer", (src, dst, wad, event)=> {
+        console.log("src: ", src);
+        console.log("dst: ", dst)
+        console.log("wad: ", wad)
+        console.log("event: ", event)
+
+      })
+
+    contract.on("ContinuousMint", (account, amount, deposit) => handleEvent(account, amount, deposit));
+    contract.on("ContinuousBurn", (account, amount, reimburseAmount) => handleEvent(account, amount, reimburseAmount));
+  }
+
+  function stopListening(provider: ethers.ContractRunner | null | undefined) {
+    let contract = new ethers.Contract(
+      params.tokenInfo[1],
+      ERC20TestArtifact.abi,
+      provider
+    );
+    
+    if (contract) {
+      contract.removeAllListeners();
+    }
+
+    console.log("listener ended...")
+   
+  }
+
   async function fetchERC20Balance(walletProvider: any,tokenAddress: string) {
     // const ethersProvider = new BrowserProvider(walletProvider);
     const signer = await walletProvider.getSigner();
@@ -283,10 +367,58 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     }
   }
 
+  async function handleBuyToken(walletProvider: ethers.Eip1193Provider, tokenAmountToTrade: { toString: () => string; }) {
+    const ethersProvider = new BrowserProvider(walletProvider);
+    const signer = await ethersProvider.getSigner();
+    const ERC20TestContractAddress = params.tokenInfo[1].toString(); 
+    const ERC20TestContract = new Contract(ERC20TestContractAddress, ERC20TestArtifact.abi, signer);
+    const options = {
+      value: ethers.parseUnits(tokenAmountToTrade.toString(), 18),
+      gasLimit: ethers.toBeHex(1000000), // Correct use of hexlify
+    };
+  
+    const mintTx = await ERC20TestContract.mint(options);
+    const txHash = mintTx.hash;
+
+    const result = await mintTx.wait();
+    return { result, txHash, ERC20TestContract };
+  }
+  
+  async function handleSellToken(walletProvider: ethers.Eip1193Provider, tokenAmountToTrade: { toString: () => any | ethers.Overrides; }) {
+    const ethersProvider = new BrowserProvider(walletProvider);
+    const signer = await ethersProvider.getSigner();
+    const ERC20TestContractAddress = params.tokenInfo[1].toString(); 
+    const ERC20TestContract = new Contract(ERC20TestContractAddress, ERC20TestArtifact.abi, signer);
+    const options = {
+      gasLimit: ethers.toBeHex(1000000),
+    };
+    const burnTx = await ERC20TestContract.burn(tokenAmountToTrade.toString(), options);
+    const txHash = burnTx.hash;
+    const result = await burnTx.wait();
+    return { result, txHash, ERC20TestContract };
+  }
+  
+
+
   // place trade handler
   const handlePlaceTrade = async () => {
 		try {
 			if (!isConnected) throw Error('User is not connected')
+      let chain: string;
+
+      await handleChainChange().then((updatedChainId)=> {
+        if (updatedChainId === 713715 ){
+          chain = "sei"
+        } else if (updatedChainId === 64165) {
+          chain = "ftm"
+        } else {
+          toast.error("Chain error! Using unsupported network")
+          return
+        }
+        // console.log(updatedChainId)
+        // console.log(chainId)
+      })
+      
 
 			if (walletProvider) {
 
@@ -295,42 +427,27 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
         const ERC20TestContractAddress = params.tokenInfo[1].toString(); 
         const ERC20TestContract = new Contract(ERC20TestContractAddress, ERC20TestArtifact.abi, signer);
 
-
-
-				//==============erc20 test contract query=======
-				// const ERC20TestContractAddress = "0x9AA19CF4849c03a77877CaFBf61003aeDFDA3779"; 
-				// const provider = new ethers.JsonRpcProvider("https://evm-rpc-arctic-1.sei-apis.com")
-				// const contractToUse = new ethers.Contract(ERC20TestContractAddress, ERC20TestArtifact.abi, provider);
-				// const txResponseTotalSupply = await contractToUse.balanceOf("0x372173ca23790098F17f376F59858a086Cae9Fb0");
-				// console.log(txResponseTotalSupply);
-
-				// ===========erc20 test contract mint===========
-        // console.log(buySell);
-				// const ethersProvider = new BrowserProvider(walletProvider);
-				// const signer = await ethersProvider.getSigner();
-        console.log(buySell)
-        if (buySell==='buy') {
-          const options = {
-            value: ethers.parseUnits(tokenAmountToTrade.toString(), 18), // Your transaction value
-            gasLimit: ethers.toBeHex(1000000), // Example gas limit; adjust based on your needs
-          };
-  
-          const mintTx = await ERC20TestContract.mint( options);  // Adjust parameters as needed
-          const txHash = mintTx.hash;
-          
-          const result = await mintTx.wait();
-  
-          if (result.status === 1) {
-            console.log("Transaction succeeded:", result);
+        if (buySell === 'buy') {
+          toast.promise(
+            handleBuyToken(walletProvider, tokenAmountToTrade),
+            {
+              pending: 'Processing buy transaction...',
+              success: 'Buy transaction successful! 👌',
+              error: 'Buy transaction failed! 🤯'
+            }
+          ).then(({ result, txHash, ERC20TestContract }) => {
+            if (result.status === 1) {
+            // console.log("Transaction succeeded:", result);
             const iface = new Interface(ERC20TestArtifact.abi);
   
             result.logs.forEach((log: any) => {
               try {
                   const parsedLog = iface.parseLog(log);
                   if (parsedLog?.name === 'ContinuousMint') {
-                    console.log('ContinuousMint Event Args:', parsedLog.args);
+                    // console.log('ContinuousMint Event Args:', parsedLog.args);
                     
                     const info = {
+                        selectedChain: chain,
                         contractAddress: ERC20TestContractAddress,
                         account: parsedLog.args[0],
                         amount: Number(parsedLog.args[1].toString()), // Ensure conversion to string before to Number if BigNumber
@@ -339,7 +456,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                         trade: buySell.toString(),
                         txHash: txHash
                     };
-                    console.log("Processed Event Data:", info);
+                    // console.log("Processed Event Data:", info);
                     postTransactionAndOHLC(info).then(response => {
                       console.log('Backend response:', response);
                     }).catch(error => {
@@ -355,30 +472,33 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
             console.log("Transaction failed with receipt:", result);
             // Handle failure case
           }
-        } else {
-          // ===========erc20 test contract burn===========
-          const options = {
-          	// value: ethers.parseUnits("0.01", 18), // Your transaction value
-          	gasLimit: ethers.toBeHex(1000000), // Example gas limit; adjust based on your needs
-          };
-          const amountToBurn = ethers.parseUnits("49976265426123", 1);
-
-          const burnTx = await ERC20TestContract.burn( tokenAmountToTrade.toString(),options);  // Adjust parameters as needed
-          const txHash = burnTx.hash;
-          const result = await burnTx.wait();
-          console.log(burnTx);
-
-          if (result.status === 1) {
-            console.log("Transaction succeeded:", result);
+            // handle success, parse logs, etc.
+            setTransactionDone(true);
+          }).catch(error => {
+            console.error("Transaction error:", error);
+            setTransactionDone(false);
+          });
+        } else if (buySell === 'sell') {
+          toast.promise(
+            handleSellToken(walletProvider, tokenAmountToTrade),
+            {
+              pending: 'Processing sell transaction...',
+              success: 'Sell transaction successful! 👌',
+              error: 'Sell transaction failed! 🤯'
+            }
+          ).then(({ result, txHash, ERC20TestContract }) => {
+            if (result.status === 1) {
+            // console.log("Transaction succeeded:", result);
             const iface = new Interface(ERC20TestArtifact.abi);
   
             result.logs.forEach((log: any) => {
               try {
                   const parsedLog = iface.parseLog(log);
                   if (parsedLog?.name === 'ContinuousBurn') {
-                    console.log('ContinuousBurn Event Args:', parsedLog.args);
+                    // console.log('ContinuousBurn Event Args:', parsedLog.args);
                     
                     const info = {
+                        selectedChain: chain,
                         contractAddress: ERC20TestContractAddress,
                         account: parsedLog.args[0],
                         amount: Number(parsedLog.args[1].toString()), // Ensure conversion to string before to Number if BigNumber
@@ -387,13 +507,13 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                         trade: buySell.toString(),
                         txHash: txHash  
                     };
-                    console.log("Processed Event Data:", info);
+                    // console.log("Processed Event Data:", info);
                     postTransactionAndOHLC(info).then(response => {
                       console.log('Backend response:', response);
                     }).catch(error => {
                         console.error('Error posting data to backend:', error);
                     });                
-                  }            
+                  }
                 } catch (error) {
                   // This log was not from our contract
                   console.error("Error parsing log:", error);
@@ -403,9 +523,15 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
             console.log("Transaction failed with receipt:", result);
             // Handle failure case
           }
+            // handle success, parse logs, etc.
+            setTransactionDone(true);
+          }).catch(error => {
+            console.error("Transaction error:", error);
+            setTransactionDone(false);
+          });
         }
-				
 
+        
 				
       } else {
 				// Handle the case where walletProvider is undefined

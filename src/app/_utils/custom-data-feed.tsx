@@ -54,10 +54,11 @@ const configurationData : DatafeedConfiguration = {
 class CustomDatafeed {
     // private data: Bar[];
     tokenAddress: string;
+    chainId: string;
 
-    constructor(tokenAddress: string) {
+    constructor(tokenAddress: string, chainId: string) {
         this.tokenAddress = tokenAddress;
-        
+        this.chainId = chainId
         
     }
 
@@ -81,9 +82,10 @@ class CustomDatafeed {
                 // const to = periodParams.to;
                 const { from,to, firstDataRequest, countBack} = periodParams;
                 // const tokenAddress = "0x3d8be50ca75d4";
-                const chainId = 1;
+                // const chainId = this.chainId;
+                // console.log("chainid:", this.chainId)
 
-                fetch(`http://localhost:3001/ohlc?token_address=${this.tokenAddress}&chainid=${chainId}&resolution=${resolution}&from=${from}&to=${to}`)
+                fetch(`http://localhost:3001/ohlc?token_address=${this.tokenAddress}&chainid=${this.chainId}&resolution=${resolution}&from=${from}&to=${to}`)
                 .then(response => response.json())
                 .then(data => {
                     console.log(data.length)
@@ -109,7 +111,7 @@ class CustomDatafeed {
                         // onHistoryCallback([], { noData: true });
                         if (firstDataRequest){
                         console.log("No data available within the requested range, fetching latest time...");
-                        fetch(`http://localhost:3001/data/latest-time?token_address=${this.tokenAddress}&chainid=${chainId}`)
+                        fetch(`http://localhost:3001/data/latest-time?token_address=${this.tokenAddress}&chainid=${this.chainId}`)
                         .then(response => {
                             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                             return response.json();
@@ -172,7 +174,7 @@ class CustomDatafeed {
     public resolveSymbol(symbolName: string, onSymbolResolvedCallback: (symbolInfo: any) => void, onResolveErrorCallback: (error: string) => void) {
       
         try {
-            fetch(`http://localhost:3001/token-info?token_address=${this.tokenAddress}&chainid=1`)
+            fetch(`http://localhost:3001/token-info?token_address=${this.tokenAddress}&chainid=${this.chainId}`)
             .then(response => response.json())
             .then(data => {
                 // console.log(data)

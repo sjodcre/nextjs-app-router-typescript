@@ -7,7 +7,11 @@ import {
   ChartingLibraryWidgetOptions,
   ResolutionString,
 } from "../../../public/static/charting_library/charting_library";
+import { ExtendedWidgetOptions } from "../_utils/types";
 
+// interface ExtendedWidgetOptions extends ChartingLibraryWidgetOptions {
+//   chainId: string; // Adding chainId to the properties
+// }
 
 const defaultWidgetProps: Partial<ChartingLibraryWidgetOptions> = {
   symbol: "0xe7a3D1A2e108A67b7F678297907eB477f661e8bf",
@@ -49,7 +53,7 @@ export default function CandleChart({ tokenAddress, chainId}: { tokenAddress: st
           setIsScriptReady(true);
         }}
       />
-      {isScriptReady && <TVChartContainer {...widgetProps} />}
+      {isScriptReady && <TVChartContainer {...widgetProps as ExtendedWidgetOptions} />}
     </>
   );
 }

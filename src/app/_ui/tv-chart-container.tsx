@@ -3,15 +3,21 @@ import { useEffect, useRef } from "react";
 import { ChartingLibraryWidgetOptions, LanguageCode, ResolutionString, widget } from "../../../public/static/charting_library";
 import React from "react";
 import CustomDatafeed from "../_utils/custom-data-feed";
+import { useAppSelector } from "../_redux/store";
+import { ExtendedWidgetOptions } from "../_utils/types";
 
-const TVChartContainerBase = (props: Partial<ChartingLibraryWidgetOptions>) => {
+const TVChartContainerBase = (props: ExtendedWidgetOptions) => {
 	const chartContainerRef =
 		useRef<HTMLDivElement>() as React.MutableRefObject<HTMLInputElement>;
+
+	// const chainType = useAppSelector((state) => state.authReducer.value.chainType);
+	// console.log("chaintype:" ,chainType)
+	
 
 	useEffect(() => {
 		const widgetOptions: ChartingLibraryWidgetOptions = {
 			symbol: props.symbol,
-			datafeed: new CustomDatafeed(props.symbol? props.symbol: ''),
+			datafeed: new CustomDatafeed(props.symbol? props.symbol: '', props.chainId),
 			interval: props.interval as ResolutionString,
 			container: chartContainerRef.current,
 			library_path: props.library_path,
