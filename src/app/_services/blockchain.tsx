@@ -69,7 +69,7 @@ const deployToken = async (token: TokenParams, walletProvider: any): Promise<Tok
       // const contractAddress = ERC20Contract.address;  // Contract address can be retrieved directly
       // const txHash = ERC20Contract.deploymentTransaction(); 
       const contractAddress = await ERC20Contract.getAddress(); // Correctly await the address
-      window.alert(`Contract deployed to: ${contractAddress}`);
+      // toast.alert(`Contract deployed to: ${contractAddress}`);
       // console.log(`Transaction hash: ${receipt}`);
 
       // console.log(`Transaction hash: `, JSON.stringify(receipt,null,4));

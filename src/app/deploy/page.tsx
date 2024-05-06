@@ -195,6 +195,8 @@ export default function Deploy() {
 			} catch (error) {
 				console.error('Failed to upload image:', error);
 			}
+			toast.success(`Contract deployed to: ${data.token_address}`);
+
 	
 			const tokenListData = {
 				...data,
