@@ -92,21 +92,19 @@ const Home: React.FC = () => {
     return (
         <>
             {/* <Header /> */}
-            <label className='text-9xl flex justify-center'>HELLO </label>
-            <label className='text-9xl flex justify-center'>Chain : {chainType} </label>
-            <label htmlFor="sortOptions" className="mr-2">Chain:</label>
-            {/* <div className='grid gap-8 item-start justify-center '>
-               
-                    <div className='  relative text-9xl justify-center bg-black text-white border-2 font-mono font-semibold rounded-lg border-green-400 shadow-[0_0_2px_#00ff00,inset_0_0_2px_#00ff00,0_0_5px_#00ff00,0_0_15px_#00ff00,0_0_30px_#08f]'>
+          
+            <div className='grid gap-8 item-start justify-center '>
+
+                <div className='  relative text-9xl justify-center bg-black text-white border-2 font-mono font-semibold rounded-lg border-green-400 shadow-[0_0_2px_#00ff00,inset_0_0_2px_#00ff00,0_0_5px_#00ff00,0_0_15px_#00ff00,0_0_30px_#08f]'>
 
 
-                        HELLO
+                    HELLO
 
-                    </div>
-            </div>  */}
-                    {/*  <label className='text-9xl flex justify-center'>Chain : {chainType} </label> */}
-                    {/* <label htmlFor="sortOptions" className="mr-2 text-white">Chain:</label> */}
-                    {/*   <div className="inline-flex">
+                </div>
+            </div>
+            {/*  <label className='text-9xl flex justify-center'>Chain : {chainType} </label> */}
+            {/* <label htmlFor="sortOptions" className="mr-2 text-white">Chain:</label> */}
+            {/*   <div className="inline-flex">
 
                 <button className={` hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-l ${isSeiActive ? 'bg-blue-500 disable' : 'bg-gray-300'
                     }`} onClick={handleClicks}>
@@ -119,15 +117,19 @@ const Home: React.FC = () => {
 
 
 
-                </div>
-            
+                </div> */}
+
             <div className='py-6  grid gap-8 item-start justify-center'>
                 <div className='relative'>
                     <div className='absolute -inset-1 bg-gradient-to-r  from-green-400 to-green-950 rounded-lg blur'></div>
                     <div className='relative px-7 py-4  bg-black rounded-lg leading-none flex items-center divide-x divide-gray-600'>
 
-                        <button className='pr-6 font-semibold text-gray-100'>SEI</button>
-                        <button className='pl-6 font-semibold text-purple-600'>FTM</button>
+                        <button className={`pr-6 font-semibold text-gray-100 `} disabled={isSeiActive} onClick={handleClicks}>
+                            SEI
+                        </button>
+                        <button className={`pl-6 font-semibold text-purple-600 `} disabled={isFtmActive} onClick={handleClicks}>
+                            FTM
+                        </button>
 
 
 
