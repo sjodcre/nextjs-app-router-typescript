@@ -3,6 +3,7 @@ import Link from 'next/link';
 import React from 'react';
 // import ConnectButton from './connect-button';
 import { useWeb3Modal, useWeb3ModalAccount } from '@web3modal/ethers/react';
+import { extractFirstSixCharac } from '../_utils/helpers';
 
 
 const Header = () => {
@@ -45,7 +46,7 @@ const Header = () => {
           <div>
             <div className='text-sm'>
               {/* <span className="hidden sm:block">(0.02 SEI)</span> */}
-              <span>{address?.slice(-6)}</span>
+              <span>{extractFirstSixCharac(address || 'unknown')}</span>
             </div>
           <Link href={`/profile/${address}`} className="text-sm hover:underline">
             {/* <a className="text-sm p-2 border border-slate-500 rounded-md cursor-pointer hover:bg-slate-600 flex items-center gap-1"> */}

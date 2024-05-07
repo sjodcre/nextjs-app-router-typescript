@@ -1,13 +1,13 @@
 "use client"
 
 import { useEffect, useState } from "react";
-import { TokenPageDetails, TradeData } from "@/app/_utils/types";
+import { TokenHolder, TokenPageDetails, TradeData } from "@/app/_utils/types";
 import CandleChart from "@/app/_ui/candle-chart";
 import SlippageDialog from "@/app/_ui/slippage-dialog";
 import IndeterminateProgressBar from "@/app/_ui/indeterminate-progress-bar";
 import { BrowserProvider, Contract, ethers, Interface } from "ethers";
 import ERC20TestArtifact from '../../../../artifacts/contracts/ERCC20Test.sol/ERC20Test.json'
-import { fetchTokenInfo, getTokenTrades, postTransactionAndOHLC } from "@/app/_services/db-write";
+import { fetchTokenInfo, getTokenTrades, getTopTokenHolders, postTransactionAndOHLC } from "@/app/_services/db-write";
 import { useSwitchNetwork, useWeb3ModalAccount, useWeb3ModalProvider } from "@web3modal/ethers/react";
 import { toast } from "react-toastify";
 import TradeItem from "@/app/_ui/trade-list";
@@ -26,9 +26,13 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   const [tokenAmountToTrade, setTokenAmountToTrade] = useState('');
   const [nativeToken, setNativeToken] = useState(true);
   const [activeTab, setActiveTab] = useState('thread');
+  const [activeTabSmScreen, setActiveTabSmScreen] = useState('info');  // Default to showing the 'info' tab
   const [buySell, setBuySell] = useState('buy');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [progress, setProgress] = useState(0);
+  const [holders, setHolders] = useState<TokenHolder[]>([]);
+  const [tokenSum, setTokenSum] = useState(0);
   const [marketCap, setMarketCap] = useState<string>('0');
   const [providerReady, setProviderReady] = useState(false);
   const [trades, setTrades] = useState<TradeData[]>([]);
@@ -220,7 +224,7 @@ useEffect(() => {
   const fetchData = async () => {
       // Fetch token info and trades data
       const tokenInfoPromise = fetchTokenInfo(params.tokenInfo[0], params.tokenInfo[1]);
-      const tradesDataPromise = getTokenTrades(params.tokenInfo[1], params.tokenInfo[0]);
+      const tradesDataPromise = getTokenTrades(params.tokenInfo[0], params.tokenInfo[1]);
 
       // Wait for both promises to resolve
       const [tokenInfo, tradesData] = await Promise.all([tokenInfoPromise, tradesDataPromise]);
@@ -228,6 +232,8 @@ useEffect(() => {
       // Update state with fetched data
       setTokenDetails(tokenInfo);
       setTrades(tradesData);
+      setTokenSum(tradesData[0].sum);
+      getTopTokenHolders(params.tokenInfo[0],params.tokenInfo[1]);
 
       // Calculate market cap if tradesData and nativeTokenPrice are available
       if (tradesData && tradesData.length > 0 && nativeTokenPrice) {
@@ -256,6 +262,18 @@ useEffect(() => {
 
 }, [params.tokenInfo, nativeTokenPrice]);
 
+useEffect(() => {
+  const fetchHolders = async () => {
+    setIsLoading(true); // Start loading
+
+    const data = await getTopTokenHolders(params.tokenInfo[0],params.tokenInfo[1]); // Assume this fetches the data as shown in your example
+    setHolders(data);
+    const sum = data.reduce((acc: any, holder: { balance: any; }) => acc + holder.balance, 0);
+    setTokenSum(sum);
+    setIsLoading(false); // End loading
+  };
+  fetchHolders();
+}, []);
 
   //slippage dialog
   const toggleDialog = () => setDialogOpen(!dialogOpen);
@@ -304,19 +322,12 @@ useEffect(() => {
     setNativeToken(!nativeToken);
   };
 
-  // function handleChainChange() {
-  //   if (params.tokenInfo[0] === "sei" ){
-  //     if (chainId !== 713715) {
-  //       switchNetwork(713715);
-  //       return
-  //     }
-  //   } else if (params.tokenInfo[0] === "ftm") {
-  //     if (chainId !== 64165) {
-  //       switchNetwork(64165)
-  //       return
-  //     }
-  //   }
-  // }
+  const getButtonClass = (tabName: string) => {
+    return activeTabSmScreen === tabName ?
+        "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 dark:ring-offset-slate-950 dark:focus-visible:ring-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50 h-10 px-4 py-2 hover:bg-transparent hover:text-white font-bold text-white bg-transparent" :
+        "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 dark:ring-offset-slate-950 dark:focus-visible:ring-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50 h-10 px-4 py-2 text-black hover:bg-transparent hover:text-white";
+  };
+
   async function handleChainChange() {
     return new Promise((resolve, reject) => {
         // Assuming chain IDs for 'sei' and 'ftm' as constants for clarity
@@ -370,66 +381,66 @@ useEffect(() => {
     });
   }
 
-  function createWebSocket() {
-    const ws = new WebSocket (process.env.NEXT_PUBLIC_WSS_PROVIDER || '');
-    ws.addEventListener("close", () => {
-      console.log("Disconnected. Reconnecting...");
-      setTimeout(() => {
-        let provider = new ethers.WebSocketProvider(createWebSocket());
-        startListening();
-      }, 3000);
-    });
+  // function createWebSocket() {
+  //   const ws = new WebSocket (process.env.NEXT_PUBLIC_WSS_PROVIDER || '');
+  //   ws.addEventListener("close", () => {
+  //     console.log("Disconnected. Reconnecting...");
+  //     setTimeout(() => {
+  //       let provider = new ethers.WebSocketProvider(createWebSocket());
+  //       startListening();
+  //     }, 3000);
+  //   });
   
-    ws.addEventListener("error", (error) => {
-      console.log("WebSocket error: ", error);
-    });
+  //   ws.addEventListener("error", (error) => {
+  //     console.log("WebSocket error: ", error);
+  //   });
   
-    // ws.close();
-    return ws;
-  }
+  //   // ws.close();
+  //   return ws;
+  // }
 
-  function startListening() {
-    const wsProvider = new ethers.WebSocketProvider(seiWebSocket)
-    const contract = new ethers.Contract(ERC20TestContractAddress.toString(), ERC20TestArtifact.abi, wsProvider);
+  // function startListening() {
+  //   const wsProvider = new ethers.WebSocketProvider(seiWebSocket)
+  //   const contract = new ethers.Contract(ERC20TestContractAddress.toString(), ERC20TestArtifact.abi, wsProvider);
     
-    // let contract = new ethers.Contract(
-    //   params.tokenInfo[1],
-    //   ERC20TestArtifact.abi,
-    //   wsProvider
-    // );
-    console.log("listener started...")
-    contract.removeAllListeners();
+  //   // let contract = new ethers.Contract(
+  //   //   params.tokenInfo[1],
+  //   //   ERC20TestArtifact.abi,
+  //   //   wsProvider
+  //   // );
+  //   console.log("listener started...")
+  //   contract.removeAllListeners();
   
-    const handleEvent = (account:any, amount:any, deposit:any) => {
-      console.log(`Event - Account: ${account}, Amount: ${amount.toString()}, Deposit: ${deposit.toString()} `);
+  //   const handleEvent = (account:any, amount:any, deposit:any) => {
+  //     console.log(`Event - Account: ${account}, Amount: ${amount.toString()}, Deposit: ${deposit.toString()} `);
 
-    };
-    contract.on("Transfer", (src, dst, wad, event)=> {
-        console.log("src: ", src);
-        console.log("dst: ", dst)
-        console.log("wad: ", wad)
-        console.log("event: ", event)
+  //   };
+  //   contract.on("Transfer", (src, dst, wad, event)=> {
+  //       console.log("src: ", src);
+  //       console.log("dst: ", dst)
+  //       console.log("wad: ", wad)
+  //       console.log("event: ", event)
 
-      })
+  //     })
 
-    contract.on("ContinuousMint", (account, amount, deposit) => handleEvent(account, amount, deposit));
-    contract.on("ContinuousBurn", (account, amount, reimburseAmount) => handleEvent(account, amount, reimburseAmount));
-  }
+  //   contract.on("ContinuousMint", (account, amount, deposit) => handleEvent(account, amount, deposit));
+  //   contract.on("ContinuousBurn", (account, amount, reimburseAmount) => handleEvent(account, amount, reimburseAmount));
+  // }
 
-  function stopListening(provider: ethers.ContractRunner | null | undefined) {
-    let contract = new ethers.Contract(
-      params.tokenInfo[1],
-      ERC20TestArtifact.abi,
-      provider
-    );
+  // function stopListening(provider: ethers.ContractRunner | null | undefined) {
+  //   let contract = new ethers.Contract(
+  //     params.tokenInfo[1],
+  //     ERC20TestArtifact.abi,
+  //     provider
+  //   );
     
-    if (contract) {
-      contract.removeAllListeners();
-    }
+  //   if (contract) {
+  //     contract.removeAllListeners();
+  //   }
 
-    console.log("listener ended...")
+  //   console.log("listener ended...")
    
-  }
+  // }
 
   async function fetchERC20Balance(walletProvider: any,tokenAddress: string) {
     // const ethersProvider = new BrowserProvider(walletProvider);
@@ -869,15 +880,6 @@ useEffect(() => {
               </div>
               <div className="w-[350px] bg-transparent text-gray-400 rounded-lg border border-none grid gap-4">
                 <div className="flex gap-4">
-                  {/* <a href="https://twitter.com/ChristChry84614" target="_blank" rel="noopener noreferrer" className=" text-gray-400 hover:underline">
-                    [twitter]
-                  </a>
-                  <a href="https://http://t.me/cryptochristt" target="_blank" rel="noopener noreferrer" className=" text-gray-400 hover:underline">
-                    [telegram]
-                  </a>
-                  <a href="https://http://cryptochrist.xyz" target="_blank" rel="noopener noreferrer" className=" text-gray-400 hover:underline">
-                    [website]
-                  </a> */}
                     {tokenDetails?.twitter && (
                       <a href={tokenDetails?.twitter} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:underline">
                         [twitter]
@@ -916,22 +918,130 @@ useEffect(() => {
                 <div className="text-xs text-gray-400">
                   when the market cap reaches $50,000 all the liquidity from the bonding curve will be deposited into Raydium and burned. progression increases as the price goes up.<br/><br/>there are 99,485,219 tokens still available for sale in the bonding curve and there is 54.848 {nativeTokenInfo.chain} in the bonding curve.
                 </div>
-                  <div className="text-yellow-500 font-bold">
+                  {/* <div className="text-yellow-500 font-bold">
                     👑 Crowned king of the hill on 12/04/2024, 12:20:58
-                  </div>
+                  </div> */}
                   <div className="grid gap-2">
                     <div className="font-bold">
                       Holder distribution
                     </div>
                     <div className="text-sm">
+                    {isLoading || holders.length === 0 ? (
                       <div>Loading...</div>
+                     ) : (
+                      <div className="grid gap-1">
+                          {holders.map((holder, index) => (
+                              <div key={holder.account} className="flex justify-between">
+                                  <a className="hover:underline" href={`https://solscan.io/account/${holder.account}`} target="_blank" rel="noopener noreferrer">
+                                      {index + 1}. {holder.account.substring(2, 8)}
+                                      {holder.account === tokenDetails?.creator ? ' 🤵‍♂️ (dev)' : ''}
+                                      {holder.account === tokenDetails?.token_address ? ' 🏦 (bonding curve)' : ''}
+                                  </a>
+                                  <div>
+                                      {((holder.balance / tokenSum) * 100).toFixed(2)}%
+                                  </div>
+                              </div>
+                          ))}
+                      </div>
+                    )}
                     </div>
                   </div>
               </div>
             </div>
           </div>
         </div>
-        
+        <div className="md:hidden relative grid h-full pb-24 custom-grid-rows-sm">
+          {activeTabSmScreen === 'info' && (
+             <div className="h-full p-4 overflow-auto">
+              <div className="w-[350px] bg-transparent text-gray-400 rounded-lg border border-none grid gap-4">
+                  <div className="gap-3 h-fit items-start flex">
+                    <img src={tokenDetails?.image_url} className="w-32 object-contain cursor-pointer"></img>
+  
+                      {/* <img src="https://pump.mypinata.cloud/ipfs/QmRMNwrwC2AZs5XAepCUGMtuwKkdy5saGDNzFoJtnovNjp" class="w-32 object-contain cursor-pointer"> */}
+                    <div>
+                        <div className="font-bold text-sm">
+                          {tokenDetails?.token_name} (ticker: {tokenDetails?.token_ticker})
+                        </div>
+                        <div className="text-xs text-gray-400">
+                        { tokenDetails?.token_description}
+                        </div>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-400 mb-1">
+                      bonding curve progress: {progress} %
+                    </div>
+                    {/* <div aria-valuemax="100" aria-valuemin="0" role="progressbar" data-state="indeterminate" data-max="100" className="relative h-4 overflow-hidden rounded-full dark:bg-slate-800 w-full bg-gray-700">
+                        <div data-state="indeterminate" data-max="100" class="h-full w-full flex-1 bg-green-300 transition-all dark:bg-slate-50" style="transform: translateX(-99%);"></div>
+                    </div> */}
+                    <IndeterminateProgressBar progress={progress} />
+  
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    when the market cap reaches $50,000 all the liquidity from the bonding curve will be deposited into Raydium and burned. progression increases as the price goes up.<br/><br/>there are 99,485,219 tokens still available for sale in the bonding curve and there is 54.848 {nativeTokenInfo.chain} in the bonding curve.
+                  </div>
+                  <div className="grid gap-2">
+                    <div className="font-bold">
+                      Holder distribution
+                    </div>
+                    <div className="text-sm">
+                      <div className="grid gap-1">
+                      {holders.map((holder, index) => (
+                        <div key={holder.account} className="flex justify-between">
+                            <a className="hover:underline" href={`https://solscan.io/account/${holder.account}`} target="_blank" rel="noopener noreferrer">
+                                {index + 1}. {holder.account.substring(2, 8)}
+                                {holder.account === tokenDetails?.creator ? ' 🤵‍♂️ (dev)' : ''}
+                                {holder.account === tokenDetails?.token_address ? ' 🏦 (bonding curve)' : ''}
+                            </a>
+                            <div>
+                                {((holder.balance / tokenSum) * 100).toFixed(2)}%
+                            </div>
+                        </div>
+                      ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+          )}
+
+          {activeTabSmScreen === 'chart' && (
+              <div className="h-full p-4 overflow-auto">
+                <div className="w-full h-full" id="chart">
+                  <div className="grid h-fit gap-2">
+                    <div className="chart-container ">
+                      <CandleChart tokenAddress={params.tokenInfo[1]} chainId={params.tokenInfo[0]}/>
+                      <div className="hidden">
+                        <div id="dexscreener-embed">
+                          {/* <iframe src="https://dexscreener.com/solana/null?embed=1&amp;theme=dark&amp;trades=0&amp;info=0" style="height: 600px; width: 95%;"></iframe> */}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+          )}
+
+          {/* {activeTabSmScreen === 'buysell' && (
+            <BuySellSm/>
+          )} */}
+         
+            <div className="md:relative fixed bottom-0 z-10 w-full flex justify-around border-t-2 border-gray-200 py-4 bg-[#5c5f66]">
+                <button onClick={() => setActiveTabSmScreen('info')} className={getButtonClass('info')}>
+                    [info]
+                </button>
+                <button onClick={() => setActiveTabSmScreen('chart')} className={getButtonClass('chart')}>
+                    [chart]
+                </button>
+                <button onClick={() => setActiveTabSmScreen('buysell')} className={getButtonClass('buysell')}>
+                    [buy/sell]
+                </button>
+                <button onClick={() => setActiveTabSmScreen('txs')} className={getButtonClass('txs')}>
+                    [txs]
+                </button>
+            </div>
+        </div>
+
       </main>
     </div>
   )

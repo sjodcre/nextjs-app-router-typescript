@@ -41,6 +41,10 @@
   grid-template-rows: auto auto auto 1fr;
 }
 
+custom-grid-rows-sm {
+  grid-template-rows: 1fr auto;
+}
+
 .indeterminate-bar {
   animation: slide 2s infinite linear;
 }

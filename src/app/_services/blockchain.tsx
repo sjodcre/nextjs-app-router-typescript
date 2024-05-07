@@ -86,14 +86,7 @@ const deployToken = async (token: TokenParams, walletProvider: any): Promise<Tok
         datetime: Math.floor(Date.now() / 1000),
         tx_hash: txHash?.toString() || '' // Current timestamp
         };
-      // await postTokenData({
-      //   token_address: contractAddress,
-      //   token_symbol: token.symbol,
-      //   token_name: token.name,
-      //   token_description: "Test deploy store backend 1", // Add more details if necessary
-      //   creator:signer.address, // Adjust accordingly
-      //   datetime: Math.floor(Date.now() / 1000) // Current timestamp
-      // });
+
 
       return tokenListData
 

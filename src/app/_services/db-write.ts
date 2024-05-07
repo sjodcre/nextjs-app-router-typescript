@@ -1,10 +1,22 @@
+// import { error } from "console";
+
+import { TokenHolder } from "../_utils/types";
+
 const normalizeValue = (value: number): number => {
     return value / 1e18;
 };
 
 export const postTokenData = async (data: any) => {
+    let url = '';
+    if (data.chainid === 'ftm'){
+        url = 'http://localhost:3001/ftm/deploytoken'
+    } else if (data.chainid === 'sei') {
+        url = 'http://localhost:3001/sei/deploytoken'
+    } else {
+        throw new Error('unsupported chain id!')
+    }
     try {
-        const response = await fetch('http://localhost:3001/deploytoken', {
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -39,7 +51,16 @@ export const initOHLCData = async (selectedChain: string, tokenAddress: string, 
             tx_hash: txHash
         };
 
-        const response = await fetch('http://localhost:3001/initialize-ohlc', {
+        let url = ''
+        if (selectedChain === 'ftm'){
+            url = 'http://localhost:3001/initialize-ohlc-ftm'
+        } else if ( selectedChain ==='sei') {
+            url = 'http://localhost:3001/initialize-ohlc-sei'
+        } else {
+            throw new Error('incorrect chain id!')
+        }
+
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -72,9 +93,17 @@ export const postTransactionAndOHLC = async (transactionData: any) => {
     // Calculate price and volume (assumes amount and deposit are already in the smallest unit)
     const price = parseFloat(deposit) / parseFloat(amount); // This assumes both values are normalized to the same scale
     const volume = parseFloat(amount);
+    let url = '';
+    if (selectedChain ==='ftm'){
+        url = 'http://localhost:3001/ftm/transaction-and-ohlc'
+    } else if (selectedChain === 'sei') {
+        url = 'http://localhost:3001/sei/transaction-and-ohlc'
+    } else {
+        throw new Error("incorrect chain id!")
+    }
 
     try {
-        const response = await fetch('http://localhost:3001/transaction-and-ohlc', {
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -103,27 +132,18 @@ export const postTransactionAndOHLC = async (transactionData: any) => {
     }
 };
 
-// export const queryDataUpdates = async (tokenAddress: string, chainId: string) => {
-//     // const tokenAddress = "0x3d8be50ca75d4";
-//     // const chainId = 1;
-//     console.log("fetching...");
-//     try {
-//         const response = await fetch(`http://localhost:3001/token-info?token_address=${tokenAddress}&chainid=${chainId}`);
-//         if (!response.ok) {
-//             throw new Error(`HTTP error! status: ${response.status}`);
-//         }
-//         const data = await response.json();
-//         return data;
-//     } catch (error) {
-//         console.error("Failed to fetch data:", error);
-//         return null;  // Or handle error appropriately depending on your application requirements
-//     }
-// };
+export const getTokenTrades = async (chainId: string, tokenAddress: string, ) => {
+    let url = '';
+    if (chainId === 'ftm') {
+        url = `http://localhost:3001/get-trades-ftm?tokenAddress=${tokenAddress}`
+    } else if (chainId === 'sei') {
+        url = `http://localhost:3001/get-trades-sei?tokenAddress=${tokenAddress}`
+    } else {
+        throw new Error('incorrect chain id!')
+    }
 
-export const getTokenTrades = async (tokenAddress: string, chainId: string) => {
-    // console.log("fetching...");
     try {
-        const response = await fetch(`http://localhost:3001/get-trades?tokenAddress=${tokenAddress}`);
+        const response = await fetch(url);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -136,11 +156,16 @@ export const getTokenTrades = async (tokenAddress: string, chainId: string) => {
 };
 
 export const fetchTokenInfo = async (chainId: string, tokenAddress: string) => {
-    // const tokenAddress = "0x9AA19CF4849c03a77877CaFBf61003aeDFDA3779";
-    // const chainId = 1;
-    // console.log("fetching data from database...");
+    let url = ''
+    if (chainId === 'ftm') {
+        url = `http://localhost:3001/token-info-ftm?token_address=${tokenAddress}&chainid=${chainId}`
+    } else if (chainId ==='sei') {
+        url = `http://localhost:3001/token-info-sei?token_address=${tokenAddress}&chainid=${chainId}`
+    } else {
+        throw new Error('incorrect chain id!')
+    }
     try {
-        const response = await fetch(`http://localhost:3001/token-info?token_address=${tokenAddress}&chainid=${chainId}`);
+        const response = await fetch(url);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -151,4 +176,36 @@ export const fetchTokenInfo = async (chainId: string, tokenAddress: string) => {
         console.error("Failed to fetch data:", error);
         return null;  // Or handle error appropriately depending on your application requirements
     }
-  };  
+  };
+
+  export const getTopTokenHolders = async (chainId: string, tokenAddress: string) : Promise<TokenHolder[]>=> {
+    let url = ''
+    if (chainId ==='ftm') {
+        url = `http://localhost:3001/ftm/top-holders/${tokenAddress}`
+    } else if (chainId ==='sei') {
+        url = `http://localhost:3001/sei/top-holders/${tokenAddress}`
+    } else {
+        throw new Error('incorrect chain id!')
+    }
+
+    return fetch(url)
+        .then(response => response.json())
+        .catch(error => {
+            console.error("Failed to fetch top token holders:", error);
+            return [];
+        });
+
+
+    // try {
+    //     const response = await fetch(url);
+    //     if (!response.ok) {
+    //         throw new Error(`HTTP error! status: ${response.status}`);
+    //     }
+    //     const data = await response.json();
+    //     console.log(data)
+    //     return data;
+    // } catch (error) {
+    //     console.error("Failed to fetch top token holders:", error);
+    //     return null;
+    // }
+};
