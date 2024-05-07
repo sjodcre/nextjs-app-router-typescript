@@ -173,7 +173,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
 
   //set native token info, token details, trades, market cap
-  useEffect(() => {
+  /* useEffect(() => {
     // const chainId = params.tokenInfo[0] === 'sei' ? '1' : '2';
     setNativeTokenInfo({
       chain: params.tokenInfo[0] === 'sei' ? 'SEI' : 'FTM',
@@ -203,8 +203,60 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     };
 
     fetchData();
+    console.log("data fetch");
+    const intervalId = setInterval(fetchData, 10000); // 30 seconds in milliseconds
+
+    // Cleanup function to clear the interval when the component unmounts or before it re-renders
+    return () => {
+        clearInterval(intervalId);
+    };
+
   }, [params.tokenInfo, nativeTokenPrice]);
-  
+   */
+
+//30 sec interval
+useEffect(() => {
+  // Function to fetch data
+  const fetchData = async () => {
+      // Fetch token info and trades data
+      const tokenInfoPromise = fetchTokenInfo(params.tokenInfo[0], params.tokenInfo[1]);
+      const tradesDataPromise = getTokenTrades(params.tokenInfo[1], params.tokenInfo[0]);
+
+      // Wait for both promises to resolve
+      const [tokenInfo, tradesData] = await Promise.all([tokenInfoPromise, tradesDataPromise]);
+
+      // Update state with fetched data
+      setTokenDetails(tokenInfo);
+      setTrades(tradesData);
+
+      // Calculate market cap if tradesData and nativeTokenPrice are available
+      if (tradesData && tradesData.length > 0 && nativeTokenPrice) {
+          const marketCap = tradesData[0].sum * tradesData[0].price_per_token * nativeTokenPrice / 1E18;
+          const formattedMarketCap = marketCap.toLocaleString('en-US', {
+              style: 'decimal',
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+          });
+          setMarketCap(formattedMarketCap);
+      }
+      console.log("data fetch");
+  };
+
+  // Initial fetch of data
+  fetchData();
+ 
+
+  // Set up interval to fetch data every 10 seconds
+  const intervalId = setInterval(fetchData, 10000); // 10 seconds in milliseconds
+
+  // Cleanup function to clear the interval when the component unmounts or before it re-renders
+  return () => {
+      clearInterval(intervalId);
+  };
+
+}, [params.tokenInfo, nativeTokenPrice]);
+
+
   //slippage dialog
   const toggleDialog = () => setDialogOpen(!dialogOpen);
 
