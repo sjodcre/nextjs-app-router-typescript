@@ -86,9 +86,9 @@ class CustomDatafeed {
                 // console.log("chainid:", this.chainId)
                 let url = ''
                 if (this.chainId === 'sei'){
-                    url = `http://localhost:3001/ohlc-sei?token_address=${this.tokenAddress}&chainid=${this.chainId}&resolution=${resolution}&from=${from}&to=${to}`
+                    url = `http://localhost:3001/ohlc-sei?token_address=${this.tokenAddress}&resolution=${resolution}&from=${from}&to=${to}`
                 } else if (this.chainId ==='ftm') {
-                    url = `http://localhost:3001/ohlc-ftm?token_address=${this.tokenAddress}&chainid=${this.chainId}&resolution=${resolution}&from=${from}&to=${to}`
+                    url = `http://localhost:3001/ohlc-ftm?token_address=${this.tokenAddress}&resolution=${resolution}&from=${from}&to=${to}`
                 } else {
                     throw new Error('invalid chain id!')
                 }
@@ -120,9 +120,9 @@ class CustomDatafeed {
                         if (firstDataRequest){
                        
                         if (this.chainId === 'sei'){
-                            url = `http://localhost:3001/sei/data/latest-time?token_address=${this.tokenAddress}&chainid=${this.chainId}`
+                            url = `http://localhost:3001/sei/data/latest-time?token_address=${this.tokenAddress}`
                         } else if (this.chainId ==='ftm') {
-                            url = `http://localhost:3001/ftm/data/latest-time?token_address=${this.tokenAddress}&chainid=${this.chainId}`
+                            url = `http://localhost:3001/ftm/data/latest-time?token_address=${this.tokenAddress}`
                         } else {
                             throw new Error('invalid chain id!')
                         }
@@ -189,9 +189,9 @@ class CustomDatafeed {
     public resolveSymbol(symbolName: string, onSymbolResolvedCallback: (symbolInfo: any) => void, onResolveErrorCallback: (error: string) => void) {
         let url = ''
         if (this.chainId === 'sei'){
-            url = `http://localhost:3001/token-info-sei?token_address=${this.tokenAddress}&chainid=${this.chainId}`
+            url = `http://localhost:3001/token-info-sei?token_address=${this.tokenAddress}`
         } else if (this.chainId ==='ftm') {
-            url = `http://localhost:3001/token-info-ftm?token_address=${this.tokenAddress}&chainid=${this.chainId}`
+            url = `http://localhost:3001/token-info-ftm?token_address=${this.tokenAddress}`
         } else {
             throw new Error('invalid chain id!')
         }

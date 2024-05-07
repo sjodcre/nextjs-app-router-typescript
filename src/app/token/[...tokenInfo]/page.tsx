@@ -156,7 +156,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
         const ethersProvider = new BrowserProvider(walletProvider);
         fetchERC20Balance(ethersProvider, params.tokenInfo[1])
       .then(balance => {
-
+        
         setUserBalance(prevState => ({
           ...prevState,
           token: Number(balance)  // Replace `newValue` with the actual new value for the token balance
@@ -218,62 +218,70 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   }, [params.tokenInfo, nativeTokenPrice]);
    */
 
+  useEffect(() => {
+    setNativeTokenInfo({
+      chain: params.tokenInfo[0] === 'sei' ? 'SEI' : 'FTM',
+      chainId: params.tokenInfo[0] === 'sei' ? 713715: 64165,
+      chainLogo: params.tokenInfo[0] === 'sei' ? '/sei-logo.png' : '/ftm-logo.png'
+    });
+  }, [params.tokenInfo, nativeTokenPrice])
 //30 sec interval
-useEffect(() => {
-  // Function to fetch data
-  const fetchData = async () => {
-      // Fetch token info and trades data
-      const tokenInfoPromise = fetchTokenInfo(params.tokenInfo[0], params.tokenInfo[1]);
-      const tradesDataPromise = getTokenTrades(params.tokenInfo[0], params.tokenInfo[1]);
+  useEffect(() => {
+    // Function to fetch data
+    const fetchData = async () => {
+        // Fetch token info and trades data
+        const tokenInfoPromise = fetchTokenInfo(params.tokenInfo[0], params.tokenInfo[1]);
+        const tradesDataPromise = getTokenTrades(params.tokenInfo[0], params.tokenInfo[1]);
 
-      // Wait for both promises to resolve
-      const [tokenInfo, tradesData] = await Promise.all([tokenInfoPromise, tradesDataPromise]);
+        // Wait for both promises to resolve
+        const [tokenInfo, tradesData] = await Promise.all([tokenInfoPromise, tradesDataPromise]);
 
-      // Update state with fetched data
-      setTokenDetails(tokenInfo);
-      setTrades(tradesData);
-      setTokenSum(tradesData[0].sum);
-      getTopTokenHolders(params.tokenInfo[0],params.tokenInfo[1]);
+        // Update state with fetched data
+        setTokenDetails(tokenInfo);
+        setTrades(tradesData);
+        setTokenSum(tradesData[0].sum);
+        getTopTokenHolders(params.tokenInfo[0],params.tokenInfo[1]);
 
-      // Calculate market cap if tradesData and nativeTokenPrice are available
-      if (tradesData && tradesData.length > 0 && nativeTokenPrice) {
-          const marketCap = tradesData[0].sum * tradesData[0].price_per_token * nativeTokenPrice / 1E18;
-          const formattedMarketCap = marketCap.toLocaleString('en-US', {
-              style: 'decimal',
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2
-          });
-          setMarketCap(formattedMarketCap);
-      }
-      console.log("data fetch");
-  };
+        // Calculate market cap if tradesData and nativeTokenPrice are available
+        if (tradesData && tradesData.length > 0 && nativeTokenPrice) {
+            const marketCap = tradesData[0].sum * tradesData[0].price_per_token * nativeTokenPrice / 1E18;
+            const formattedMarketCap = marketCap.toLocaleString('en-US', {
+                style: 'decimal',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+            setMarketCap(formattedMarketCap);
+        }
+        console.log("data fetch");
+    };
 
-  // Initial fetch of data
-  fetchData();
- 
+    // Initial fetch of data
+    fetchData();
+  
 
-  // Set up interval to fetch data every 10 seconds
-  const intervalId = setInterval(fetchData, 10000); // 10 seconds in milliseconds
+    // Set up interval to fetch data every 10 seconds
+    const intervalId = setInterval(fetchData, 10000); // 10 seconds in milliseconds
 
-  // Cleanup function to clear the interval when the component unmounts or before it re-renders
-  return () => {
-      clearInterval(intervalId);
-  };
+    // Cleanup function to clear the interval when the component unmounts or before it re-renders
+    return () => {
+        clearInterval(intervalId);
+    };
 
-}, [params.tokenInfo, nativeTokenPrice]);
+  }, [params.tokenInfo, nativeTokenPrice]);
 
-useEffect(() => {
-  const fetchHolders = async () => {
-    setIsLoading(true); // Start loading
+  //fetch token holders
+  useEffect(() => {
+    const fetchHolders = async () => {
+      setIsLoading(true); // Start loading
 
-    const data = await getTopTokenHolders(params.tokenInfo[0],params.tokenInfo[1]); // Assume this fetches the data as shown in your example
-    setHolders(data);
-    const sum = data.reduce((acc: any, holder: { balance: any; }) => acc + holder.balance, 0);
-    setTokenSum(sum);
-    setIsLoading(false); // End loading
-  };
-  fetchHolders();
-}, []);
+      const data = await getTopTokenHolders(params.tokenInfo[0],params.tokenInfo[1]); // Assume this fetches the data as shown in your example
+      setHolders(data);
+      const sum = data.reduce((acc: any, holder: { balance: any; }) => acc + holder.balance, 0);
+      setTokenSum(sum);
+      setIsLoading(false); // End loading
+    };
+    fetchHolders();
+  }, []);
 
   //slippage dialog
   const toggleDialog = () => setDialogOpen(!dialogOpen);
@@ -448,6 +456,8 @@ useEffect(() => {
     const contract = new ethers.Contract(tokenAddress, ERC20TestArtifact.abi, signer);
     
     try {
+      // console.log(chainId)
+      // console.log(nativeTokenInfo.chainId)
       if(chainId === nativeTokenInfo.chainId){
         // console.log('pass here')
         const balance = await contract.balanceOf(signer.address.toString());

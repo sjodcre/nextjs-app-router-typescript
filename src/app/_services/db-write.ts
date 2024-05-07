@@ -39,7 +39,6 @@ export const postTokenData = async (data: any) => {
 export const initOHLCData = async (selectedChain: string, tokenAddress: string, creator: string, datetime:number, txHash: string) => {
     try {
         const transactionData = {
-            chainid: selectedChain, // Example static chain ID
             tokenAddress: tokenAddress, // Replace with actual token address
             account: creator,
             token_amount:1E16,
@@ -109,7 +108,6 @@ export const postTransactionAndOHLC = async (transactionData: any) => {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                chainid: selectedChain, // Example static chain ID
                 tokenAddress: contractAddress, 
                 account,
                 token_amount: amount,
@@ -158,9 +156,9 @@ export const getTokenTrades = async (chainId: string, tokenAddress: string, ) =>
 export const fetchTokenInfo = async (chainId: string, tokenAddress: string) => {
     let url = ''
     if (chainId === 'ftm') {
-        url = `http://localhost:3001/token-info-ftm?token_address=${tokenAddress}&chainid=${chainId}`
+        url = `http://localhost:3001/token-info-ftm?token_address=${tokenAddress}`
     } else if (chainId ==='sei') {
-        url = `http://localhost:3001/token-info-sei?token_address=${tokenAddress}&chainid=${chainId}`
+        url = `http://localhost:3001/token-info-sei?token_address=${tokenAddress}`
     } else {
         throw new Error('incorrect chain id!')
     }
