@@ -236,6 +236,7 @@ class CustomDatafeed {
 
     public subscribeBars(symbolInfo: LibrarySymbolInfo, resolution: ResolutionString, onTick: SubscribeBarsCallback, listenerGuid: string, onResetCacheNeededCallback: () => void) {
         console.log('[subscribeBars]: Subscribed', listenerGuid);
+        
     }
 
     public unsubscribeBars(subscriberUID: string) {
@@ -248,6 +249,7 @@ class CustomDatafeed {
 
     public subscribeQuotes(symbols: any, fastSymbols: any, onRealtimeCallback: any, listenerGUID: any) {
         console.log("subscribe quotes")
+        
     }
 
     public unsubscribeQuotes(listenerGUID: string | number) {

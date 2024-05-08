@@ -1,45 +1,8 @@
-// // Define types for the symbol generation function
-// interface SymbolInfo {
-//     short: string;
-//     full: string;
-// }
+// import BigNumber from "bignumber.js";
 
-// // Define type for the parsed symbol information
-// interface ParsedSymbol {
-//     exchange: string;
-//     fromSymbol: string;
-//     toSymbol: string;
-// }
+// import BigNumber from 'bignumber.js';
+// BigNumber.config({ EXPONENTIAL_AT: 1e+9 });  // Adjust as necessary for your precision needs
 
-// // Makes requests to the CryptoCompare API
-// export async function makeApiRequest(path: string): Promise<any> {
-//     try {
-//         const response = await fetch(`https://min-api.cryptocompare.com/${path}`);
-//         return response.json();
-//     } catch (error) {
-//         // Ensuring that 'error' has a 'status' field. Assuming it does not, use a default error message
-//         const status = (error as any).status ? (error as any).status : "unknown";
-//         throw new Error(`CryptoCompare request error: ${status}`);
-//     }
-// }
-
-// // Generates a symbol ID from a pair of the coins
-// export function generateSymbol(exchange: string, fromSymbol: string, toSymbol: string): SymbolInfo {
-//     const short = `${fromSymbol}/${toSymbol}`;
-//     return {
-//         short,
-//         full: `${exchange}:${short}`,
-//     };
-// }
-
-// // Returns all parts of the symbol
-// export function parseFullSymbol(fullSymbol: string): ParsedSymbol | null {
-//     const match = fullSymbol.match(/^(\w+):(\w+)\/(\w+)$/);
-//     if (!match) {
-//         return null;
-//     }
-//     return { exchange: match[1], fromSymbol: match[2], toSymbol: match[3] };
-// }
 
 export const extractFirstSixCharac = (input: string): string => {
     // Check if the input starts with '0x' and has at least 8 characters
@@ -48,3 +11,67 @@ export const extractFirstSixCharac = (input: string): string => {
     }
     return '';  // Return an empty string if conditions are not met
 };
+
+function calculateExpectedReturn(_supply: number, _reserveBalance: number, _reserveRatio: number, _depositAmount: number) {
+    const MAX_RESERVE_RATIO = 1000000;  // Adjust based on your contract
+
+    // Compute (1 + _depositAmount / _reserveBalance)
+    const ratio = 1 + _depositAmount / _reserveBalance;
+
+    // Compute (_reserveRatio / MAX_RESERVE_RATIO)
+    const exp = _reserveRatio / MAX_RESERVE_RATIO;
+
+    // Compute ratio ^ exp - 1
+    const factor = Math.pow(ratio, exp) - 1;
+
+    // Return _supply * factor
+    return _supply * factor;
+}
+
+export function calculateRequiredDeposit(_supply: number, _reserveBalance: number, _reserveRatio: number, Return: number) {
+    const MAX_RESERVE_RATIO = 1000000;  // Constant from your contract
+
+    // Calculate the inner part of the equation first
+    let innerPart = (Return / _supply + 1);
+    
+    // Calculate the root
+    let exp = MAX_RESERVE_RATIO / _reserveRatio;
+    let root = Math.pow(innerPart, exp);
+
+    // Calculate _depositAmount
+    let _depositAmount = (root - 1) * _reserveBalance;
+
+    return _depositAmount;
+}
+
+export function calculateMinTokensWithSlippage(_supply: number, _reserveBalance: number, _reserveRatio: number , _depositAmount: number , slippagePercent: number): number {
+    const tokensWithoutSlippage = calculateExpectedReturn(_supply, _reserveBalance, _reserveRatio, _depositAmount);
+    const slippageMultiplier = (100 - slippagePercent) / 100;
+
+    return Math.round(tokensWithoutSlippage * slippageMultiplier)
+}
+
+export function calculateBurnReturn(_supply: number, _reserveBalance: number, _reserveRatio: number, _sellAmount: number): number {
+    // Compute (1 - _sellAmount / _supply)
+    const MAX_RESERVE_RATIO = 1000000;  // Adjust based on your contract
+    const ratio = 1 - (_sellAmount / _supply);
+
+    // Compute (1 / (_reserveRatio / MAX_RESERVE_RATIO))
+    const exp = 1 / (_reserveRatio / MAX_RESERVE_RATIO);
+
+    // Compute ratio ^ exp
+    const factor = Math.pow(ratio, exp);
+
+    // Calculate return
+    const burnReturn = _reserveBalance * (1 - factor);
+
+    return burnReturn;
+}
+
+export function calculateMinReturnWithSlippage(_supply: number, _reserveBalance: number, _reserveRatio: number, _sellAmount: number, slippagePercent: number): number {
+    const burnReturnWithoutSlippage = calculateBurnReturn(_supply, _reserveBalance, _reserveRatio, _sellAmount);
+    const slippageMultiplier = (100 - slippagePercent) / 100;
+
+    // Calculate the minimum return based on the slippage percentage
+    return Math.round(burnReturnWithoutSlippage * slippageMultiplier);
+}

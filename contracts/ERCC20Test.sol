@@ -15,9 +15,11 @@ contract ERC20Test is BancorBondingCurve, ERC20, CappedGasPrice {
     uint256 public reserveBalance = 10*scale;
     uint256 public reserveRatio;
 
+
     error ErrorZeroReserveTokenProvided();
     error ErrorZeroContinuousTokenProvided();
     error ErrorInsufficientTokensToBurn();
+    error ErrorSlippageLimitExceeded();
 
     // Updated event signatures to include timestamp
     event ContinuousMint(address indexed account, uint256 amount, uint256 deposit);
@@ -32,13 +34,20 @@ contract ERC20Test is BancorBondingCurve, ERC20, CappedGasPrice {
         _mint(address(this), 1*scale);
     }
 
-    function mint() external payable validGasPrice {
-        _continuousMint(msg.value);
+    function mint(uint256 minTokens) external payable validGasPrice {
+        uint256 tokensToMint = calculateContinuousMintReturn(msg.value);
+        require(tokensToMint >= minTokens, "ErrorSlippageLimitExceeded");
+
+        _continuousMint(msg.value, tokensToMint);
     }
 
-    function burn(uint256 _amount) external validGasPrice {
-        uint256 returnAmount = _continuousBurn(_amount);
-        payable(msg.sender).transfer(returnAmount);
+    function burn(uint256 _amount, uint256 minReturn) external validGasPrice {
+        uint256 returnAmount = calculateContinuousBurnReturn(_amount);
+        // require(returnAmount >= minReturn, "ErrorSlippageLimitExceeded");
+        if (returnAmount < minReturn) {
+            revert ErrorSlippageLimitExceeded();
+        }
+        _continuousBurn(_amount, returnAmount);
     }
 
     function calculateContinuousMintReturn(uint256 _amount) public view returns (uint256 mintAmount) {
@@ -49,30 +58,43 @@ contract ERC20Test is BancorBondingCurve, ERC20, CappedGasPrice {
         return calculateSaleReturn(totalSupply(), reserveBalance, uint32(reserveRatio), _amount);
     }
 
-    function _continuousMint(uint256 _deposit) private returns (uint256) {
-        if (_deposit == 0) {
-            revert ErrorZeroReserveTokenProvided();
-        }
-
-        uint256 amount = calculateContinuousMintReturn(_deposit);
+     function _continuousMint(uint256 _deposit, uint256 amount) private {
         _mint(msg.sender, amount);
         reserveBalance += _deposit;
-        emit ContinuousMint(msg.sender, amount, _deposit);  // Emitting the event with a timestamp
-        return amount;
+        emit ContinuousMint(msg.sender, amount, _deposit);
     }
 
-    function _continuousBurn(uint256 _amount) private returns (uint256) {
-        if (_amount == 0) {
-            revert ErrorZeroContinuousTokenProvided();
-        }
-        if (balanceOf(msg.sender) < _amount) {
-            revert ErrorInsufficientTokensToBurn();
-        }
-
-        uint256 reimburseAmount = calculateContinuousBurnReturn(_amount);
-        reserveBalance -= reimburseAmount;
+    function _continuousBurn(uint256 _amount, uint256 reimburseAmount) private {
         _burn(msg.sender, _amount);
-        emit ContinuousBurn(msg.sender, _amount, reimburseAmount);  
-        return reimburseAmount;
+        reserveBalance -= reimburseAmount;
+        payable(msg.sender).transfer(reimburseAmount);
+        emit ContinuousBurn(msg.sender, _amount, reimburseAmount);
     }
+
+    // function _continuousMint(uint256 _deposit) private returns (uint256) {
+    //     if (_deposit == 0) {
+    //         revert ErrorZeroReserveTokenProvided();
+    //     }
+
+    //     uint256 amount = calculateContinuousMintReturn(_deposit);
+    //     _mint(msg.sender, amount);
+    //     reserveBalance += _deposit;
+    //     emit ContinuousMint(msg.sender, amount, _deposit);  // Emitting the event with a timestamp
+    //     return amount;
+    // }
+
+    // function _continuousBurn(uint256 _amount) private returns (uint256) {
+    //     if (_amount == 0) {
+    //         revert ErrorZeroContinuousTokenProvided();
+    //     }
+    //     if (balanceOf(msg.sender) < _amount) {
+    //         revert ErrorInsufficientTokensToBurn();
+    //     }
+
+    //     uint256 reimburseAmount = calculateContinuousBurnReturn(_amount);
+    //     reserveBalance -= reimburseAmount;
+    //     _burn(msg.sender, _amount);
+    //     emit ContinuousBurn(msg.sender, _amount, reimburseAmount);  
+    //     return reimburseAmount;
+    // }
 }

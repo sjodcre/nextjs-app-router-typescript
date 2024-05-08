@@ -1,13 +1,26 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { AppDispatch, useAppSelector } from '../_redux/store';
+import { setSlippage } from '../_redux/features/user-slice';
 
 interface SlippageDialogProps {
   open: boolean;
   onDialogClose: () => void;
+  // onSetSlippage: (slippage: string) => void; // Callback to pass slippage to parent
+
 }
 
 const SlippageDialog: React.FC<SlippageDialogProps> = ({ open, onDialogClose }) => {
-  const [slippage, setSlippage] = useState('1');
+  const slippageRedux = useAppSelector((state) => state.userReducer.value.slippage);
+  const [slippageUI, setSlippageUI] = useState(slippageRedux);
+  const dispatch = useDispatch<AppDispatch>();
+
+  const handleSlippageSet = () => {
+    // onSetSlippage(slippage);
+    dispatch(setSlippage(slippageUI))
+    onDialogClose();
+  };
 
   return (
     <Dialog.Root open={open} onOpenChange={onDialogClose}>
@@ -27,13 +40,13 @@ const SlippageDialog: React.FC<SlippageDialogProps> = ({ open, onDialogClose }) 
                 className="bg-[#2a2a3b] border border-slate-200 rounded-md p-2 w-fit justify-self-center"
                 type="number"
                 id = "slippage"
-                value={slippage}
-                onChange={(e) => setSlippage(e.target.value)}
+                value={slippageUI}
+                onChange={(e) => setSlippageUI(Number(e.target.value))}
             />
             <div className="text-xs">
                 This is the maximum amount of slippage you are willing to accept when placing trades
             </div>
-            <Dialog.Close className="text-slate-50 hover:font-bold hover:text-slate-50 cursor-pointer w-fit justify-self-center">
+            <Dialog.Close onClick= {handleSlippageSet} className="text-slate-50 hover:font-bold hover:text-slate-50 cursor-pointer w-fit justify-self-center">
                 Close
             </Dialog.Close>
           </div>

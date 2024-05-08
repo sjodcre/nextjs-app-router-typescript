@@ -15,6 +15,13 @@ export interface TokenHolder {
   balance: number;
 }
 
+export interface SmartContractError {
+  message?: string;
+  reason?: string;
+  code?: string;
+  stack?: string;
+}
+
 
 export type TokenPageDetails = {
   token_address: string;

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react";
-import { TokenHolder, TokenPageDetails, TradeData } from "@/app/_utils/types";
+import { SmartContractError, TokenHolder, TokenPageDetails, TradeData } from "@/app/_utils/types";
 import CandleChart from "@/app/_ui/candle-chart";
 import SlippageDialog from "@/app/_ui/slippage-dialog";
 import IndeterminateProgressBar from "@/app/_ui/indeterminate-progress-bar";
@@ -11,8 +11,9 @@ import { fetchTokenInfo, getTokenTrades, getTopTokenHolders, postTransactionAndO
 import { useSwitchNetwork, useWeb3ModalAccount, useWeb3ModalProvider } from "@web3modal/ethers/react";
 import { toast } from "react-toastify";
 import TradeItem from "@/app/_ui/trade-list";
-import { extractFirstSixCharac } from "@/app/_utils/helpers";
+import { calculateMinReturnWithSlippage, calculateMinTokensWithSlippage, calculateRequiredDeposit, extractFirstSixCharac } from "@/app/_utils/helpers";
 import { fetchNativeTokenPrice } from "@/app/_utils/native-token-pricing";
+import { useAppSelector } from "@/app/_redux/store";
 
 
 
@@ -21,10 +22,10 @@ import { fetchNativeTokenPrice } from "@/app/_utils/native-token-pricing";
 
 export default function TokenPage({ params }: { params: { tokenInfo: string } }) {
 
-
+  const slippage = useAppSelector((state) => state.userReducer.value.slippage);
   const [tokenDetails, setTokenDetails] = useState<TokenPageDetails>();
   const [tokenAmountToTrade, setTokenAmountToTrade] = useState('');
-  const [nativeToken, setNativeToken] = useState(true);
+  const [nativeTokenBool, setNativeTokenBool] = useState(true);
   const [activeTab, setActiveTab] = useState('thread');
   const [activeTabSmScreen, setActiveTabSmScreen] = useState('info');  // Default to showing the 'info' tab
   const [buySell, setBuySell] = useState('buy');
@@ -33,6 +34,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   const [progress, setProgress] = useState(0);
   const [holders, setHolders] = useState<TokenHolder[]>([]);
   const [tokenSum, setTokenSum] = useState(0);
+  const [nativeSum, setNativeSum] = useState(0);
   const [marketCap, setMarketCap] = useState<string>('0');
   const [providerReady, setProviderReady] = useState(false);
   const [trades, setTrades] = useState<TradeData[]>([]);
@@ -173,7 +175,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
         console.log("provider is not ready to read user")
       }
     }
-  }, [providerReady, transactionDone,switchNetwork]);
+  }, [chainId, providerReady, transactionDone,switchNetwork]);
 
 
   //set native token info, token details, trades, market cap
@@ -225,6 +227,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
       chainLogo: params.tokenInfo[0] === 'sei' ? '/sei-logo.png' : '/ftm-logo.png'
     });
   }, [params.tokenInfo, nativeTokenPrice])
+
 //30 sec interval
   useEffect(() => {
     // Function to fetch data
@@ -239,12 +242,14 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
         // Update state with fetched data
         setTokenDetails(tokenInfo);
         setTrades(tradesData);
-        setTokenSum(tradesData[0].sum);
-        getTopTokenHolders(params.tokenInfo[0],params.tokenInfo[1]);
+        setTokenSum(tradesData[0].sum_token);
+        setNativeSum(tradesData[0].sum_native)
 
+        getTopTokenHolders(params.tokenInfo[0],params.tokenInfo[1]);
+        fetchHolders();
         // Calculate market cap if tradesData and nativeTokenPrice are available
         if (tradesData && tradesData.length > 0 && nativeTokenPrice) {
-            const marketCap = tradesData[0].sum * tradesData[0].price_per_token * nativeTokenPrice / 1E18;
+            const marketCap = tradesData[0].sum_token * tradesData[0].price_per_token * nativeTokenPrice / 1E18;
             const formattedMarketCap = marketCap.toLocaleString('en-US', {
                 style: 'decimal',
                 minimumFractionDigits: 2,
@@ -270,20 +275,19 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   }, [params.tokenInfo, nativeTokenPrice]);
 
   //fetch token holders
-  useEffect(() => {
-    const fetchHolders = async () => {
+  const fetchHolders = async () => {
       setIsLoading(true); // Start loading
 
       const data = await getTopTokenHolders(params.tokenInfo[0],params.tokenInfo[1]); // Assume this fetches the data as shown in your example
+      // console.log(data)
+
       setHolders(data);
-      const sum = data.reduce((acc: any, holder: { balance: any; }) => acc + holder.balance, 0);
-      setTokenSum(sum);
+      // const sum = data.reduce((acc: any, holder: { balance: any; }) => acc + holder.balance, 0);
+      // setTokenSum(sum);
       setIsLoading(false); // End loading
     };
-    fetchHolders();
-  }, []);
 
-  //slippage dialog
+    //slippage dialog
   const toggleDialog = () => setDialogOpen(!dialogOpen);
 
   //tokena mount to buy/sell
@@ -327,7 +331,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
   //switch to native/erc20 token
   const handleToggleToken = () => {
-    setNativeToken(!nativeToken);
+    setNativeTokenBool(!nativeTokenBool);
   };
 
   const getButtonClass = (tabName: string) => {
@@ -335,6 +339,10 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
         "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 dark:ring-offset-slate-950 dark:focus-visible:ring-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50 h-10 px-4 py-2 hover:bg-transparent hover:text-white font-bold text-white bg-transparent" :
         "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 dark:ring-offset-slate-950 dark:focus-visible:ring-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50 h-10 px-4 py-2 text-black hover:bg-transparent hover:text-white";
   };
+
+  function isErrorWithMessage(error: unknown): error is { message: string } {
+    return typeof error === 'object' && error !== null && 'message' in error;
+}
 
   async function handleChainChange() {
     return new Promise((resolve, reject) => {
@@ -480,16 +488,64 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     const signer = await ethersProvider.getSigner();
     const ERC20TestContractAddress = params.tokenInfo[1].toString(); 
     const ERC20TestContract = new Contract(ERC20TestContractAddress, ERC20TestArtifact.abi, signer);
-    const options = {
-      value: ethers.parseUnits(tokenAmountToTrade.toString(), 18),
-      gasLimit: ethers.toBeHex(1000000), // Correct use of hexlify
-    };
-  
-    const mintTx = await ERC20TestContract.mint(options);
-    const txHash = mintTx.hash;
 
-    const result = await mintTx.wait();
-    return { result, txHash, ERC20TestContract };
+    const reserveBalance = nativeSum;
+    const reserveRatio = 50000;
+    let options = {};
+    if (!nativeTokenBool){
+      let depositAmount = calculateRequiredDeposit(tokenSum, reserveBalance, reserveRatio, Number(tokenAmountToTrade));
+      console.log("estimated deposit required",depositAmount);
+      console.log("format depost units", ethers.formatUnits(depositAmount.toString(), 18))
+      options = {
+        value: depositAmount.toString(),
+        gasLimit: ethers.toBeHex(1000000), // Correct use of hexlify
+      };
+    } else {
+      options = {
+        value: ethers.parseUnits(tokenAmountToTrade.toString(), 18),
+        gasLimit: ethers.toBeHex(1000000), // Correct use of hexlify
+      }; 
+    }
+    
+
+
+    const ethValue = ethers.parseUnits(tokenAmountToTrade.toString(), 18);
+    // console.log("scale", scale)
+    console.log("ethValue: ", ethValue)
+    const depositAmount = Number(ethers.formatUnits(ethValue, 18));
+    console.log("depositAmount: ", depositAmount)
+    console.log("tokenSum: ", tokenSum)
+    console.log("reserveBalance", reserveBalance)
+    console.log("reserveRatio", reserveRatio)
+    console.log("slippage", slippage)
+    // console.log("sent to fn", (Math.round(minTokens)).toString())
+
+    try {
+      const minTokens = calculateMinTokensWithSlippage(tokenSum, reserveBalance,reserveRatio, Number(ethValue), slippage);
+      console.log("minTokens", minTokens)
+
+      const mintTx = await ERC20TestContract.mint(minTokens.toString(),options);
+      const txHash = mintTx.hash;
+      const result = await mintTx.wait();
+
+      return { result, txHash, ERC20TestContract };
+    } catch (error) {
+      console.error("Transaction error:", error);
+
+      if (isErrorWithMessage(error) && error.message.includes("transaction execution reverted")) {
+        const errorMessage = "Buy transaction failed! Error: Transaction Execution Reverted.";
+        // toast.error(errorMessage);
+        throw new Error(errorMessage); // Rethrow if you need further error handling
+      }
+
+      // Generic error if no specific message
+      const genericMessage = "Transaction failed due to unknown reasons!";
+      // toast.error(genericMessage);
+      throw new Error(genericMessage);
+    }
+  
+    // const mintTx = await ERC20TestContract.mint(options);
+
   }
   
   async function handleSellToken(walletProvider: ethers.Eip1193Provider, tokenAmountToTrade: { toString: () => any | ethers.Overrides; }) {
@@ -500,7 +556,17 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     const options = {
       gasLimit: ethers.toBeHex(1000000),
     };
-    const burnTx = await ERC20TestContract.burn(tokenAmountToTrade.toString(), options);
+    const reserveRatio = 50000;
+    console.log("_supply", tokenSum)
+    console.log("_reserveBalance", nativeSum)
+    console.log("_reserveRatio", reserveRatio)
+    console.log("slippage", slippage)
+    console.log("_sellAmount",Number(tokenAmountToTrade.toString()) )
+
+
+    const minReturn = calculateMinReturnWithSlippage(tokenSum, nativeSum, reserveRatio, Number(tokenAmountToTrade.toString()), slippage);
+    console.log("minReturn", minReturn)
+    const burnTx = await ERC20TestContract.burn(tokenAmountToTrade.toString(),minReturn.toString(), options);
     const txHash = burnTx.hash;
     const result = await burnTx.wait();
     return { result, txHash, ERC20TestContract };
@@ -536,7 +602,15 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
               {
                 pending: 'Processing buy transaction...',
                 success: 'Buy transaction successful! 👌',
-                error: 'Buy transaction failed! 🤯'
+                error: {
+                  render({data}) {
+                      // Accessing error details
+                      if (isErrorWithMessage(data)) {
+                        return data.message;
+                    }
+                    return "An unexpected error occurred";
+                  }
+              }
               }
             ).then(({ result, txHash, ERC20TestContract }) => {
               if (result.status === 1) {
@@ -579,7 +653,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
               setTokenAmountToTrade('');
               setTransactionDone(true);
             }).catch(error => {
-              console.error("Transaction error:", error);
+              console.error("Buy transaction error:", error);
               setTransactionDone(false);
             });
           } else if (buySell === 'sell') {
@@ -631,7 +705,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
               setTokenAmountToTrade('');
               setTransactionDone(true);
             }).catch(error => {
-              console.error("Transaction error:", error);
+              console.error("Sell transaction error:", error);
               setTransactionDone(false);
             });
           }
@@ -790,7 +864,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                     disabled={buySell === 'sell'}
                     style={{ visibility: buySell === 'sell' ? 'hidden' : 'visible' }}  // Use inline style for visibility
                   >
-                    switch to {nativeToken ? tokenDetails?.token_ticker : nativeTokenInfo.chain}
+                    switch to {nativeTokenBool ? tokenDetails?.token_ticker : nativeTokenInfo.chain}
                   </button>
                     <div>
                       <button 
@@ -798,7 +872,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                         onClick={toggleDialog}
                         aria-haspopup="dialog"
                       >
-                        Set max slippage
+                        Set max slippage: {slippage}%
                       </button>
                       {dialogOpen && <SlippageDialog open={dialogOpen} onDialogClose={toggleDialog} />}
                     </div>
@@ -816,13 +890,13 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                       onChange={e => setTokenAmountToTrade(e.target.value)}/>
                         <div className="flex items-center ml-2 absolute right-2">
                         <span className="text-white mr-2">
-                          {buySell === 'sell' ? tokenDetails?.token_ticker : (nativeToken ? nativeTokenInfo.chain : tokenDetails?.token_ticker)}
+                          {buySell === 'sell' ? tokenDetails?.token_ticker : (nativeTokenBool ? nativeTokenInfo.chain : tokenDetails?.token_ticker)}
                         </span>
                         {/* Conditionally display token logo or chain logo */}
                         <img 
                           className="w-8 h-8 rounded-full bg-white" 
-                          src={buySell === 'sell' ? tokenDetails?.image_url : (nativeToken ? nativeTokenInfo.chainLogo : tokenDetails?.image_url)}
-                          alt={buySell === 'sell' ? tokenDetails?.token_name : (nativeToken ? nativeTokenInfo.chain : tokenDetails?.token_name)}
+                          src={buySell === 'sell' ? tokenDetails?.image_url : (nativeTokenBool ? nativeTokenInfo.chainLogo : tokenDetails?.image_url)}
+                          alt={buySell === 'sell' ? tokenDetails?.token_name : (nativeTokenBool ? nativeTokenInfo.chain : tokenDetails?.token_name)}
                         />
                           
                           {/* <span className="text-white mr-2">{nativeToken ? nativeTokenInfo.chain : tokenDetails?.token_ticker}</span>
@@ -835,7 +909,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
                     </div>
                     <div className="flex mt-2 bg-[#2e303a] p-1 rounded-lg">
-                      {nativeToken && (
+                      {nativeTokenBool && (
                           <div>
                             <button className="text-xs py-1 -ml-1 px-2 rounded bg-black text-gray-400 hover:bg-gray-800 hover:text-gray-300"
                             onClick={() => handleSetAmount('')}>
