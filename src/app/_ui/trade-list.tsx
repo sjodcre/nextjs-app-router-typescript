@@ -28,7 +28,7 @@ const timeSince = (date: number) => {
     return `${Math.floor(seconds)}s ago`;
 };
 
-const TradeItem = ({ trade }: { trade: TradeData }) => {
+const TradeItem = ({ trade, networkType }: { trade: TradeData, networkType: string }) => {
     const accountShort = useMemo(() => {
         return extractFirstSixCharac(trade.account)
     }, [trade.account]);
@@ -52,6 +52,17 @@ const TradeItem = ({ trade }: { trade: TradeData }) => {
             return `${(amount / 1e9).toFixed(2)}b`
         }
     }, [trade.token_amount]);
+
+    const transactionUrl = useMemo(() => {
+        switch (networkType) {
+            case 'ftm':
+                return `https://public-sonic.fantom.network/tx/${trade.tx_hash}`;
+            case 'sei':
+                return `https://seitrace.com/tx/${trade.tx_hash}`;
+            default:
+                return ''; // No link if no valid network type is specified
+        }
+    }, [networkType, trade.tx_hash]);
 
     return (
         <div className="text-xs my-1 bg-[#2e303a] rounded-lg grid grid-cols-4 sm:grid-cols-6 items-start ">
@@ -86,7 +97,10 @@ const TradeItem = ({ trade }: { trade: TradeData }) => {
                 {timeSince(trade.timestamp)}  {/* Use the new helper function for date formatting */}
 
             </div>
-            <a href={`https://seitrace.com/tx/${trade.tx_hash}`} target="_blank" rel="noopener noreferrer" className="hidden sm:block text-right p-3 hover:text-blue-500 hover:underline">
+            {/* <a href={`https://seitrace.com/tx/${trade.tx_hash}`} target="_blank" rel="noopener noreferrer" className="hidden sm:block text-right p-3 hover:text-blue-500 hover:underline">
+                {txHashShort}
+            </a> */}
+            <a href={transactionUrl} target="_blank" rel="noopener noreferrer" className="hidden sm:block text-right p-3 hover:text-blue-500 hover:underline">
                 {txHashShort}
             </a>
         </div>

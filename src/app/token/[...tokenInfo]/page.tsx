@@ -11,7 +11,7 @@ import { fetchTokenInfo, getTokenTrades, getTopTokenHolders, postTransactionAndO
 import { useSwitchNetwork, useWeb3ModalAccount, useWeb3ModalProvider } from "@web3modal/ethers/react";
 import { toast } from "react-toastify";
 import TradeItem from "@/app/_ui/trade-list";
-import { calculateMinReturnWithSlippage, calculateMinTokensWithSlippage, calculateRequiredDeposit, extractFirstSixCharac } from "@/app/_utils/helpers";
+import { calculateMinReturnWithSlippage, calculateMinTokensWithSlippage, calculateRequiredDeposit, extractFirstSixCharac, getAccountUrl } from "@/app/_utils/helpers";
 import { fetchNativeTokenPrice } from "@/app/_utils/native-token-pricing";
 import { useAppSelector } from "@/app/_redux/store";
 
@@ -51,7 +51,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     chainLogo: '',
   })
 
-  const { isConnected, chainId } = useWeb3ModalAccount()
+  const { isConnected, chainId, address } = useWeb3ModalAccount()
   const { walletProvider } = useWeb3ModalProvider()
   const seiWebSocket = "wss://evm-ws-arctic-1.sei-apis.com";
   // const ftmWebSocket = "wss://fantom-testnet.public.blastapi.io/";
@@ -174,8 +174,8 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
       } else {
         console.log("provider is not ready to read user")
       }
-    }
-  }, [chainId, providerReady, transactionDone,switchNetwork]);
+    } 
+  }, [address,chainId, providerReady, transactionDone,switchNetwork]);
 
 
   //set native token info, token details, trades, market cap
@@ -273,6 +273,12 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     };
 
   }, [params.tokenInfo, nativeTokenPrice]);
+
+  //when user change wallet
+  useEffect(()=> {
+    setTokenAmountToTrade(''); 
+  }, [address])
+
 
   //fetch token holders
   const fetchHolders = async () => {
@@ -828,7 +834,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                   {trades.length > 0 ? (
                   <div>
                       {trades.map(trade => (
-                          <TradeItem key={trade.txid} trade={trade} />
+                          <TradeItem key={trade.txid} trade={trade} networkType={params.tokenInfo[0]}/>
                       ))}
                   </div>
                     ) : (
@@ -1017,7 +1023,12 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                       <div className="grid gap-1">
                           {holders.map((holder, index) => (
                               <div key={holder.account} className="flex justify-between">
-                                  <a className="hover:underline" href={`https://solscan.io/account/${holder.account}`} target="_blank" rel="noopener noreferrer">
+                                   <a
+                                    className="hover:underline"
+                                    href={getAccountUrl(params.tokenInfo[0],holder.account)}
+                                    target={getAccountUrl(params.tokenInfo[0], holder.account) ? "_blank" : undefined}
+                                    rel={getAccountUrl(params.tokenInfo[0], holder.account) ? "noopener noreferrer" : undefined}
+                                  >
                                       {index + 1}. {holder.account.substring(2, 8)}
                                       {holder.account === tokenDetails?.creator ? ' 🤵‍♂️ (dev)' : ''}
                                       {holder.account === tokenDetails?.token_address ? ' 🏦 (bonding curve)' : ''}
@@ -1035,97 +1046,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
             </div>
           </div>
         </div>
-        <div className="md:hidden relative grid h-full pb-24 custom-grid-rows-sm">
-          {activeTabSmScreen === 'info' && (
-             <div className="h-full p-4 overflow-auto">
-              <div className="w-[350px] bg-transparent text-gray-400 rounded-lg border border-none grid gap-4">
-                  <div className="gap-3 h-fit items-start flex">
-                    <img src={tokenDetails?.image_url} className="w-32 object-contain cursor-pointer"></img>
-  
-                      {/* <img src="https://pump.mypinata.cloud/ipfs/QmRMNwrwC2AZs5XAepCUGMtuwKkdy5saGDNzFoJtnovNjp" class="w-32 object-contain cursor-pointer"> */}
-                    <div>
-                        <div className="font-bold text-sm">
-                          {tokenDetails?.token_name} (ticker: {tokenDetails?.token_ticker})
-                        </div>
-                        <div className="text-xs text-gray-400">
-                        { tokenDetails?.token_description}
-                        </div>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-400 mb-1">
-                      bonding curve progress: {progress} %
-                    </div>
-                    {/* <div aria-valuemax="100" aria-valuemin="0" role="progressbar" data-state="indeterminate" data-max="100" className="relative h-4 overflow-hidden rounded-full dark:bg-slate-800 w-full bg-gray-700">
-                        <div data-state="indeterminate" data-max="100" class="h-full w-full flex-1 bg-green-300 transition-all dark:bg-slate-50" style="transform: translateX(-99%);"></div>
-                    </div> */}
-                    <IndeterminateProgressBar progress={progress} />
-  
-                  </div>
-                  <div className="text-xs text-gray-400">
-                    when the market cap reaches $50,000 all the liquidity from the bonding curve will be deposited into Raydium and burned. progression increases as the price goes up.<br/><br/>there are 99,485,219 tokens still available for sale in the bonding curve and there is 54.848 {nativeTokenInfo.chain} in the bonding curve.
-                  </div>
-                  <div className="grid gap-2">
-                    <div className="font-bold">
-                      Holder distribution
-                    </div>
-                    <div className="text-sm">
-                      <div className="grid gap-1">
-                      {holders.map((holder, index) => (
-                        <div key={holder.account} className="flex justify-between">
-                            <a className="hover:underline" href={`https://solscan.io/account/${holder.account}`} target="_blank" rel="noopener noreferrer">
-                                {index + 1}. {holder.account.substring(2, 8)}
-                                {holder.account === tokenDetails?.creator ? ' 🤵‍♂️ (dev)' : ''}
-                                {holder.account === tokenDetails?.token_address ? ' 🏦 (bonding curve)' : ''}
-                            </a>
-                            <div>
-                                {((holder.balance / tokenSum) * 100).toFixed(2)}%
-                            </div>
-                        </div>
-                      ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-          )}
-
-          {activeTabSmScreen === 'chart' && (
-              <div className="h-full p-4 overflow-auto">
-                <div className="w-full h-full" id="chart">
-                  <div className="grid h-fit gap-2">
-                    <div className="chart-container ">
-                      <CandleChart tokenAddress={params.tokenInfo[1]} chainId={params.tokenInfo[0]}/>
-                      <div className="hidden">
-                        <div id="dexscreener-embed">
-                          {/* <iframe src="https://dexscreener.com/solana/null?embed=1&amp;theme=dark&amp;trades=0&amp;info=0" style="height: 600px; width: 95%;"></iframe> */}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-          )}
-
-          {/* {activeTabSmScreen === 'buysell' && (
-            <BuySellSm/>
-          )} */}
-         
-            <div className="md:relative fixed bottom-0 z-10 w-full flex justify-around border-t-2 border-gray-200 py-4 bg-[#5c5f66]">
-                <button onClick={() => setActiveTabSmScreen('info')} className={getButtonClass('info')}>
-                    [info]
-                </button>
-                <button onClick={() => setActiveTabSmScreen('chart')} className={getButtonClass('chart')}>
-                    [chart]
-                </button>
-                <button onClick={() => setActiveTabSmScreen('buysell')} className={getButtonClass('buysell')}>
-                    [buy/sell]
-                </button>
-                <button onClick={() => setActiveTabSmScreen('txs')} className={getButtonClass('txs')}>
-                    [txs]
-                </button>
-            </div>
-        </div>
+        
 
       </main>
    

@@ -75,3 +75,16 @@ export function calculateMinReturnWithSlippage(_supply: number, _reserveBalance:
     // Calculate the minimum return based on the slippage percentage
     return Math.round(burnReturnWithoutSlippage * slippageMultiplier);
 }
+
+export function getAccountUrl(chainid: string, holderAccount: string) {
+    // const networkType = params.tokenInfo[0]; // Assume params.tokenInfo[0] contains the network type
+
+    switch (chainid) {
+        case 'ftm':
+            return `https://public-sonic.fantom.network/address/${holderAccount}`;
+        case 'sei':
+            return `https://seitrace.com/address/${holderAccount}`;
+        default:
+            return ''; // No link in case of other networks
+    }
+}
