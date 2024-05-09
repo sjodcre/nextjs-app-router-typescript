@@ -7,7 +7,7 @@ import SlippageDialog from "@/app/_ui/slippage-dialog";
 import IndeterminateProgressBar from "@/app/_ui/indeterminate-progress-bar";
 import { BrowserProvider, Contract, ethers, Interface } from "ethers";
 import ERC20TestArtifact from '../../../../artifacts/contracts/ERCC20Test.sol/ERC20Test.json'
-import { fetchTokenInfo, getTokenTrades, getTopTokenHolders, postTransactionAndOHLC } from "@/app/_services/db-write";
+import { fetchTokenInfo, getTokenTrades, getTopTokenHolders, postTransactionAndOHLC, postTransactionData } from "@/app/_services/db-write";
 import { useSwitchNetwork, useWeb3ModalAccount, useWeb3ModalProvider } from "@web3modal/ethers/react";
 import { toast } from "react-toastify";
 import TradeItem from "@/app/_ui/trade-list";
@@ -364,17 +364,14 @@ const fetchData = async () => {
   const handleBuySellChange = (tab: string) => {
     setBuySell(tab);
     setTokenAmountToTrade('');
+    if(tab ==='sell'){
+      setNativeTokenBool(true);
+    }
   }
 
   //switch to native/erc20 token
   const handleToggleToken = () => {
     setNativeTokenBool(!nativeTokenBool);
-  };
-
-  const getButtonClass = (tabName: string) => {
-    return activeTabSmScreen === tabName ?
-        "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 dark:ring-offset-slate-950 dark:focus-visible:ring-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50 h-10 px-4 py-2 hover:bg-transparent hover:text-white font-bold text-white bg-transparent" :
-        "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 dark:ring-offset-slate-950 dark:focus-visible:ring-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50 h-10 px-4 py-2 text-black hover:bg-transparent hover:text-white";
   };
 
   function isErrorWithMessage(error: unknown): error is { message: string } {
@@ -520,7 +517,7 @@ const fetchData = async () => {
     }
   }
 
-  async function handleBuyToken(walletProvider: ethers.Eip1193Provider, tokenAmountToTrade: { toString: () => string; }) {
+  async function handleBuyToken(walletProvider: ethers.Eip1193Provider, tokenAmountToTrade: { toString: () => string; }, chain: string) {
     const ethersProvider = new BrowserProvider(walletProvider);
     const signer = await ethersProvider.getSigner();
     const ERC20TestContractAddress = params.tokenInfo[1].toString(); 
@@ -528,39 +525,45 @@ const fetchData = async () => {
 
     const reserveBalance = nativeSum;
     const reserveRatio = 50000;
-    let options = {};
+    let options: { value?: any; gasLimit?: string } = {};
+    let ethValue = 0;
+
     if (!nativeTokenBool){
       let depositAmount = calculateRequiredDeposit(tokenSum, reserveBalance, reserveRatio, Number(tokenAmountToTrade));
       console.log("estimated deposit required",depositAmount);
       console.log("format depost units", ethers.formatUnits(depositAmount.toString(), 18))
       options = {
-        value: depositAmount.toString(),
+        value: ethers.parseUnits(depositAmount.toString(), 1),
         gasLimit: ethers.toBeHex(1000000), // Correct use of hexlify
       };
+      ethValue = depositAmount;
     } else {
       options = {
         value: ethers.parseUnits(tokenAmountToTrade.toString(), 18),
         gasLimit: ethers.toBeHex(1000000), // Correct use of hexlify
       }; 
+      ethValue = Number(ethers.parseUnits(tokenAmountToTrade.toString(), 18));
     }
-    
-
-
-    const ethValue = ethers.parseUnits(tokenAmountToTrade.toString(), 18);
-    // console.log("scale", scale)
-    console.log("ethValue: ", ethValue)
-    const depositAmount = Number(ethers.formatUnits(ethValue, 18));
-    console.log("depositAmount: ", depositAmount)
-    console.log("tokenSum: ", tokenSum)
-    console.log("reserveBalance", reserveBalance)
-    console.log("reserveRatio", reserveRatio)
-    console.log("slippage", slippage)
-    // console.log("sent to fn", (Math.round(minTokens)).toString())
 
     try {
-      const minTokens = calculateMinTokensWithSlippage(tokenSum, reserveBalance,reserveRatio, Number(ethValue), slippage);
+      const minTokens = calculateMinTokensWithSlippage(tokenSum, reserveBalance,reserveRatio, ethValue, slippage);
       console.log("minTokens", minTokens)
-
+      const info = {
+        status: 'pending',
+        selectedChain: chain,
+        contractAddress: ERC20TestContractAddress,
+        account: signer.address,
+        amount: minTokens, // Ensure conversion to string before to Number if BigNumber
+        deposit: options.value, // Same conversion as above
+        timestamp: Math.floor(Date.now() / 1000),
+        trade: buySell.toString(),
+        txHash: ''
+      };
+      postTransactionData(info).then(response => {
+        console.log('Backend response:', response);
+      }).catch(error => {
+          console.error('Error posting data to backend:', error);
+      }); 
       const mintTx = await ERC20TestContract.mint(minTokens.toString(),options);
       const txHash = mintTx.hash;
       const result = await mintTx.wait();
@@ -635,7 +638,7 @@ const fetchData = async () => {
   
           if (buySell === 'buy') {
             toast.promise(
-              handleBuyToken(walletProvider, tokenAmountToTrade),
+              handleBuyToken(walletProvider, tokenAmountToTrade, chain),
               {
                 pending: 'Processing buy transaction...',
                 success: 'Buy transaction successful! 👌',
@@ -726,6 +729,7 @@ const fetchData = async () => {
                       // console.log("Processed Event Data:", info);
                       postTransactionAndOHLC(info).then(response => {
                         console.log('Backend response:', response);
+                        socket.emit("updated","updated to db");
                       }).catch(error => {
                           console.error('Error posting data to backend:', error);
                       });                

@@ -41,7 +41,7 @@ export function calculateRequiredDeposit(_supply: number, _reserveBalance: numbe
     // Calculate _depositAmount
     let _depositAmount = (root - 1) * _reserveBalance;
 
-    return _depositAmount;
+    return Math.round(_depositAmount);
 }
 
 export function calculateMinTokensWithSlippage(_supply: number, _reserveBalance: number, _reserveRatio: number , _depositAmount: number , slippagePercent: number): number {

@@ -78,7 +78,50 @@ export const initOHLCData = async (selectedChain: string, tokenAddress: string, 
 
 }
 
+export const postTransactionData = async (transactionData: any) => {
+    const { status, selectedChain, contractAddress, account, amount, deposit, timestamp, trade, txHash } = transactionData;
 
+    const price = parseFloat(deposit) / parseFloat(amount); // This assumes both values are normalized to the same scale
+    const volume = parseFloat(amount);
+    let url = '';
+    if (selectedChain ==='ftm'){
+        url = 'http://localhost:3001/transaction-update-ftm'
+    } else if (selectedChain === 'sei') {
+        url = 'http://localhost:3001/transaction-update-sei'
+    } else {
+        throw new Error("incorrect chain id!")
+    }
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                tokenAddress: contractAddress, 
+                account,
+                tx_status: status,
+                token_amount: amount,
+                native_amount: deposit,
+                time: timestamp,
+                price,
+                volume,
+                trade: trade,
+                tx_hash: txHash
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error("Failed to post transaction and OHLC data:", error);
+        return null;
+    }
+
+}
 
 export const postTransactionAndOHLC = async (transactionData: any) => {
     const { selectedChain, contractAddress, account, amount, deposit, timestamp, trade, txHash } = transactionData;
