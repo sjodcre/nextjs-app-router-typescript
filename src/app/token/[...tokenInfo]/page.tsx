@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react";
+import { SetStateAction, useEffect, useState } from "react";
 import { SmartContractError, TokenHolder, TokenPageDetails, TradeData } from "@/app/_utils/types";
 import CandleChart from "@/app/_ui/candle-chart";
 import SlippageDialog from "@/app/_ui/slippage-dialog";
@@ -14,7 +14,7 @@ import TradeItem from "@/app/_ui/trade-list";
 import { calculateMinReturnWithSlippage, calculateMinTokensWithSlippage, calculateRequiredDeposit, extractFirstSixCharac, getAccountUrl } from "@/app/_utils/helpers";
 import { fetchNativeTokenPrice } from "@/app/_utils/native-token-pricing";
 import { useAppSelector } from "@/app/_redux/store";
-
+import {socket } from "src/socket";
 
 
 
@@ -57,7 +57,37 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   // const ftmWebSocket = "wss://fantom-testnet.public.blastapi.io/";
   const ERC20TestContractAddress = params.tokenInfo[1]; 
   
+//new socket/websocket codes
+  const [isCon, setIsConnected] = useState(false);
+  const [transport, setTransport] = useState("N/A");
 
+  useEffect(() => {
+    if (socket.connected) {
+      onConnect();
+    }
+
+    function onConnect() {
+      setIsConnected(true);
+      setTransport(socket.io.engine.transport.name);
+
+      socket.io.engine.on("upgrade", (transport: { name: SetStateAction<string>; }) => {
+        setTransport(transport.name);
+      });
+    }
+
+    function onDisconnect() {
+      setIsConnected(false);
+      setTransport("N/A");
+    }
+
+    socket.on("connect", onConnect);
+    socket.on("disconnect", onDisconnect);
+
+    return () => {
+      socket.off("connect", onConnect);
+      socket.off("disconnect", onDisconnect);
+    };
+  }, []);
   
  
 //set bonding curve %
@@ -228,49 +258,50 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     });
   }, [params.tokenInfo, nativeTokenPrice])
 
-//30 sec interval
+
+// Function to fetch data
+const fetchData = async () => {
+  // Fetch token info and trades data
+  const tokenInfoPromise = fetchTokenInfo(params.tokenInfo[0], params.tokenInfo[1]);
+  const tradesDataPromise = getTokenTrades(params.tokenInfo[0], params.tokenInfo[1]);
+
+  // Wait for both promises to resolve
+  const [tokenInfo, tradesData] = await Promise.all([tokenInfoPromise, tradesDataPromise]);
+
+  // Update state with fetched data
+  setTokenDetails(tokenInfo);
+  setTrades(tradesData);
+  setTokenSum(tradesData[0].sum_token);
+  setNativeSum(tradesData[0].sum_native)
+
+  getTopTokenHolders(params.tokenInfo[0],params.tokenInfo[1]);
+  fetchHolders();
+  // Calculate market cap if tradesData and nativeTokenPrice are available
+  if (tradesData && tradesData.length > 0 && nativeTokenPrice) {
+      const marketCap = tradesData[0].sum_token * tradesData[0].price_per_token * nativeTokenPrice / 1E18;
+      const formattedMarketCap = marketCap.toLocaleString('en-US', {
+          style: 'decimal',
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+      });
+      setMarketCap(formattedMarketCap);
+  }
+  console.log("data fetch");
+};
+
+//Fetch Data useeffect
   useEffect(() => {
-    // Function to fetch data
-    const fetchData = async () => {
-        // Fetch token info and trades data
-        const tokenInfoPromise = fetchTokenInfo(params.tokenInfo[0], params.tokenInfo[1]);
-        const tradesDataPromise = getTokenTrades(params.tokenInfo[0], params.tokenInfo[1]);
-
-        // Wait for both promises to resolve
-        const [tokenInfo, tradesData] = await Promise.all([tokenInfoPromise, tradesDataPromise]);
-
-        // Update state with fetched data
-        setTokenDetails(tokenInfo);
-        setTrades(tradesData);
-        setTokenSum(tradesData[0].sum_token);
-        setNativeSum(tradesData[0].sum_native)
-
-        getTopTokenHolders(params.tokenInfo[0],params.tokenInfo[1]);
-        fetchHolders();
-        // Calculate market cap if tradesData and nativeTokenPrice are available
-        if (tradesData && tradesData.length > 0 && nativeTokenPrice) {
-            const marketCap = tradesData[0].sum_token * tradesData[0].price_per_token * nativeTokenPrice / 1E18;
-            const formattedMarketCap = marketCap.toLocaleString('en-US', {
-                style: 'decimal',
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
-            setMarketCap(formattedMarketCap);
-        }
-        console.log("data fetch");
-    };
+    
 
     // Initial fetch of data
     fetchData();
   
-
-    // Set up interval to fetch data every 10 seconds
-    const intervalId = setInterval(fetchData, 10000); // 10 seconds in milliseconds
-
-    // Cleanup function to clear the interval when the component unmounts or before it re-renders
-    return () => {
-        clearInterval(intervalId);
-    };
+    socket.on("refresh", (value: any) => {
+      console.log(value);
+      fetchData();
+    });
+    
+    
 
   }, [params.tokenInfo, nativeTokenPrice]);
 
@@ -642,6 +673,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                       // console.log("Processed Event Data:", info);
                       postTransactionAndOHLC(info).then(response => {
                         console.log('Backend response:', response);
+                        socket.emit("updated","updated to db");
                       }).catch(error => {
                           console.error('Error posting data to backend:', error);
                       });                
