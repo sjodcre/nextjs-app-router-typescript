@@ -117,14 +117,14 @@ export const postTransactionData = async (transactionData: any) => {
         }
         return await response.json();
     } catch (error) {
-        console.error("Failed to post transaction and OHLC data:", error);
+        console.error("Failed to post transaction:", error);
         return null;
     }
 
 }
 
 export const postTransactionAndOHLC = async (transactionData: any) => {
-    const { selectedChain, contractAddress, account, amount, deposit, timestamp, trade, txHash } = transactionData;
+    const { selectedChain, contractAddress, account, status, amount, deposit, timestamp, trade, txHash ,txid} = transactionData;
 
     // const normalizedAmount = normalizeValue(parseFloat(amount.toString())); // Ensuring number type if needed
     // const normalizedDeposit = normalizeValue(parseFloat(deposit.toString()));
@@ -151,14 +151,61 @@ export const postTransactionAndOHLC = async (transactionData: any) => {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
+                txid: txid,
                 tokenAddress: contractAddress, 
                 account,
+                tx_status: status,
                 token_amount: amount,
                 native_amount: deposit,
                 time: timestamp,
                 price,
                 volume,
                 trade: trade,
+                tx_hash: txHash
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error("Failed to post transaction and OHLC data:", error);
+        return null;
+    }
+};
+
+//newly added 
+export const postTransactionFailed = async (transactionData: any) => {
+    const { selectedChain, txid, status,timestamp,  txHash } = transactionData;
+
+    // const normalizedAmount = normalizeValue(parseFloat(amount.toString())); // Ensuring number type if needed
+    // const normalizedDeposit = normalizeValue(parseFloat(deposit.toString()));
+    
+    // Calculate price and volume using normalized values
+    // const price = normalizedDeposit / normalizedAmount; // Price per token in ether
+    // const volume = normalizedAmount; // Volume in ether
+    // Calculate price and volume (assumes amount and deposit are already in the smallest unit)
+    
+    let url = '';
+    if (selectedChain ==='ftm'){
+        url = 'http://localhost:3001/ftm/transaction-fail'
+    } else if (selectedChain === 'sei') {
+        url = 'http://localhost:3001/sei/transaction-fail'
+    } else {
+        throw new Error("incorrect chain id!")
+    }
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                txid: txid, 
+                tx_status: status,
+                time: timestamp,
                 tx_hash: txHash
             })
         });
