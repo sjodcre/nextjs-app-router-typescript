@@ -15,6 +15,7 @@ import { calculateMinReturnWithSlippage, calculateMinTokensWithSlippage, calcula
 import { fetchNativeTokenPrice } from "@/app/_utils/native-token-pricing";
 import { useAppSelector } from "@/app/_redux/store";
 import { socket } from "src/socket";
+import useSocket from "@/app/_utils/use-socket";
 
 
 
@@ -56,38 +57,46 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   const seiWebSocket = "wss://evm-ws-arctic-1.sei-apis.com";
   // const ftmWebSocket = "wss://fantom-testnet.public.blastapi.io/";
   const ERC20TestContractAddress = params.tokenInfo[1];
+  const { isSocketConnected, emitEvent } = useSocket();
 
-  //new socket/websocket codes
-  const [isCon, setIsConnected] = useState(false);
-  const [transport, setTransport] = useState("N/A");
 
   useEffect(() => {
-    if (socket.connected) {
-      onConnect();
+    if (isSocketConnected) {
+      emitEvent("someEvent", { key: 'value' });
     }
+  }, [isConnected, emitEvent]);
 
-    function onConnect() {
-      setIsConnected(true);
-      setTransport(socket.io.engine.transport.name);
+  // //new socket/websocket codes
+  // const [isCon, setIsConnected] = useState(false);
+  // const [transport, setTransport] = useState("N/A");
 
-      socket.io.engine.on("upgrade", (transport: { name: SetStateAction<string>; }) => {
-        setTransport(transport.name);
-      });
-    }
+  // useEffect(() => {
+  //   if (socket.connected) {
+  //     onConnect();
+  //   }
 
-    function onDisconnect() {
-      setIsConnected(false);
-      setTransport("N/A");
-    }
+  //   function onConnect() {
+  //     setIsConnected(true);
+  //     setTransport(socket.io.engine.transport.name);
 
-    socket.on("connect", onConnect);
-    socket.on("disconnect", onDisconnect);
+  //     socket.io.engine.on("upgrade", (transport: { name: SetStateAction<string>; }) => {
+  //       setTransport(transport.name);
+  //     });
+  //   }
 
-    return () => {
-      socket.off("connect", onConnect);
-      socket.off("disconnect", onDisconnect);
-    };
-  }, []);
+  //   function onDisconnect() {
+  //     setIsConnected(false);
+  //     setTransport("N/A");
+  //   }
+
+  //   socket.on("connect", onConnect);
+  //   socket.on("disconnect", onDisconnect);
+
+  //   return () => {
+  //     socket.off("connect", onConnect);
+  //     socket.off("disconnect", onDisconnect);
+  //   };
+  // }, []);
 
 
   //set bonding curve %
@@ -681,7 +690,9 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                       // console.log("Processed Event Data:", info);
                       postTransactionAndOHLC(info).then(response => {
                         console.log('Backend response:', response);
-                        socket.emit("updated", "updated to db");
+                        // socket.emit("updated", "updated to db");
+                        emitEvent("updated","updated to db");
+
                       }).catch(error => {
                         console.error('Error posting data to backend:', error);
                       });
@@ -748,7 +759,9 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                       // console.log("Processed Event Data:", info);
                       postTransactionAndOHLC(info).then(response => {
                         console.log('Backend response:', response);
-                        socket.emit("updated", "updated to db");
+                        // socket.emit("updated", "updated to db");
+                        emitEvent("updated","updated to db");
+
                       }).catch(error => {
                         console.error('Error posting data to backend:', error);
                       });

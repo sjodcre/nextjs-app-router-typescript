@@ -1,5 +1,6 @@
 // CustomDatafeed.ts
 import {  HistoryCallback, PeriodParams, LibrarySymbolInfo, ResolutionString, ErrorCallback, OnReadyCallback, SubscribeBarsCallback, DatafeedConfiguration} from '../../../public/static/charting_library/charting_library';
+import { subscribeOnStream, unsubscribeFromStream } from './use-socket';
 // import { makeApiRequest, generateSymbol, parseFullSymbol } from './helpers';
 
 interface Symbol {
@@ -21,7 +22,6 @@ const configurationData : DatafeedConfiguration = {
   
     supported_resolutions: ["1" as ResolutionString, "5" as ResolutionString, "30" as ResolutionString, "60" as ResolutionString, "D" as ResolutionString]
 }
-
 
 // async function getAllSymbols(): Promise<Symbol[]> {
 //     const data = await makeApiRequest('data/v3/all/exchanges');
@@ -55,10 +55,12 @@ class CustomDatafeed {
     // private data: Bar[];
     tokenAddress: string;
     chainId: string;
+    lastBarsCache;
 
     constructor(tokenAddress: string, chainId: string) {
         this.tokenAddress = tokenAddress;
         this.chainId = chainId
+        this.lastBarsCache = new Map()
         
     }
 
@@ -153,8 +155,7 @@ class CustomDatafeed {
             },
             50
             );
-        }
-
+    }
 
     public searchSymbols(userInput: string, exchange: string, symbolType: string, onResultReadyCallback: (symbols: Symbol[]) => void) {
         // getAllSymbols().then(symbols => {
@@ -234,13 +235,28 @@ class CustomDatafeed {
         }      
     }
 
-    public subscribeBars(symbolInfo: LibrarySymbolInfo, resolution: ResolutionString, onTick: SubscribeBarsCallback, listenerGuid: string, onResetCacheNeededCallback: () => void) {
-        console.log('[subscribeBars]: Subscribed', listenerGuid);
+    public  subscribeBars (
+        symbolInfo:LibrarySymbolInfo,
+        resolution: ResolutionString,
+        onRealtimeCallback:SubscribeBarsCallback ,
+        subscriberUID: string,
+        onResetCacheNeededCallback: () => void
+    ) {
+        console.log('[subscribeBars]: Subscribed', subscriberUID);
+        subscribeOnStream(
+            symbolInfo,
+            resolution,
+            onRealtimeCallback,
+            subscriberUID,
+            onResetCacheNeededCallback,
+            this.lastBarsCache.get(`${symbolInfo.exchange}:${symbolInfo.name}`)
+        );
         
     }
 
     public unsubscribeBars(subscriberUID: string) {
         console.log('[unsubscribeBars]: Unsubscribed', subscriberUID);
+        unsubscribeFromStream(subscriberUID);
     }
 
     public getQuotes (symbols: any, onDataCallback: any, onErrorCallback: ErrorCallback){

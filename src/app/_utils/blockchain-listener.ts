@@ -1,14 +1,7 @@
 // backend/listeners/blockchainListener.ts
 import { Contract, ethers } from "ethers";
 import ERC20TestArtifact from '../../../artifacts/contracts/ERCC20Test.sol/ERC20Test.json';
-// import WebSocket from 'ws';
 
-// const provider = new providers.JsonRpcProvider("YOUR_BLOCKCHAIN_RPC_URL");
-// const provider = new ethers.JsonRpcProvider("wss://evm-ws-arctic-1.sei-apis.com")
-
-// const contractAddress = "YOUR_CONTRACT_ADDRESS";
-// // const contract = new Contract(contractAddress, ERC20TestABI, provider);
-// const ERC20TestContract = new Contract(contractAddress, ERC20TestArtifact.abi, provider);
 const seiWebSocket = "wss://evm-ws-arctic-1.sei-apis.com";
 
   function createWebSocket() {
@@ -45,19 +38,7 @@ const listenToEvents = (ERC20TestContractAddress: string) => {
     wsProvider);
     console.log("WebSocket provider set up:", wsProvider);
     console.log("Contract initialized and listening for events at address:", ERC20TestContractAddress);
-    // wsProvider.on('open', () => {
-    //     console.log('WebSocket connection established');
-    //   });
-      
-    //   // Log any errors with the WebSocket
-    //   wsProvider.on('error', (error) => {
-    //     console.error('WebSocket error:', error);
-    //   });
-      
-    //   // Log when the WebSocket is disconnected
-    //   wsProvider.on('close', () => {
-    //     console.log('WebSocket connection closed');
-    //   });
+
     contract.on("Transfer", (from, to, value)=> {
         console.log("src: ", from);
         console.log("dst: ", to)
