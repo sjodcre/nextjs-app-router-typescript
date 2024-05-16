@@ -41,6 +41,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   const [trades, setTrades] = useState<TradeData[]>([]);
   const [transactionDone, setTransactionDone] = useState(false);
   const { switchNetwork } = useSwitchNetwork()
+  const [initialCheckDone, setInitialCheckDone] = useState(false);
   const [userBalance, setUserBalance] = useState({
     token: 0,
     native: 0,
@@ -225,11 +226,17 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
    //get pending tx
   useEffect(() => {
-    const changes = checkPendingTx(params.tokenInfo[0], params.tokenInfo[1]);
+    // console.log("tradesData",trades.length)
+    if (trades.length > 1 && !initialCheckDone){
+      const changes = checkPendingTx(params.tokenInfo[0], params.tokenInfo[1]);
+      setInitialCheckDone(true);
+
+    }
+
     // if (changes ==='true'){
     //   socket.emit("updated", "updated to db");
     // }
-  }, []);
+  }, [trades]);
 
   // Function to fetch data
   const fetchData = async () => {
@@ -247,6 +254,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
     getTopTokenHolders(params.tokenInfo[0], params.tokenInfo[1]);
     fetchHolders();
+
     // Calculate market cap if tradesData and nativeTokenPrice are available
     if (tradesData && tradesData.length > 0 && nativeTokenPrice) {
       const marketCap = tradesData[0].sum_token * tradesData[0].price_per_token * nativeTokenPrice / 1E18;
@@ -448,47 +456,47 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     const ERC20TestContractAddress = params.tokenInfo[1].toString();
     // const ERC20TestContract = new Contract(ERC20TestContractAddress, ERC20TestArtifact.abi, signer);
 
-    try {
+    // try {
      
       const toRet = mintToken(chain, ERC20TestContractAddress, walletProvider, nativeSum, tokenSum, nativeTokenBool,tokenAmountToTrade, slippage)
       return toRet;
-    } catch (error) {
-      console.error("Transaction error:", error);
+    // } catch (error) {
+    //   console.log("Transaction error:", error);
 
-      if (isErrorWithMessage(error) && error.message.includes("transaction execution reverted")) {
-        const errorMessage = "Buy transaction failed! Error: Transaction Execution Reverted.";
-        // toast.error(errorMessage);
-        throw new Error(errorMessage); // Rethrow if you need further error handling
-      }
+    //   if (isErrorWithMessage(error) && error.message.includes("transaction execution reverted")) {
+    //     const errorMessage = "Buy transaction failed! Error: Transaction Execution Reverted.";
+    //     // toast.error(errorMessage);
+    //     throw new Error(errorMessage); // Rethrow if you need further error handling
+    //   }
 
-      // Generic error if no specific message
-      const genericMessage = "Transaction failed due to unknown reasons!";
-      // toast.error(genericMessage);
-      throw new Error(genericMessage);
-    }
+    //   // Generic error if no specific message
+    //   const genericMessage = "Transaction failed due to unknown reasons!";
+    //   // toast.error(genericMessage);
+    //   throw new Error(genericMessage);
+    // }
   }
 
   async function handleSellToken(walletProvider: any, tokenAmountToTrade: { toString: () => any | ethers.Overrides; }, chain:string) {
     const ERC20TestContractAddress = params.tokenInfo[1].toString();
 
-    try {
+    // try {
       const toRet = burnToken(chain, ERC20TestContractAddress, nativeSum,tokenSum,tokenAmountToTrade,slippage, walletProvider)
       return toRet;
 
-    } catch (error) {
-      console.error("Transaction error:", error);
+    // } catch (error) {
+    //   console.error("Transaction error:", error);
 
-      if (isErrorWithMessage(error) && error.message.includes("transaction execution reverted")) {
-        const errorMessage = "Buy transaction failed! Error: Transaction Execution Reverted.";
-        // toast.error(errorMessage);
-        throw new Error(errorMessage); // Rethrow if you need further error handling
-      }
+    //   if (isErrorWithMessage(error) && error.message.includes("transaction execution reverted")) {
+    //     const errorMessage = "Buy transaction failed! Error: Transaction Execution Reverted.";
+    //     // toast.error(errorMessage);
+    //     throw new Error(errorMessage); // Rethrow if you need further error handling
+    //   }
 
-      // Generic error if no specific message
-      const genericMessage = "Transaction failed due to unknown reasons!";
-      // toast.error(genericMessage);
-      throw new Error(genericMessage);
-    }
+    //   // Generic error if no specific message
+    //   const genericMessage = "Transaction failed due to unknown reasons!";
+    //   // toast.error(genericMessage);
+    //   throw new Error(genericMessage);
+    // }
     // console.log("minReturn", minReturn)
   }
 
@@ -521,15 +529,16 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
               {
                 pending: 'Processing buy transaction...',
                 success: 'Buy transaction successful! 👌',
-                error: {
-                  render({ data }) {
-                    // Accessing error details
-                    if (isErrorWithMessage(data)) {
-                      return data.message;
-                    }
-                    return "An unexpected error occurred";
-                  }
-                }
+                error: 'Transaction Failed'
+                // error: {
+                //   render({ data }) {
+                //     // Accessing error details
+                //     if (isErrorWithMessage(data)) {
+                //       return data.message;
+                //     }
+                //     return "An unexpected error occurred";
+                //   }
+                // }
               }
             ).then(({ result, txHash }) => {
               console.log("result status", result.status)
@@ -569,7 +578,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                     console.error("Error parsing log:", error);
                   }
                 });
-              } else {
+              } else if (result.status === 0){
                 console.log("Transaction failed with receipt:", result);
                 // Handle failure case
 
@@ -585,12 +594,27 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                   console.error('Error posting data to backend:', error);
                 });
 
+              } else {
+                console.log("transaction result not found")
+                // return 'Transaction not found or pending';
               }
-              // handle success, parse logs, etc.
               setTokenAmountToTrade('');
               setTransactionDone(true);
             }).catch(error => {
-              console.error("Buy transaction error:", error);
+              // console.error("Buy transaction error:", error);
+              // console.log(error.transaction)
+              // console.log(error.transaction.hash)
+              const info = {
+                selectedChain: chain,
+                status: "failed",
+                timestamp: Math.floor(Date.now() / 1000),
+                txHash: error.transaction.hash
+              };
+              postTransactionFailed(info).then(response => {
+                console.log('Backend response:', response);
+              }).catch(error => {
+                console.error('Error posting data to backend:', error);
+              });      
               setTransactionDone(false);
             });
           } else if (buySell === 'sell') {
@@ -638,7 +662,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                     console.error("Error parsing log:", error);
                   }
                 });
-              } else {
+              } else if (result.status === 0){
                 console.log("Transaction failed with receipt:", result);
                 // Handle failure case
                 const info = {
@@ -652,12 +676,23 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                 }).catch(error => {
                   console.error('Error posting data to backend:', error);
                 });
-              }
+              } 
               // handle success, parse logs, etc.
               setTokenAmountToTrade('');
               setTransactionDone(true);
             }).catch(error => {
-              console.error("Sell transaction error:", error);
+              // console.error("Sell transaction error:", error);
+              const info = {
+                selectedChain: chain,
+                status: "failed",
+                timestamp: Math.floor(Date.now() / 1000),
+                txHash: error.transaction.hash
+              };
+              postTransactionFailed(info).then(response => {
+                console.log('Backend response:', response);
+              }).catch(error => {
+                console.error('Error posting data to backend:', error);
+              });      
               setTransactionDone(false);
             });
           }

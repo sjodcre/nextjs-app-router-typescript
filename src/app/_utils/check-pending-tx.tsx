@@ -80,6 +80,8 @@ export async function checkPendingTx( chain: string, tokenAddr: string){
                 console.error('Error posting data to backend:', error);
               });
         } else {
+          console.log("transaction result not found")
+
             // return 'Transaction not found or pending';
         }
     }

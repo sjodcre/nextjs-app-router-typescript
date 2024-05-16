@@ -164,7 +164,8 @@ const mintToken = async (
 
       // return Promise.resolve(tx)
     } catch (error) {
-      reportError(error)
+      // console.log("is it this error?")
+      // reportError(error)
       return Promise.reject(error)
     }
   }
@@ -249,7 +250,7 @@ const mintToken = async (
 
       return { result, txHash };
     } catch (error) {
-      reportError(error)
+      // reportError(error)
       return Promise.reject(error)
     }
   }
