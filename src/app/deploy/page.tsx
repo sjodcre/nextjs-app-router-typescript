@@ -1,10 +1,10 @@
 "use client";
 // import { useWeb3React } from '@web3-react/core';
 import { useState, MouseEvent, useEffect } from 'react';
-import { Contract, BrowserProvider, ContractFactory, Signer, ethers } from 'ethers';
+import { Contract, ContractFactory, Signer, ethers } from 'ethers';
 import ERC20TestArtifact from '../../../artifacts/contracts/ERCC20Test.sol/ERC20Test.json'
 
-import { useWeb3ModalProvider, useWeb3ModalAccount, useSwitchNetwork } from '@web3modal/ethers/react'
+import { useWeb3ModalProvider, useWeb3ModalAccount, useSwitchNetwork } from '@web3modal/ethers5/react'
 import { toast } from 'react-toastify'
 // import ConnectButton from "../_ui/connect-button";
 import { TokenParams } from '@/app/_utils/types';
@@ -300,7 +300,6 @@ export default function Deploy() {
 		try {
 			if (!isConnected) throw Error('User is not connected')
 
-			// const ethersProvider = new BrowserProvider(walletProvider)
 			if (walletProvider) {
 				const tokenParams: TokenParams = {
 					reserveRatio: 50000,

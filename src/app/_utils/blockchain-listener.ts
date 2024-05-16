@@ -31,7 +31,7 @@ const seiWebSocket = "wss://evm-ws-arctic-1.sei-apis.com";
 
 const listenToEvents = (ERC20TestContractAddress: string) => {
     
-    const wsProvider = new ethers.WebSocketProvider(createWebSocket())
+    const wsProvider = new ethers.providers.WebSocketProvider(createWebSocket())
     const contract = new ethers.Contract(
     ERC20TestContractAddress.toString(), 
     ERC20TestArtifact.abi, 

@@ -1,6 +1,6 @@
 'use client'
 
-import { createWeb3Modal, defaultConfig } from '@web3modal/ethers/react'
+import { createWeb3Modal, defaultConfig } from '@web3modal/ethers5/react'
 import { ReactNode } from 'react'
 
 // 1. Get projectId at https://cloud.walletconnect.com
@@ -20,7 +20,7 @@ const SeiEVM = {
   name: 'SEI',
   currency: 'SEI  ',
   explorerUrl: 'https://seistream.app/',
-  rpcUrl: 'https://evm-rpc.arctic-1.seinetwork.io'
+  rpcUrl: 'https://cool-aged-owl.sei-arctic.quiknode.pro/177cc0d1e96c821bc0cdd8bb9dbf72157f1a5e1d/'
 }
 
 const FtmEVM = {
@@ -71,6 +71,9 @@ createWeb3Modal({
   allWallets:'HIDE'
 })
 
+// export function Web3Modal({ children }) {
+//   return children
+// }
 export function Web3Modal({ children }: Props) {
   return children
 }

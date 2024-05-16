@@ -12,10 +12,10 @@
   "dependencies": {
     "@reduxjs/toolkit": "^2.2.3",
     "@types/socket.io": "^3.0.2",
-    "@web3modal/ethers": "^4.1.6",
+    "@web3modal/ethers5": "^4.1.11",
     "arweave": "^1.15.0",
     "dotenv": "^16.4.5",
-    "ethers": "^6.11.1",
+    "ethers": "5.7.2",
     "eventemitter3": "^5.0.1",
     "next": "14.1.4",
     "pg": "^8.11.5",
@@ -27,7 +27,7 @@
     "socket.io-client": "^4.7.5"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@nomicfoundation/hardhat-toolbox": "^2.0.2",
     "@openzeppelin/contracts": "^5.0.2",
     "@radix-ui/react-dialog": "^1.0.5",
     "@types/node": "^20",

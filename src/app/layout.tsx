@@ -17,9 +17,9 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
       
@@ -48,27 +48,4 @@ export default function RootLayout({
       </body>
     </html>
   );
-  // return (
-  //   <>
-  //     <div className={`min-h-screen bg-black ${inter.className}`}>
-  //       {/* <Header /> */}
-  //       <ReduxProvider>
-  //         <Web3Modal>
-  //           {children}
-  //         </Web3Modal>
-  //         <ToastContainer
-  //           position="bottom-center"
-  //           autoClose={5000}
-  //           hideProgressBar={false}
-  //           newestOnTop={false}
-  //           closeOnClick
-  //           rtl={false}
-  //           pauseOnFocusLoss
-  //           draggable
-  //           pauseOnHover
-  //         />
-  //       </ReduxProvider>
-  //     </div>
-  //   </>
-  // );
 }

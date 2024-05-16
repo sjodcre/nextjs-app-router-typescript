@@ -124,7 +124,7 @@ export const postTransactionData = async (transactionData: any) => {
 }
 
 export const postTransactionAndOHLC = async (transactionData: any) => {
-    const { selectedChain, contractAddress, account, status, amount, deposit, timestamp, trade, txHash ,txid} = transactionData;
+    const { selectedChain, contractAddress, account, status, amount, deposit, timestamp, trade, txHash} = transactionData;
 
     // const normalizedAmount = normalizeValue(parseFloat(amount.toString())); // Ensuring number type if needed
     // const normalizedDeposit = normalizeValue(parseFloat(deposit.toString()));
@@ -151,7 +151,6 @@ export const postTransactionAndOHLC = async (transactionData: any) => {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                txid: txid,
                 tokenAddress: contractAddress, 
                 account,
                 tx_status: status,
@@ -177,7 +176,7 @@ export const postTransactionAndOHLC = async (transactionData: any) => {
 
 //newly added 
 export const postTransactionFailed = async (transactionData: any) => {
-    const { selectedChain, txid, status,timestamp,  txHash } = transactionData;
+    const { selectedChain, status,timestamp,  txHash } = transactionData;
 
     // const normalizedAmount = normalizeValue(parseFloat(amount.toString())); // Ensuring number type if needed
     // const normalizedDeposit = normalizeValue(parseFloat(deposit.toString()));
@@ -203,7 +202,6 @@ export const postTransactionFailed = async (transactionData: any) => {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                txid: txid, 
                 tx_status: status,
                 time: timestamp,
                 tx_hash: txHash
@@ -282,18 +280,22 @@ export const fetchTokenInfo = async (chainId: string, tokenAddress: string) => {
             console.error("Failed to fetch top token holders:", error);
             return [];
         });
+};
 
+export const getPendingTransactions = async (chainId: string): Promise<any[]> => {
+    let url = '';
+    if (chainId === 'sei') {
+        url = `http://localhost:3001/sei/pending-transactions`;
+    } else if (chainId ==='ftm') {
+        url = `http://localhost:3001/ftm/pending-transactions`
+    }else {
+        throw new Error('Unsupported chain ID or functionality not yet implemented for this chain!');
+    }
 
-    // try {
-    //     const response = await fetch(url);
-    //     if (!response.ok) {
-    //         throw new Error(`HTTP error! status: ${response.status}`);
-    //     }
-    //     const data = await response.json();
-    //     console.log(data)
-    //     return data;
-    // } catch (error) {
-    //     console.error("Failed to fetch top token holders:", error);
-    //     return null;
-    // }
+    return fetch(url)
+        .then(response => response.json())
+        .catch(error => {
+            console.error("Failed to fetch pending transactions:", error);
+            return [];
+        });
 };

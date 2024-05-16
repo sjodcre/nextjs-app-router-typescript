@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import React from 'react';
 // import ConnectButton from './connect-button';
-import { useWeb3Modal, useWeb3ModalAccount } from '@web3modal/ethers/react';
+import { useWeb3Modal, useWeb3ModalAccount } from '@web3modal/ethers5/react';
 import { extractFirstSixCharac } from '../_utils/helpers';
 
 

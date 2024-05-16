@@ -109,13 +109,13 @@ export function subscribeOnStream(
     lastDailyBar: any
 )
 {
-    if (symbolInfo.base_name) {
-        console.log(symbolInfo.base_name[0])
+    // if (symbolInfo.base_name) {
+    //     console.log(symbolInfo.base_name[0])
 
-    }
-    console.log("symbolInfo", symbolInfo)
-    console.log(symbolInfo.description)
-    console.log(symbolInfo.ticker)
+    // }
+    // console.log("symbolInfo", symbolInfo)
+    // console.log(symbolInfo.description)
+    // console.log(symbolInfo.ticker)
     const parsedSymbol = parseFullSymbol(`${symbolInfo.exchange}:${symbolInfo.name}`);
     // const channelString = `0~${parsedSymbol?.exchange}~${parsedSymbol?.fromSymbol}~${parsedSymbol?.toSymbol}`;
     const channelString = `0~${symbolInfo?.ticker}~${symbolInfo?.base_name?.[0] ?? 'No Name'}~${symbolInfo?.description}`;

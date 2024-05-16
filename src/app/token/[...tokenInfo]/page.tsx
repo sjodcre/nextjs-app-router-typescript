@@ -1,23 +1,24 @@
 "use client"
 
-import { SetStateAction, useEffect, useState } from "react";
-import { SmartContractError, TokenHolder, TokenPageDetails, TradeData } from "@/app/_utils/types";
+import { useEffect, useState } from "react";
+import {  TokenHolder, TokenPageDetails, TradeData } from "@/app/_utils/types";
 import CandleChart from "@/app/_ui/candle-chart";
 import SlippageDialog from "@/app/_ui/slippage-dialog";
 import IndeterminateProgressBar from "@/app/_ui/indeterminate-progress-bar";
-import { BrowserProvider, Contract, ethers, Interface } from "ethers";
+import {  ethers } from "ethers";
 import ERC20TestArtifact from '../../../../artifacts/contracts/ERCC20Test.sol/ERC20Test.json'
 import { fetchTokenInfo, getTokenTrades, getTopTokenHolders, postTransactionAndOHLC, postTransactionData, postTransactionFailed } from "@/app/_services/db-write";
-import { useSwitchNetwork, useWeb3ModalAccount, useWeb3ModalProvider } from "@web3modal/ethers/react";
+import { useSwitchNetwork, useWeb3ModalAccount, useWeb3ModalProvider } from "@web3modal/ethers5/react";
 import { toast } from "react-toastify";
 import TradeItem from "@/app/_ui/trade-list";
-import { calculateMinReturnWithSlippage, calculateMinTokensWithSlippage, calculateRequiredDeposit, extractFirstSixCharac, getAccountUrl } from "@/app/_utils/helpers";
+import { extractFirstSixCharac, getAccountUrl } from "@/app/_utils/helpers";
 import { fetchNativeTokenPrice } from "@/app/_utils/native-token-pricing";
 import { useAppSelector } from "@/app/_redux/store";
 import { socket } from "src/socket";
 import useSocket from "@/app/_utils/use-socket";
-
-
+import { burnToken, mintToken } from "@/app/_services/blockchain";
+import { Interface } from "ethers/lib/utils";
+import { checkPendingTx } from "@/app/_utils/check-pending-tx";
 
 
 
@@ -28,7 +29,6 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   const [tokenAmountToTrade, setTokenAmountToTrade] = useState('');
   const [nativeTokenBool, setNativeTokenBool] = useState(true);
   const [activeTab, setActiveTab] = useState('thread');
-  const [activeTabSmScreen, setActiveTabSmScreen] = useState('info');  // Default to showing the 'info' tab
   const [buySell, setBuySell] = useState('buy');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -55,7 +55,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   const { isConnected, chainId, address } = useWeb3ModalAccount()
   const { walletProvider } = useWeb3ModalProvider()
   const seiWebSocket = "wss://evm-ws-arctic-1.sei-apis.com";
-  // const ftmWebSocket = "wss://fantom-testnet.public.blastapi.io/";
+  // const seiWebSocket = "wss://cool-aged-owl.sei-arctic.quiknode.pro/177cc0d1e96c821bc0cdd8bb9dbf72157f1a5e1d/";
   const ERC20TestContractAddress = params.tokenInfo[1];
   const { isSocketConnected, emitEvent } = useSocket();
 
@@ -65,39 +65,6 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
       emitEvent("someEvent", { key: 'value' });
     }
   }, [isConnected, emitEvent]);
-
-  // //new socket/websocket codes
-  // const [isCon, setIsConnected] = useState(false);
-  // const [transport, setTransport] = useState("N/A");
-
-  // useEffect(() => {
-  //   if (socket.connected) {
-  //     onConnect();
-  //   }
-
-  //   function onConnect() {
-  //     setIsConnected(true);
-  //     setTransport(socket.io.engine.transport.name);
-
-  //     socket.io.engine.on("upgrade", (transport: { name: SetStateAction<string>; }) => {
-  //       setTransport(transport.name);
-  //     });
-  //   }
-
-  //   function onDisconnect() {
-  //     setIsConnected(false);
-  //     setTransport("N/A");
-  //   }
-
-  //   socket.on("connect", onConnect);
-  //   socket.on("disconnect", onDisconnect);
-
-  //   return () => {
-  //     socket.off("connect", onConnect);
-  //     socket.off("disconnect", onDisconnect);
-  //   };
-  // }, []);
-
 
   //set bonding curve %
   useEffect(() => {
@@ -143,10 +110,10 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
     // }
 
-    try {
 
-      const wsProvider = new ethers.WebSocketProvider(seiWebSocket)
-      // const wsProvider = new ethers.WebSocketProvider(ftmWebSocket)
+    try {
+      
+      const wsProvider = new ethers.providers.WebSocketProvider(seiWebSocket)
       const contract = new ethers.Contract(
         ERC20TestContractAddress.toString(),
         ERC20TestArtifact.abi,
@@ -162,6 +129,11 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
       })
 
+      contract.on("*", (event) => {
+        console.log("event?", event)
+        // The `event.log` has the entire EventLog
+      });
+
       const handleEvent = (account: any, amount: any, deposit: any) => {
         console.log(`Event - Account: ${account}, Amount: ${amount.toString()}, Deposit: ${deposit.toString()} `);
 
@@ -172,6 +144,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
       return () => {
         contract.removeAllListeners();
+        wsProvider.destroy();
       };
     } catch (error) {
       console.error("Failed to set up contract listeners:", error);
@@ -182,6 +155,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
   //wallet provider readiness
   useEffect(() => {
+
     if (walletProvider) {
       setProviderReady(true);
     } else {
@@ -191,9 +165,10 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
   //provider ready, get data
   useEffect(() => {
+
     if (providerReady) {
       if (walletProvider) {
-        const ethersProvider = new BrowserProvider(walletProvider);
+        const ethersProvider = new ethers.providers.Web3Provider(walletProvider);
         fetchERC20Balance(ethersProvider, params.tokenInfo[1])
           .then(balance => {
 
@@ -215,61 +190,49 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     }
   }, [address, chainId, providerReady, transactionDone, switchNetwork]);
 
-
-  //set native token info, token details, trades, market cap
-  /* useEffect(() => {
-    // const chainId = params.tokenInfo[0] === 'sei' ? '1' : '2';
-    setNativeTokenInfo({
-      chain: params.tokenInfo[0] === 'sei' ? 'SEI' : 'FTM',
-      chainId: params.tokenInfo[0] === 'sei' ? 713715: 64165,
-      chainLogo: params.tokenInfo[0] === 'sei' ? '/sei-logo.png' : '/ftm-logo.png'
-    });
-
-    const fetchData = async () => {
-      const tokenInfoPromise = fetchTokenInfo(params.tokenInfo[0], params.tokenInfo[1]);
-      const tradesDataPromise = getTokenTrades(params.tokenInfo[1], params.tokenInfo[0]);
-
-      const [tokenInfo, tradesData] = await Promise.all([tokenInfoPromise, tradesDataPromise]);
-      setTokenDetails(tokenInfo);
-      setTrades(tradesData);
-      // console.log(tradesData);
-
-      if (tradesData && tradesData.length > 0 && nativeTokenPrice) {
-        const marketCap = tradesData[0].sum * tradesData[0].price_per_token * nativeTokenPrice/1E18;
-        // marketCap = 10000;
-        const formattedMarketCap = marketCap.toLocaleString('en-US', {
-          style: 'decimal',
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2
-        });
-        setMarketCap(formattedMarketCap);
-      }
-    };
-
-    fetchData();
-    console.log("data fetch");
-    const intervalId = setInterval(fetchData, 10000); // 30 seconds in milliseconds
-
-    // Cleanup function to clear the interval when the component unmounts or before it re-renders
-    return () => {
-        clearInterval(intervalId);
-    };
-
-  }, [params.tokenInfo, nativeTokenPrice]);
-   */
-
+  //set native token info
   useEffect(() => {
+
     setNativeTokenInfo({
       chain: params.tokenInfo[0] === 'sei' ? 'SEI' : 'FTM',
       chainId: params.tokenInfo[0] === 'sei' ? 713715 : 64165,
       chainLogo: params.tokenInfo[0] === 'sei' ? '/sei-logo.png' : '/ftm-logo.png'
     });
   }, [params.tokenInfo, nativeTokenPrice])
+  
+  //Fetch Data useeffect
+  useEffect(() => {
 
+    // Initial fetch of data
+    fetchData();
+
+    socket.on("refresh", (value: any) => {
+      console.log(value);
+      fetchData();
+    });
+
+    return () => {
+      socket.off("refresh", fetchData);
+    };
+
+
+  }, [params.tokenInfo, nativeTokenPrice]);
+
+  //when user change wallet
+  useEffect(() => {
+    setTokenAmountToTrade('');
+  }, [address])
+
+   //get pending tx
+  useEffect(() => {
+    const changes = checkPendingTx(params.tokenInfo[0], params.tokenInfo[1]);
+    // if (changes ==='true'){
+    //   socket.emit("updated", "updated to db");
+    // }
+  }, []);
 
   // Function to fetch data
   const fetchData = async () => {
-    // Fetch token info and trades data
     const tokenInfoPromise = fetchTokenInfo(params.tokenInfo[0], params.tokenInfo[1]);
     const tradesDataPromise = getTokenTrades(params.tokenInfo[0], params.tokenInfo[1]);
 
@@ -297,34 +260,12 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     console.log("data fetch");
   };
 
-  //Fetch Data useeffect
-  useEffect(() => {
-
-
-    // Initial fetch of data
-    fetchData();
-
-    socket.on("refresh", (value: any) => {
-      console.log(value);
-      fetchData();
-    });
-
-
-
-  }, [params.tokenInfo, nativeTokenPrice]);
-
-  //when user change wallet
-  useEffect(() => {
-    setTokenAmountToTrade('');
-  }, [address])
-
-
   //fetch token holders
   const fetchHolders = async () => {
     setIsLoading(true); // Start loading
 
     const data = await getTopTokenHolders(params.tokenInfo[0], params.tokenInfo[1]); // Assume this fetches the data as shown in your example
-    // console.log(data)
+    console.log(data)
 
     setHolders(data);
     // const sum = data.reduce((acc: any, holder: { balance: any; }) => acc + holder.balance, 0);
@@ -346,7 +287,6 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     // const fullAmount = userBalance.token; // Assuming `userBalance.token` holds the full token balance as a number
     // const amountToSet = (fullAmount * percentage / 100).toFixed(0); // Calculating the percentage and rounding it to the nearest whole number
 
-    // setTokenAmountToTrade(amountToSet.toString()); // Convert to string to match your state expectation
     handleChainChange()
       .then(async () => {
 
@@ -405,27 +345,6 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
         switchNetwork(targetChainId)
           .then(() => {
             // if (walletProvider)
-            // {
-            //   const ethersProvider = new BrowserProvider(walletProvider);
-            //   await fetchERC20Balance(ethersProvider, params.tokenInfo[1])
-            // .then(balance => {
-
-            //   setUserBalance(prevState => ({
-            //     ...prevState,
-            //     token: Number(balance)  // Replace `newValue` with the actual new value for the token balance
-            //   }));
-            //   setTransactionDone(false);
-
-            // })
-            // .catch(error => {
-            //   // Error handling
-            //   console.log("fail to fetch user balance:", error)
-
-            // });
-            // } else {
-            //   console.log("provider is not ready to read user")
-            // }
-            // resolve(`Switched to ${targetChainId} successfully.`);
             resolve(targetChainId);
           })
           .catch((error) => {
@@ -501,8 +420,8 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   // }
 
   async function fetchERC20Balance(walletProvider: any, tokenAddress: string) {
-    // const ethersProvider = new BrowserProvider(walletProvider);
     const signer = await walletProvider.getSigner();
+    const signerAddr = await signer.getAddress();
     const contract = new ethers.Contract(tokenAddress, ERC20TestArtifact.abi, signer);
 
     try {
@@ -510,7 +429,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
       // console.log(nativeTokenInfo.chainId)
       if (chainId === nativeTokenInfo.chainId) {
         // console.log('pass here')
-        const balance = await contract.balanceOf(signer.address.toString());
+        const balance = await contract.balanceOf(signerAddr.toString());
         // console.log("token address: ", tokenAddress);
         // console.log("signer address: ", signer.address);
         // console.log("Token Balance:", balance.toString());
@@ -525,61 +444,14 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     }
   }
 
-  async function handleBuyToken(walletProvider: ethers.Eip1193Provider, tokenAmountToTrade: { toString: () => string; }, chain: string) {
-    const ethersProvider = new BrowserProvider(walletProvider);
-    const signer = await ethersProvider.getSigner();
+  async function handleBuyToken(walletProvider: any, tokenAmountToTrade: { toString: () => string; }, chain: string) {
     const ERC20TestContractAddress = params.tokenInfo[1].toString();
-    const ERC20TestContract = new Contract(ERC20TestContractAddress, ERC20TestArtifact.abi, signer);
-
-    const reserveBalance = nativeSum;
-    const reserveRatio = 50000;
-    let options: { value?: any; gasLimit?: string } = {};
-    let ethValue = 0;
-
-    if (!nativeTokenBool) {
-      let depositAmount = calculateRequiredDeposit(tokenSum, reserveBalance, reserveRatio, Number(tokenAmountToTrade));
-      console.log("estimated deposit required", depositAmount);
-      console.log("format depost units", ethers.formatUnits(depositAmount.toString(), 18))
-      options = {
-        value: ethers.parseUnits(depositAmount.toString(), 1),
-        gasLimit: ethers.toBeHex(1000000), // Correct use of hexlify
-      };
-      ethValue = depositAmount;
-    } else {
-      options = {
-        value: ethers.parseUnits(tokenAmountToTrade.toString(), 18),
-        gasLimit: ethers.toBeHex(1000000), // Correct use of hexlify
-      };
-      ethValue = Number(ethers.parseUnits(tokenAmountToTrade.toString(), 18));
-    }
+    // const ERC20TestContract = new Contract(ERC20TestContractAddress, ERC20TestArtifact.abi, signer);
 
     try {
-      const minTokens = calculateMinTokensWithSlippage(tokenSum, reserveBalance, reserveRatio, ethValue, slippage);
      
-      const info = {
-        status: 'pending',
-        selectedChain: chain,
-        contractAddress: ERC20TestContractAddress,
-        account: signer.address,
-        amount: Number(minTokens.toString()),// Ensure conversion to string before to Number if BigNumber
-        deposit: Number(options.value.toString()), // Same conversion as above
-        timestamp: Math.floor(Date.now() / 1000),
-        trade: buySell.toString(),
-        txHash: ''
-      };
-      let txid = '';
-      postTransactionData(info).then(response => {
-        console.log('Backend response:', response);
-        txid = response.primaryKey;
-      }).catch(error => {
-        console.error('Error posting data to backend:', error);
-      });
-      console.log("minTokens", minTokens)
-      const mintTx = await ERC20TestContract.mint(minTokens.toString(), options);
-      const txHash = mintTx.hash;
-      const result = await mintTx.wait();
-
-      return { result, txHash,txid, ERC20TestContract };
+      const toRet = mintToken(chain, ERC20TestContractAddress, walletProvider, nativeSum, tokenSum, nativeTokenBool,tokenAmountToTrade, slippage)
+      return toRet;
     } catch (error) {
       console.error("Transaction error:", error);
 
@@ -594,33 +466,30 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
       // toast.error(genericMessage);
       throw new Error(genericMessage);
     }
-
-    // const mintTx = await ERC20TestContract.mint(options);
-
   }
 
-  async function handleSellToken(walletProvider: ethers.Eip1193Provider, tokenAmountToTrade: { toString: () => any | ethers.Overrides; }) {
-    const ethersProvider = new BrowserProvider(walletProvider);
-    const signer = await ethersProvider.getSigner();
+  async function handleSellToken(walletProvider: any, tokenAmountToTrade: { toString: () => any | ethers.Overrides; }, chain:string) {
     const ERC20TestContractAddress = params.tokenInfo[1].toString();
-    const ERC20TestContract = new Contract(ERC20TestContractAddress, ERC20TestArtifact.abi, signer);
-    const options = {
-      gasLimit: ethers.toBeHex(1000000),
-    };
-    const reserveRatio = 50000;
-    console.log("_supply", tokenSum)
-    console.log("_reserveBalance", nativeSum)
-    console.log("_reserveRatio", reserveRatio)
-    console.log("slippage", slippage)
-    console.log("_sellAmount", Number(tokenAmountToTrade.toString()))
 
+    try {
+      const toRet = burnToken(chain, ERC20TestContractAddress, nativeSum,tokenSum,tokenAmountToTrade,slippage, walletProvider)
+      return toRet;
 
-    const minReturn = calculateMinReturnWithSlippage(tokenSum, nativeSum, reserveRatio, Number(tokenAmountToTrade.toString()), slippage);
-    console.log("minReturn", minReturn)
-    const burnTx = await ERC20TestContract.burn(tokenAmountToTrade.toString(), minReturn.toString(), options);
-    const txHash = burnTx.hash;
-    const result = await burnTx.wait();
-    return { result, txHash, ERC20TestContract };
+    } catch (error) {
+      console.error("Transaction error:", error);
+
+      if (isErrorWithMessage(error) && error.message.includes("transaction execution reverted")) {
+        const errorMessage = "Buy transaction failed! Error: Transaction Execution Reverted.";
+        // toast.error(errorMessage);
+        throw new Error(errorMessage); // Rethrow if you need further error handling
+      }
+
+      // Generic error if no specific message
+      const genericMessage = "Transaction failed due to unknown reasons!";
+      // toast.error(genericMessage);
+      throw new Error(genericMessage);
+    }
+    // console.log("minReturn", minReturn)
   }
 
 
@@ -642,10 +511,9 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
         }
         if (walletProvider) {
 
-          const ethersProvider = new BrowserProvider(walletProvider);
-          const signer = await ethersProvider.getSigner();
+          // const ethersProvider = new BrowserProvider(walletProvider);
+          // const signer = await ethersProvider.getSigner();
           const ERC20TestContractAddress = params.tokenInfo[1].toString();
-          const ERC20TestContract = new Contract(ERC20TestContractAddress, ERC20TestArtifact.abi, signer);
 
           if (buySell === 'buy') {
             toast.promise(
@@ -663,9 +531,9 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                   }
                 }
               }
-            ).then(({ result, txHash,txid, ERC20TestContract }) => {
+            ).then(({ result, txHash }) => {
+              console.log("result status", result.status)
               if (result.status === 1) {
-               // console.log("txid:",txid);
                // console.log("Transaction succeeded:", result);
                 const iface = new Interface(ERC20TestArtifact.abi);
 
@@ -676,7 +544,6 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                    //    console.log('ContinuousMint Event Args:', parsedLog.args);
 
                       const info = {
-                        txid: txid,
                         selectedChain: chain,
                         contractAddress: ERC20TestContractAddress,
                         account: parsedLog.args[0],
@@ -709,7 +576,6 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                 const info = {
                   selectedChain: chain,
                   status: "failed",
-                  txid: txid,
                   timestamp: Math.floor(Date.now() / 1000),
                   txHash: txHash
                 };
@@ -729,13 +595,13 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
             });
           } else if (buySell === 'sell') {
             toast.promise(
-              handleSellToken(walletProvider, tokenAmountToTrade),
+              handleSellToken(walletProvider, tokenAmountToTrade, chain),
               {
                 pending: 'Processing sell transaction...',
                 success: 'Sell transaction successful! 👌',
                 error: 'Sell transaction failed! 🤯'
               }
-            ).then(({ result, txHash, ERC20TestContract }) => {
+            ).then(({ result, txHash }) => {
               if (result.status === 1) {
                 // console.log("Transaction succeeded:", result);
                 const iface = new Interface(ERC20TestArtifact.abi);
@@ -750,6 +616,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                         selectedChain: chain,
                         contractAddress: ERC20TestContractAddress,
                         account: parsedLog.args[0],
+                        status: "successful",
                         amount: Number(parsedLog.args[1].toString()), // Ensure conversion to string before to Number if BigNumber
                         deposit: Number(parsedLog.args[2].toString()), // Same conversion as above
                         timestamp: Math.floor(Date.now() / 1000),
@@ -774,6 +641,17 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
               } else {
                 console.log("Transaction failed with receipt:", result);
                 // Handle failure case
+                const info = {
+                  selectedChain: chain,
+                  status: "failed",
+                  timestamp: Math.floor(Date.now() / 1000),
+                  txHash: txHash
+                };
+                postTransactionFailed(info).then(response => {
+                  console.log('Backend response:', response);
+                }).catch(error => {
+                  console.error('Error posting data to backend:', error);
+                });
               }
               // handle success, parse logs, etc.
               setTokenAmountToTrade('');

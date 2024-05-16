@@ -44,11 +44,11 @@ export function calculateRequiredDeposit(_supply: number, _reserveBalance: numbe
     return Math.round(_depositAmount);
 }
 
-export function calculateMinTokensWithSlippage(_supply: number, _reserveBalance: number, _reserveRatio: number , _depositAmount: number , slippagePercent: number): number {
+export function calculateMinTokensWithSlippage(_supply: number, _reserveBalance: number, _reserveRatio: number , _depositAmount: number , slippagePercent: number): {estToken:number,estTokenWSlippage:number} {
     const tokensWithoutSlippage = calculateExpectedReturn(_supply, _reserveBalance, _reserveRatio, _depositAmount);
     const slippageMultiplier = (100 - slippagePercent) / 100;
 
-    return Math.round(tokensWithoutSlippage * slippageMultiplier)
+    return {estToken: Math.round(tokensWithoutSlippage), estTokenWSlippage: Math.round(tokensWithoutSlippage * slippageMultiplier)}
 }
 
 export function calculateBurnReturn(_supply: number, _reserveBalance: number, _reserveRatio: number, _sellAmount: number): number {
