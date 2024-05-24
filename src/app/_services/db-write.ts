@@ -9,9 +9,9 @@ const normalizeValue = (value: number): number => {
 export const postTokenData = async (data: any) => {
     let url = '';
     if (data.chainid === 'ftm'){
-        url = 'http://localhost:3001/ftm/deploytoken'
+        url = 'api/ftm/deploytoken'
     } else if (data.chainid === 'sei') {
-        url = 'http://localhost:3001/sei/deploytoken'
+        url = 'api/sei/deploytoken'
     } else {
         throw new Error('unsupported chain id!')
     }
@@ -52,9 +52,9 @@ export const initOHLCData = async (selectedChain: string, tokenAddress: string, 
 
         let url = ''
         if (selectedChain === 'ftm'){
-            url = 'http://localhost:3001/initialize-ohlc-ftm'
+            url = 'api/initialize-ohlc-ftm'
         } else if ( selectedChain ==='sei') {
-            url = 'http://localhost:3001/initialize-ohlc-sei'
+            url = 'api/initialize-ohlc-sei'
         } else {
             throw new Error('incorrect chain id!')
         }
@@ -85,9 +85,9 @@ export const postTransactionData = async (transactionData: any) => {
     const volume = parseFloat(amount);
     let url = '';
     if (selectedChain ==='ftm'){
-        url = 'http://localhost:3001/transaction-update-ftm'
+        url = 'api/transaction-update-ftm'
     } else if (selectedChain === 'sei') {
-        url = 'http://localhost:3001/transaction-update-sei'
+        url = 'api/transaction-update-sei'
     } else {
         throw new Error("incorrect chain id!")
     }
@@ -137,9 +137,9 @@ export const postTransactionAndOHLC = async (transactionData: any) => {
     const volume = parseFloat(amount);
     let url = '';
     if (selectedChain ==='ftm'){
-        url = 'http://localhost:3001/ftm/transaction-and-ohlc'
+        url = 'api/ftm/transaction-and-ohlc'
     } else if (selectedChain === 'sei') {
-        url = 'http://localhost:3001/sei/transaction-and-ohlc'
+        url = 'api/sei/transaction-and-ohlc'
     } else {
         throw new Error("incorrect chain id!")
     }
@@ -188,9 +188,9 @@ export const postTransactionFailed = async (transactionData: any) => {
     
     let url = '';
     if (selectedChain ==='ftm'){
-        url = 'http://localhost:3001/ftm/transaction-fail'
+        url = 'api/ftm/transaction-fail'
     } else if (selectedChain === 'sei') {
-        url = 'http://localhost:3001/sei/transaction-fail'
+        url = 'api/sei/transaction-fail'
     } else {
         throw new Error("incorrect chain id!")
     }
@@ -221,9 +221,9 @@ export const postTransactionFailed = async (transactionData: any) => {
 export const getTokenTrades = async (chainId: string, tokenAddress: string, ) => {
     let url = '';
     if (chainId === 'ftm') {
-        url = `http://localhost:3001/get-trades-ftm?tokenAddress=${tokenAddress}`
+        url = `api/get-trades-ftm?token_address=${tokenAddress}`
     } else if (chainId === 'sei') {
-        url = `http://localhost:3001/get-trades-sei?tokenAddress=${tokenAddress}`
+        url = `api/get-trades-sei?token_address=${tokenAddress}`
     } else {
         throw new Error('incorrect chain id!')
     }
@@ -233,10 +233,13 @@ export const getTokenTrades = async (chainId: string, tokenAddress: string, ) =>
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const data = await response.json();
+        const rawData = await response.text();
+        const data = JSON.parse(rawData);
+        console.log('Parsed JSON data:', data);
+        // console.log(data[0])
         return data;
     } catch (error) {
-        console.error("Failed to fetch data:", error);
+        console.error("Failed to fetch tokentrade data:", error);
         return null;  // Or handle error appropriately depending on your application requirements
     }
 };
@@ -244,9 +247,9 @@ export const getTokenTrades = async (chainId: string, tokenAddress: string, ) =>
 export const fetchTokenInfo = async (chainId: string, tokenAddress: string) => {
     let url = ''
     if (chainId === 'ftm') {
-        url = `http://localhost:3001/token-info-ftm?token_address=${tokenAddress}`
+        url = `api/token-info-ftm?token_address=${tokenAddress}`
     } else if (chainId ==='sei') {
-        url = `http://localhost:3001/token-info-sei?token_address=${tokenAddress}`
+        url = `api/token-info-sei?token_address=${tokenAddress}`
     } else {
         throw new Error('incorrect chain id!')
     }
@@ -255,11 +258,13 @@ export const fetchTokenInfo = async (chainId: string, tokenAddress: string) => {
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const data = await response.json();
+        const rawData = await response.text();
+        const data = JSON.parse(rawData);
+        console.log('Parsed JSON data:', data);
         // console.log(data[0])
-        return data[0];
+        return data;
     } catch (error) {
-        console.error("Failed to fetch data:", error);
+        console.error("Failed to fetch tokeninfo data:", error);
         return null;  // Or handle error appropriately depending on your application requirements
     }
   };
@@ -267,9 +272,9 @@ export const fetchTokenInfo = async (chainId: string, tokenAddress: string) => {
   export const getTopTokenHolders = async (chainId: string, tokenAddress: string) : Promise<TokenHolder[]>=> {
     let url = ''
     if (chainId ==='ftm') {
-        url = `http://localhost:3001/ftm/top-holders/${tokenAddress}`
+        url = `api/ftm/top-holders/${tokenAddress}`
     } else if (chainId ==='sei') {
-        url = `http://localhost:3001/sei/top-holders/${tokenAddress}`
+        url = `api/sei/top-holders/${tokenAddress}`
     } else {
         throw new Error('incorrect chain id!')
     }
@@ -285,9 +290,9 @@ export const fetchTokenInfo = async (chainId: string, tokenAddress: string) => {
 export const getPendingTransactions = async (chainId: string): Promise<any[]> => {
     let url = '';
     if (chainId === 'sei') {
-        url = `http://localhost:3001/sei/pending-transactions`;
+        url = `api/sei/pending-transactions`;
     } else if (chainId ==='ftm') {
-        url = `http://localhost:3001/ftm/pending-transactions`
+        url = `api/ftm/pending-transactions`
     }else {
         throw new Error('Unsupported chain ID or functionality not yet implemented for this chain!');
     }

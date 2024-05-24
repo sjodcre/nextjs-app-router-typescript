@@ -286,7 +286,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   const fetchData = async () => {
     const tokenInfoPromise = fetchTokenInfo(params.tokenInfo[0], params.tokenInfo[1]);
     const tradesDataPromise = getTokenTrades(params.tokenInfo[0], params.tokenInfo[1]);
-
+console.log(params.tokenInfo[0], params.tokenInfo[1]);
     // Wait for both promises to resolve
     const [tokenInfo, tradesData] = await Promise.all([tokenInfoPromise, tradesDataPromise]);
 

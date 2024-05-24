@@ -10,18 +10,18 @@ import { AppDispatch, useAppSelector } from '@/app/_redux/store';
 
 interface Token {
 
-    tokensymbol: string;
+    tokenticker: string;
     tokenname: string;
     creator: string;
     datetime: string;
     image: string;
     tokenaddress: string;
-    marketcap: number;
-    repliescount: number;
     description: string;
     username: string;
-    // Assuming this is a string representation of a date
-    lastactivity: string; // Assuming this is a string representation of a date
+    lastactivity: string;
+
+    marketcap: number;
+    repliescount: number;
     lastreply: string;
     // Add other properties if available in the token object
 }
@@ -172,7 +172,7 @@ const Home: React.FC = () => {
                                 <li>Market Cap: {token.marketcap} </li>
                                 <li>Replies: {token.repliescount} </li>
                                 <li>Creation : {token.datetime} </li>
-                                <li>{token.tokenname} '(Ticker : {token.tokensymbol}) : {token.description}"</li>
+                                <li>{token.tokenname} '(Ticker : {token.tokenticker}) : {token.description}"</li>
                             </ul>
                         </div>
                     </Link>
