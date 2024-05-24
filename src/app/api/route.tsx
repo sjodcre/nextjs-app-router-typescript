@@ -13,7 +13,7 @@ export async function GET(req: Request) {
     let orderByClause = '';
     if (sortBy && order) {
         if (sortBy === 'lastUpdatedTime') {
-            orderByClause = `ORDER BY lastactivity ${order}`;
+            orderByClause = `ORDER BY timestamp ${order}`;
         } else if (sortBy === 'lastReplyTime') {
             orderByClause = `ORDER BY lastreply ${order}`;
         } else if (sortBy === 'replies') {
@@ -26,22 +26,17 @@ export async function GET(req: Request) {
 
         const queryResult = await query(`
                     SELECT
-                    tl.TokenID,
-                    tl.TokenSymbol,
-                    tl.TokenName,
-                    tl.TokenAddress,
-                    tl.Creator,
+                    tl.token_ticker,
+                    tl.token_name,
+                    tl.token_address,
+                    tl.creator,
                     tl.DateTime,
-                    tl.ImageURL,
-                    tl.LastActivity,
-                    ti.Description,
-                    tm.MarketCap,
-                    tm.LastReply,
-                    tm.RepliesCount,
+                    tl.Image_URL,
+                    tl.token_Description,
+                    th.timestamp,
                     p.username
-                    FROM TokenList_${chain} tl
-                    JOIN TokenMarket_${chain} tm ON tl.tokenaddress = tm.tokenaddress
-                    JOIN TokenInfo_${chain} ti ON tl.tokenaddress = ti.tokenaddress
+                    FROM token_list_${chain} tl
+                    JOIN transaction_history_${chain} th ON tl.token_address = th.token_address
                     JOIN Profile_${chain} p ON tl.Creator = p.walletaddress
                 ${orderByClause}
               `, []);
