@@ -16,13 +16,13 @@ app.prepare().then(() => {
 
   io.on("connection", (socket) => {
     // ...
-console.log(socket.id);
+    console.log(socket.id);
 
 
-    socket.on('updated',(data) =>{
+    socket.on('updated', (data) => {
       console.log("recieved from client")
-      console.log(data)
-      io.emit('refresh','refresh page')
+      //console.log(data)
+      io.emit('refresh', data)
     })
 
 

@@ -14,7 +14,7 @@ import TradeItem from "@/app/_ui/trade-list";
 import { extractFirstSixCharac, getAccountUrl } from "@/app/_utils/helpers";
 import { fetchNativeTokenPrice } from "@/app/_utils/native-token-pricing";
 import { useAppSelector } from "@/app/_redux/store";
-import { socket } from "src/socket";
+//import { socket } from "src/socket";
 import useSocket from "@/app/_utils/use-socket";
 import { burnToken, mintToken } from "@/app/_services/blockchain";
 import { Interface } from "ethers/lib/utils";
@@ -58,7 +58,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   const seiWebSocket = "wss://evm-ws-arctic-1.sei-apis.com";
   // const seiWebSocket = "wss://cool-aged-owl.sei-arctic.quiknode.pro/177cc0d1e96c821bc0cdd8bb9dbf72157f1a5e1d/";
   const ERC20TestContractAddress = params.tokenInfo[1];
-  const { isSocketConnected, emitEvent } = useSocket();
+  const { isSocketConnected, emitEvent ,onEvent, offEvent} = useSocket();
 
 
   useEffect(() => {
@@ -207,17 +207,61 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     // Initial fetch of data
     fetchData();
 
-    socket.on("refresh", (value: any) => {
-      console.log(value);
-      fetchData();
+
+    onEvent("refresh", (value: any) => {
+      console.log('Received from server: ' + value);
+      //console.log(value);
+      updateData(value);
+    
     });
 
     return () => {
-      socket.off("refresh", fetchData);
+      offEvent("refresh", fetchData);
     };
 
 
   }, [params.tokenInfo, nativeTokenPrice]);
+
+
+//UpdateData on Data Emit 
+  const updateData = async (data: any) => {
+    const {amount, deposit, contractAddress, trade} = data;
+        const price = deposit / amount;
+  
+
+
+
+        let currentTokenSum = 0 ;
+        if (trade === 'buy'){
+          currentTokenSum =  tokenSum + amount ;
+        }else{
+
+        }currentTokenSum = tokenSum - amount;
+
+        
+       
+    getTopTokenHolders(params.tokenInfo[0], params.tokenInfo[1]);
+    fetchHolders();
+
+
+    // Calculate market cap if tradesData and nativeTokenPrice are available
+    if (nativeTokenPrice !== null) {
+      const marketCap = currentTokenSum * price * nativeTokenPrice / 1E18;
+      const formattedMarketCap = marketCap.toLocaleString('en-US', {
+        style: 'decimal',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+      console.log('marketcap = '+ formattedMarketCap);
+      if(params.tokenInfo[1] == contractAddress ){
+        setMarketCap(formattedMarketCap);
+      }
+     
+    }
+   console.log(data);
+   console.log("data updated");
+    
+  };
 
   //when user change wallet
   useEffect(() => {
@@ -567,7 +611,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                       postTransactionAndOHLC(info).then(response => {
                         console.log('Backend response:', response);
                         // socket.emit("updated", "updated to db");
-                        emitEvent("updated","updated to db");
+                        emitEvent("updated",info);
 
                       }).catch(error => {
                         console.error('Error posting data to backend:', error);
@@ -651,7 +695,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                       postTransactionAndOHLC(info).then(response => {
                         console.log('Backend response:', response);
                         // socket.emit("updated", "updated to db");
-                        emitEvent("updated","updated to db");
+                        emitEvent("updated",info);
 
                       }).catch(error => {
                         console.error('Error posting data to backend:', error);

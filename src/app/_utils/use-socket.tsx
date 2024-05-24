@@ -1,10 +1,10 @@
 // hooks/useSocket.tsx
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { socket } from '../../socket';  // Adjust the path as necessary
+import { getSocket } from '../../socket';  // Adjust the path as necessary
 import { LibrarySymbolInfo, ResolutionString, SubscribeBarsCallback } from 'public/static/charting_library/charting_library';
 import { parseFullSymbol } from './helpers';
 // import { parseFullSymbol } from './helpers';
-
+const socket = getSocket();
 interface EventListener {
     event: string;
     handler: (data: any) => void;
@@ -91,10 +91,20 @@ const useSocket = (listeners: EventListener[] = []) => {
     socket.emit(event, data);
   }, []);
 
+  const onEvent = useCallback((event: string, data: any) => {
+    socket.on(event, data);
+  }, []);
+
+  const offEvent = useCallback((event: string, data: any) => {
+    socket.off(event, data);
+  }, []);
+
   return {
     isSocketConnected,
     transport,
     emitEvent,
+    onEvent,
+    offEvent,
   };
 };
 
