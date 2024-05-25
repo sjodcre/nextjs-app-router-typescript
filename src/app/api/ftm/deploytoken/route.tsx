@@ -23,10 +23,12 @@ export async function POST(req: Request) {
   try {
 
 
-    const sql = `
-    INSERT INTO ${tokenListTableName} (token_address, token_ticker, token_name, token_description, image_url, creator, datetime, twitter, telegram, website)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-`;
+      const sql = `
+      INSERT INTO ${tokenListTableName} 
+      (token_address, token_ticker, token_name, token_description, image_url, creator, datetime, twitter, telegram, website)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      `;
+
     // console.log('Executing query:', query);
     // console.log('With parameters:', [token_address, token_ticker, token_name, token_description, image_url, creator, datetime, twitter || '', telegram || '', website || '']);
 
@@ -36,7 +38,7 @@ export async function POST(req: Request) {
 
   } catch (error) {
 
-    return new Response(JSON.stringify('Error'), { status: 500 });
+    return new Response(JSON.stringify('Error:' + error), { status: 500 });
     //res.status(500).json({ message: 'Internal server error' });
   }
 }

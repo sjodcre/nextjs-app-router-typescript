@@ -21,7 +21,7 @@ export async function GET(req: Request, route: { params: { id: string } }) {
   try {
 
    
-    const sql = `SELECT MAX(time) as latestTime FROM ${tableName} WHERE token_address = ?`;
+    const sql = `SELECT MAX(time) as latestTime FROM ${tableName} WHERE token_address = $1`;
     const row = await query(sql,[token_address]);
     if (row[0].latestTime) {
       return new Response(JSON.stringify({latestTime: row[0].latestTime }), { status: 200 });

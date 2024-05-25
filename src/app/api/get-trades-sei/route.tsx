@@ -1,10 +1,11 @@
-import { query } from "@/app/api/db";
+import { query } from "../db";
 
 
 
 
 
-export async function GET(req: Request, route: { params: { id: string } }) {
+
+export async function GET(req: Request) {
 
   const url = new URL(req.url)
 
@@ -15,7 +16,7 @@ export async function GET(req: Request, route: { params: { id: string } }) {
     return new Response(JSON.stringify({ error: 'Token address is required' }), { status: 400 });
 }
 
-  
+  console.log(tokenAddress)
   try {
   
     const transactions = await query(`SELECT * FROM transaction_history_sei WHERE token_address = $1 ORDER BY timestamp DESC`, [tokenAddress]);

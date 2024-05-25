@@ -27,16 +27,16 @@ export async function GET(req: Request) {
     
         sql = `
         SELECT 
-            ROUND(time / ?) * ? as bucket,
+            ROUND(time / $1) * $2 as bucket,
             token_address,
             MAX(high) as high, 
             MIN(low) as low,
-            (SELECT open FROM ${tableName} WHERE ROUND(time / ?) = ROUND(t.time / ?) AND token_address = t.token_address ORDER BY time ASC LIMIT 1) as open,
-            (SELECT close FROM ${tableName} WHERE ROUND(time / ?) = ROUND(t.time / ?) AND token_address = t.token_address ORDER BY time DESC LIMIT 1) as close,
+            (SELECT open FROM ${tableName} WHERE ROUND(time / $3) = ROUND(t.time / $4) AND token_address = t.token_address ORDER BY time ASC LIMIT 1) as open,
+            (SELECT close FROM ${tableName} WHERE ROUND(time / $5) = ROUND(t.time / $6) AND token_address = t.token_address ORDER BY time DESC LIMIT 1) as close,
             MAX(time) as time
         FROM ${tableName} t
-        WHERE time >= ? AND time <= ? AND token_address = ?
-        GROUP BY ROUND(time / ?), token_address
+        WHERE time >= $7 AND time <= $8 AND token_address = $9
+        GROUP BY ROUND(time / $10), token_address
         `;
 
 
@@ -50,7 +50,7 @@ export async function GET(req: Request) {
         // queryParams.push(interval);
     } else {
         // Direct selection for daily and weekly without aggregation
-        sql = `SELECT * FROM ${tableName} WHERE time >= ? AND time <= ? AND token_address = ?`;
+        sql = `SELECT * FROM ${tableName} WHERE time >= $1 AND time <= $2 AND token_address = $3`;
         queryParams = [parseInt(from), parseInt(to), token_address];
         // query = 'SELECT * FROM ohlc WHERE time >= ? AND time <= ?';
     }
