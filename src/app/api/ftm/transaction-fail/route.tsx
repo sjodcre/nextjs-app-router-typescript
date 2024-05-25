@@ -25,7 +25,7 @@ export  async function POST(req: Request) {
   try {
    
         // transaction_history table
-        await query(`UPDATE ${transactionTableName} SET tx_status = ? , timestamp = ?  WHERE tx_hash = ?` , [tx_status, time , tx_hash ]);
+        await query(`UPDATE ${transactionTableName} SET tx_status = $1 , timestamp = $2  WHERE tx_hash = $3` , [tx_status, time , tx_hash ]);
 
          
     return new Response(JSON.stringify({ message: 'Transaction and OHLC data updated successfully.' }), { status: 201});

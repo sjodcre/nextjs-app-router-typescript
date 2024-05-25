@@ -20,8 +20,8 @@ const transactionTableName = 'transaction_history_ftm';
   try {
     const sql = `
     SELECT 
-        (SELECT sum_token FROM ${transactionTableName} WHERE token_address = ? ORDER BY timestamp DESC LIMIT 1) AS sum_token,
-        (SELECT sum_native FROM ${transactionTableName} WHERE token_address = ? ORDER BY timestamp DESC LIMIT 1) AS sum_native
+        (SELECT sum_token FROM ${transactionTableName} WHERE token_address = $1 ORDER BY timestamp DESC LIMIT 1) AS sum_token,
+        (SELECT sum_native FROM ${transactionTableName} WHERE token_address = $2 ORDER BY timestamp DESC LIMIT 1) AS sum_native
 `;
 const result = await query(sql, [tokenAddress, tokenAddress]);
 let sum_token = result ? result[0].sum_token : 1E16; 
@@ -41,21 +41,21 @@ if (tx_status === 'successful'){
 
               const sql2 = `
               INSERT INTO ${transactionTableName} (token_address, account, tx_status, token_amount, native_amount, price_per_token, timestamp, trade, sum_token, sum_native, tx_hash)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
           `;
           // Execute the INSERT query with placeholders for values
-          const result2 = await query(sql2, [tokenAddress, account, tx_status, token_amount, native_amount, price, time, trade, sum_token, sum_native, tx_hash]);
+          await query(sql2, [tokenAddress, account, tx_status, token_amount, native_amount, price, time, trade, sum_token, sum_native, tx_hash]);
           
           // Retrieve the last inserted row ID (primary key)
-          const primaryKey = result2[0].lastID;
+         // const primaryKey = result2[0].lastID;
           
           // Return the primary key as part of the response
          
-    return new Response(JSON.stringify(primaryKey), { status: 201});
+    return new Response(JSON.stringify("Success"), { status: 201});
     
   } catch (error) {
-   
-    return new Response(JSON.stringify('Error'), { status: 500 });
+   console.log("err:" + error)
+    return new Response(JSON.stringify(error), { status: 500 });
     //res.status(500).json({ message: 'Internal server error' });
   }
 }

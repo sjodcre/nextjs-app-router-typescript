@@ -1,4 +1,4 @@
-import { query } from "../db";
+import { query } from "../../db";
 
 
 
@@ -23,18 +23,18 @@ export  async function POST(req: Request) {
   try {
     const sql = `
             SELECT 
-                (SELECT sum_token FROM ${transactionTableName} WHERE token_address = ? ORDER BY timestamp DESC LIMIT 1) AS sum_token,
-                (SELECT sum_native FROM ${transactionTableName} WHERE token_address = ? ORDER BY timestamp DESC LIMIT 1) AS sum_native
+                (SELECT sum_token FROM ${transactionTableName} WHERE token_address = $1 ORDER BY timestamp DESC LIMIT 1) AS sum_token,
+                (SELECT sum_native FROM ${transactionTableName} WHERE token_address = $2 ORDER BY timestamp DESC LIMIT 1) AS sum_native
         `;
 
         const result = await query(sql, [tokenAddress, tokenAddress]);
 
-        let sum_token = result ? result.sum_token : 1E16; 
+        let sum_token = result ? result[0].sum_token : 1E16; 
         if (tx_status ==="successful") {
             sum_token = trade === 'buy' ? sum_token + token_amount : sum_token - token_amount;
         }
 
-        let sum_native = result ? result.sum_native : 1E17;  // Using scientific notation for the default value
+        let sum_native = result ? result[0].sum_native : 1E17;  // Using scientific notation for the default value
         if (tx_status ==="successful") {
             sum_native = trade === 'buy' ? sum_native + native_amount : sum_native - native_amount;
         }
@@ -48,31 +48,31 @@ export  async function POST(req: Request) {
         console.log(sum_token, sum_native);
 
         // transaction_history table
-        await query(`UPDATE ${transactionTableName} SET sum_native = ? ,sum_token = ?, tx_status = ? , timestamp = ? , token_amount = ? WHERE tx_hash = ?` , [sum_native, sum_token, tx_status, time , token_amount, tx_hash]);
+        await query(`UPDATE ${transactionTableName} SET sum_native = $1 ,sum_token = $2, tx_status = $3 , timestamp = $4 , token_amount = $5 WHERE tx_hash = $6` , [sum_native, sum_token, tx_status, time , token_amount, tx_hash]);
 
                           
         // ohlc table
         const timeSlice = Math.floor(time / 300) * 300;
-        const existing = await query(`SELECT * FROM ${ohlcTableName} WHERE token_address = ? AND time = ?`, [tokenAddress, timeSlice]);
+        const existing = await query(`SELECT * FROM ${ohlcTableName} WHERE token_address = $1 AND time = $2`, [tokenAddress, timeSlice]);
         if (existing) {
 
             const updatedOHLC = {
-                open: existing.open,
-                high: Math.max(existing.high, price),
-                low: Math.min(existing.low, price),
+                open: existing[0].open,
+                high: Math.max(existing[0].high, price),
+                low: Math.min(existing[0].low, price),
                 close: price,
-                volume: existing.volume + volume
+                volume: existing[0].volume + volume
             };
-            await query(`UPDATE ${ohlcTableName} SET high = ?, low = ?, close = ?, volume = ? WHERE chartid = ?`, 
-                [updatedOHLC.high, updatedOHLC.low, updatedOHLC.close, updatedOHLC.volume, existing.chartid]);
+            await query(`UPDATE ${ohlcTableName} SET high = $1, low = $2, close = $3, volume = $4 WHERE chartid = $5`, 
+                [updatedOHLC.high, updatedOHLC.low, updatedOHLC.close, updatedOHLC.volume, existing[0].chartid]);
         } else {
             await query(`INSERT INTO ${ohlcTableName} (token_address, time, open, high, low, close, volume)
-                          VALUES (?, ?, ?, ?, ?, ?, ?)`, [tokenAddress, timeSlice, price, price, price, price, volume]);
+                          VALUES ($1, $2, $3, $4, $5, $6, $7)`, [tokenAddress, timeSlice, price, price, price, price, volume]);
         }
 
         //token_balance table
-        const currentBalance = (await query(`SELECT balance FROM token_balances_sei WHERE account = ? AND token_address =?`, [account, tokenAddress])) || {balance: 0 };
-        let newBalance = currentBalance.balance;
+        const currentBalance = (await query(`SELECT balance FROM token_balances_sei WHERE account = $1 AND token_address =$2`, [account, tokenAddress])) || {balance: 0 };
+        let newBalance = currentBalance[0].balance;
         if (tx_status ==="successful") {
             if (trade === 'buy') {
                 newBalance += token_amount;
@@ -82,18 +82,18 @@ export  async function POST(req: Request) {
         }
         
     
-        if (currentBalance.balance === 0) {
-            await query("INSERT INTO token_balances_sei (account, token_address, balance) VALUES (?, ?, ?)", [account, tokenAddress, newBalance]);
+        if (currentBalance[0].balance === 0) {
+            await query("INSERT INTO token_balances_sei (account, token_address, balance) VALUES ($1, $2, $3)", [account, tokenAddress, newBalance]);
         } else {
-            await query("UPDATE token_balances_sei SET balance = ? WHERE account = ? AND token_address = ?", [newBalance, account, tokenAddress]);
+            await query("UPDATE token_balances_sei SET balance = $1 WHERE account = $2 AND token_address = $3", [newBalance, account, tokenAddress]);
         }
 
          
     return new Response(JSON.stringify({ message: 'Transaction and OHLC data updated successfully.' }), { status: 201});
     
   } catch (error) {
-   
-    return new Response(JSON.stringify('Error'), { status: 500 });
+   console.log(error)
+    return new Response(JSON.stringify('Error:' + error), { status: 500 });
     //res.status(500).json({ message: 'Internal server error' });
   }
 }

@@ -4,12 +4,12 @@ import { query } from "../db";
 
 export async function GET(req: Request) {
 
-  const data = await req.json(); 
+  const url = new URL(req.url)
 
-  const { token_address } = data as Record<string, string>;
+  const token_address = url.searchParams.get("token_address");
 
   const tableName = 'token_list_ftm';
-  const sql = `SELECT * FROM ${tableName} WHERE token_address = ?`;
+  const sql = `SELECT * FROM ${tableName} WHERE token_address = $1`;
 
   try {
 
