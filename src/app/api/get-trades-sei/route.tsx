@@ -16,10 +16,10 @@ export async function GET(req: Request) {
     return new Response(JSON.stringify({ error: 'Token address is required' }), { status: 400 });
 }
 
-  console.log(tokenAddress)
+  // console.log(tokenAddress)
   try {
   
-    const transactions = await query(`SELECT * FROM transaction_history_sei WHERE token_address = $1 ORDER BY timestamp DESC`, [tokenAddress]);
+    const transactions = await query(`SELECT * FROM transaction_history_sei WHERE token_address = $1 AND tx_status = 'successful' ORDER BY timestamp DESC`, [tokenAddress]);
 
     return new Response(JSON.stringify(transactions), { status: 200 });
     

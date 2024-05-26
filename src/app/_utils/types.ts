@@ -53,9 +53,9 @@ export interface TradeData {
   account: string;
   token_amount: number;
   native_amount: number;
-  price_per_token: number;
+  // price_per_token: number;
   timestamp: number;
   trade: 'buy' | 'sell';
-  sum: number;
+  // sum: number;
   tx_hash: string
 }

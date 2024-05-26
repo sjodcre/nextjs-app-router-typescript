@@ -1,13 +1,13 @@
 "use client"
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {  TokenHolder, TokenPageDetails, TradeData } from "@/app/_utils/types";
 import CandleChart from "@/app/_ui/candle-chart";
 import SlippageDialog from "@/app/_ui/slippage-dialog";
 import IndeterminateProgressBar from "@/app/_ui/indeterminate-progress-bar";
 import {  ethers } from "ethers";
 import ERC20TestArtifact from '../../../../artifacts/contracts/ERCC20Test.sol/ERC20Test.json'
-import { fetchTokenInfo, getTokenTrades, getTopTokenHolders, postTransactionAndOHLC, postTransactionData, postTransactionFailed } from "@/app/_services/db-write";
+import { fetchTokenInfo, getTokenTrades, getTopTokenHolders, postTransactionAndOHLC, postTransactionFailed } from "@/app/_services/db-write";
 import { useSwitchNetwork, useWeb3ModalAccount, useWeb3ModalProvider } from "@web3modal/ethers5/react";
 import { toast } from "react-toastify";
 import TradeItem from "@/app/_ui/trade-list";
@@ -19,6 +19,7 @@ import useSocket from "@/app/_utils/use-socket";
 import { burnToken, mintToken } from "@/app/_services/blockchain";
 import { Interface } from "ethers/lib/utils";
 import { checkPendingTx } from "@/app/_utils/check-pending-tx";
+import { json } from "stream/consumers";
 
 
 
@@ -59,6 +60,8 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   // const seiWebSocket = "wss://cool-aged-owl.sei-arctic.quiknode.pro/177cc0d1e96c821bc0cdd8bb9dbf72157f1a5e1d/";
   const ERC20TestContractAddress = params.tokenInfo[1];
   const { isSocketConnected, emitEvent ,onEvent, offEvent} = useSocket();
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
 
 
   useEffect(() => {
@@ -96,61 +99,61 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   }, []);
 
   //web socket listener
-  useEffect(() => {
-    // try {
-    //   let provider = new ethers.WebSocketProvider(createWebSocket());
-    //   startListening(provider);
+  // useEffect(() => {
+  //   // try {
+  //   //   let provider = new ethers.WebSocketProvider(createWebSocket());
+  //   //   startListening(provider);
 
 
-    //   return () => {
-    //     stopListening(provider);
-    // };
-    // } catch (error) {
-    //   console.error("Failed to set up contract listeners:", error);
+  //   //   return () => {
+  //   //     stopListening(provider);
+  //   // };
+  //   // } catch (error) {
+  //   //   console.error("Failed to set up contract listeners:", error);
 
-    // }
+  //   // }
 
 
-    try {
+  //   try {
       
-      const wsProvider = new ethers.providers.WebSocketProvider(seiWebSocket)
-      const contract = new ethers.Contract(
-        ERC20TestContractAddress.toString(),
-        ERC20TestArtifact.abi,
-        wsProvider);
-      // contract.removeAllListeners();
-      // console.log("WebSocket provider set up:", wsProvider);
-      console.log("Contract initialized and listening for events at address:", ERC20TestContractAddress);
-      contract.on("Transfer", (from, to, value) => {
-        console.log("src: ", from);
-        console.log("dst: ", to)
-        console.log("wad: ", value)
+  //     const wsProvider = new ethers.providers.WebSocketProvider(seiWebSocket)
+  //     const contract = new ethers.Contract(
+  //       ERC20TestContractAddress.toString(),
+  //       ERC20TestArtifact.abi,
+  //       wsProvider);
+  //     // contract.removeAllListeners();
+  //     // console.log("WebSocket provider set up:", wsProvider);
+  //     console.log("Contract initialized and listening for events at address:", ERC20TestContractAddress);
+  //     contract.on("Transfer", (from, to, value) => {
+  //       console.log("src: ", from);
+  //       console.log("dst: ", to)
+  //       console.log("wad: ", value)
 
-      })
+  //     })
 
-      contract.on("*", (event) => {
-        console.log("event?", event)
-        // The `event.log` has the entire EventLog
-      });
+  //     contract.on("*", (event) => {
+  //       console.log("event?", event)
+  //       // The `event.log` has the entire EventLog
+  //     });
 
-      const handleEvent = (account: any, amount: any, deposit: any) => {
-        console.log(`Event - Account: ${account}, Amount: ${amount.toString()}, Deposit: ${deposit.toString()} `);
+  //     const handleEvent = (account: any, amount: any, deposit: any) => {
+  //       console.log(`Event - Account: ${account}, Amount: ${amount.toString()}, Deposit: ${deposit.toString()} `);
 
-      };
+  //     };
 
-      contract.on("ContinuousMint", (account, amount, deposit) => handleEvent(account, amount, deposit));
-      contract.on("ContinuousBurn", (account, amount, reimburseAmount) => handleEvent(account, amount, reimburseAmount));
+  //     contract.on("ContinuousMint", (account, amount, deposit) => handleEvent(account, amount, deposit));
+  //     contract.on("ContinuousBurn", (account, amount, reimburseAmount) => handleEvent(account, amount, reimburseAmount));
 
-      return () => {
-        contract.removeAllListeners();
-        wsProvider.destroy();
-      };
-    } catch (error) {
-      console.error("Failed to set up contract listeners:", error);
+  //     return () => {
+  //       contract.removeAllListeners();
+  //       wsProvider.destroy();
+  //     };
+  //   } catch (error) {
+  //     console.error("Failed to set up contract listeners:", error);
 
-    }
+  //   }
 
-  }, []);
+  // }, []);
 
   //wallet provider readiness
   useEffect(() => {
@@ -207,8 +210,11 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
 
     onEvent("refresh", (value: any) => {
-      console.log('Received from server: ' + value);
-      updateData(value);
+      // console.log('Received from server: ' + value);
+      // console.log('check inside object',JSON.stringify(value,null,2))
+      // updateData(value);
+      fetchData();
+
     
     });
 
@@ -217,30 +223,37 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     };
 
 
-  }, [params.tokenInfo, nativeTokenPrice]);
+  }, []);
 
 
+  const totalPages = useMemo(() => {
+    return Math.ceil(trades.length / itemsPerPage);
+  }, [trades, itemsPerPage]);
+
+  // Get current trades to display
+  const currentTrades = useMemo(() => {
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
+      return trades.slice(startIndex, endIndex);
+  }, [trades, currentPage, itemsPerPage]);
+  
 //UpdateData on Data Emit 
   const updateData = async (data: any) => {
-    const {amount, deposit, contractAddress, trade} = data;
-        const price = deposit / amount;
-  
 
+    handleNewTrade(data);
+    // const {amount, deposit, contractAddress, trade} = data;
+    const price = data.deposit / data.amount;
 
+    let currentTokenSum = 0 ;
+    if (data.trade === 'buy'){
+      currentTokenSum =  tokenSum + data.amount ;
+    }else{
+      currentTokenSum = tokenSum - data.amount;
+    }
 
-        let currentTokenSum = 0 ;
-        if (trade === 'buy'){
-          currentTokenSum =  tokenSum + amount ;
-        }else{
-
-        }currentTokenSum = tokenSum - amount;
-
-        
-       
-    getTopTokenHolders(params.tokenInfo[0], params.tokenInfo[1]);
+    // getTopTokenHolders(params.tokenInfo[0], params.tokenInfo[1]);
     fetchHolders();
-
-
+    
     // Calculate market cap if tradesData and nativeTokenPrice are available
     if (nativeTokenPrice !== null) {
       const marketCap = currentTokenSum * price * nativeTokenPrice / 1E18;
@@ -249,7 +262,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
       });
-      if(params.tokenInfo[1] == contractAddress ){
+      if(params.tokenInfo[1] == data.contractAddress ){
         setMarketCap(formattedMarketCap);
       }
      
@@ -276,6 +289,25 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     // }
   }, [trades]);
 
+  const handleNewTrade = (newTradeData: { txid: any; contractAddress: any; account: any; amount: any; deposit: any; timestamp: any; trade: any; txHash: any; }) => {
+    console.log("inside handlenewtrade", newTradeData)
+    console.log("id for new trade", newTradeData.txid)
+    
+    const newTrade = {
+      txid: newTradeData.txid,
+      token_address: newTradeData.contractAddress,
+      account: newTradeData.account,
+      token_amount: newTradeData.amount,
+      native_amount: newTradeData.deposit,
+      timestamp: newTradeData.timestamp,      
+      trade: newTradeData.trade,
+      tx_hash: newTradeData.txHash
+    };
+
+    // Update the trades state to include the new trade
+    setTrades(currentTrades => [newTrade, ...currentTrades]);
+  };
+
   // Function to fetch data
   const fetchData = async () => {
     const tokenInfoPromise = fetchTokenInfo(params.tokenInfo[0], params.tokenInfo[1]);
@@ -287,9 +319,9 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     setTokenDetails(tokenInfo[0]);
     setTrades(tradesData);
     setTokenSum(tradesData[0].sum_token);
-    setNativeSum(tradesData[0].sum_native)
+    setNativeSum(tradesData[0].sum_native);
 
-    getTopTokenHolders(params.tokenInfo[0], params.tokenInfo[1]);
+    // getTopTokenHolders(params.tokenInfo[0], params.tokenInfo[1]);
     fetchHolders();
 
     // Calculate market cap if tradesData and nativeTokenPrice are available
@@ -310,7 +342,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     setIsLoading(true); // Start loading
 
     const data = await getTopTokenHolders(params.tokenInfo[0], params.tokenInfo[1]); // Assume this fetches the data as shown in your example
-    console.log("holders data", data)
+    // console.log("holders data", data)
     setHolders(data);
     // const sum = data.reduce((acc: any, holder: { balance: any; }) => acc + holder.balance, 0);
     // setTokenSum(sum);
@@ -571,14 +603,14 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
             ).then(({ result, txHash }) => {
               console.log("result status", result.status)
               if (result.status === 1) {
-               // console.log("Transaction succeeded:", result);
+               console.log("Transaction succeeded:", result);
                 const iface = new Interface(ERC20TestArtifact.abi);
 
                 result.logs.forEach((log: any) => {
                   try {
                     const parsedLog = iface.parseLog(log);
                     if (parsedLog?.name === 'ContinuousMint') {
-                   //    console.log('ContinuousMint Event Args:', parsedLog.args);
+                      console.log('ContinuousMint Event Args:', parsedLog.args);
 
                       const info = {
                         selectedChain: chain,
@@ -593,10 +625,11 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                       };
                       // console.log("Processed Event Data:", info);
                       postTransactionAndOHLC(info).then(response => {
-                        console.log('Backend response:', response);
+                        console.log('Backend response:', response.message);
                         // socket.emit("updated", "updated to db");
                         const updatedInfo = {
                           ...info,
+                          txid: response.txid,
                           token_ticker: tokenDetails?.token_ticker,
                           token_name: tokenDetails?.token_name,
                           token_description: tokenDetails?.token_description
@@ -681,10 +714,13 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                         txHash: txHash
                       };
                       postTransactionAndOHLC(info).then(response => {
-                        console.log('Backend response:', response);
+                        // let txid = response.primaryKey
+                        // console.log('primary key', txid)
+                        console.log('Backend response:', response.message);
                         // socket.emit("updated", "updated to db");
                         const updatedInfo = {
                           ...info,
+                          txid: response.txid,
                           token_ticker: tokenDetails?.token_ticker,
                           token_name: tokenDetails?.token_name,
                           token_description: tokenDetails?.token_description
@@ -856,6 +892,14 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                     {trades.map(trade => (
                       <TradeItem key={trade.txid} trade={trade} networkType={params.tokenInfo[0]} />
                     ))}
+                    <div className="pagination">
+                      <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
+                          Previous
+                      </button>
+                      <button onClick={() => setCurrentPage(prev => (prev < totalPages ? prev + 1 : prev))} disabled={currentPage === totalPages}>
+                          Next
+                      </button>
+                  </div>
                   </div>
                 ) : (
                   <p>No trades found.</p>

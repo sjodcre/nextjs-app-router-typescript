@@ -100,7 +100,7 @@ class CustomDatafeed {
                 fetch(url)
                 .then(response => response.json())
                 .then(data => {
-                    console.log(data.length)
+                    // console.log(data)
                     if (data.length > 0) {
                         const correctedData = data.map((d: { time: number; open: any; high: any; low: any; close: any; }) => ({
                         time: d.time * 1000, // Convert timestamp from seconds to milliseconds
@@ -213,11 +213,11 @@ class CustomDatafeed {
             fetch(url)
             .then(response => response.json())
             .then(data => {
-                console.log("data from token info", data)
+                // console.log("data from token info", data)
                 let descriptionSnippet = '';
-                if (data.length > 0 && data[0].description) {
-                    descriptionSnippet = data[0].description.substring(0, 10);
-                    console.log(descriptionSnippet);
+                if (data.length > 0 && data[0].token_description) {
+                    descriptionSnippet = data[0].token_description.substring(0, 10);
+                    // console.log(descriptionSnippet);
                 } else {
                     console.log("Description is not available");
                 }

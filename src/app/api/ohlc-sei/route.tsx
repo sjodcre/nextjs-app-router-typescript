@@ -118,6 +118,7 @@ export async function GET(req: Request) {
           MAX(time) as time
         FROM ranked_data
         GROUP BY 1, token_address
+        ORDER BY time ASC
       `;
       queryParams = [interval, from, to, token_address];
     } else {

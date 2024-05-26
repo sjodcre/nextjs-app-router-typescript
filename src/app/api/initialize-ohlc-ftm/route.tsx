@@ -23,12 +23,14 @@ export async function POST(req: Request) {
   try {
     let sum_token = 1E16;
     let sum_native = 1E17;
+    let tx_status = 'successful'
 
 
-    const sql = `INSERT INTO ${transactionTableName} (token_address, account, token_amount, native_amount, price_per_token, timestamp, trade, sum_token, sum_native, tx_hash)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)` ;
+
+    const sql = `INSERT INTO ${transactionTableName} (token_address, account, token_amount, native_amount, price_per_token, timestamp, trade, sum_token, sum_native, tx_hash, tx_status)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)` ;
     // Insert transaction data into the transaction history table
-    await query(sql, [tokenAddress, account, token_amount, native_amount, price, time, trade, sum_token, sum_native, tx_hash]);
+    await query(sql, [tokenAddress, account, token_amount, native_amount, price, time, trade, sum_token, sum_native, tx_hash, tx_status]);
 
     // Handle OHLC data
     const timeSlice = Math.floor(time / 300) * 300;

@@ -48,7 +48,9 @@ export  async function POST(req: Request) {
         console.log(sum_token, sum_native);
 
         // transaction_history table
-        await query(`UPDATE ${transactionTableName} SET sum_native = $1 ,sum_token = $2, tx_status = $3 , timestamp = $4 , token_amount = $5 WHERE tx_hash = $6` , [sum_native, sum_token, tx_status, time , token_amount, tx_hash]);
+        let result2 = await query(`UPDATE ${transactionTableName} SET sum_native = $1 ,sum_token = $2, tx_status = $3 , timestamp = $4 , token_amount = $5 WHERE tx_hash = $6 RETURNING txid` , [sum_native, sum_token, tx_status, time , token_amount, tx_hash]);
+        console.log("transaction&ohlc result", result2)
+        const txid = result2[0].txid;
 
                           
         // ohlc table
@@ -96,7 +98,7 @@ export  async function POST(req: Request) {
         }
 
          
-    return new Response(JSON.stringify({ message: 'Transaction and OHLC data updated successfully.' }), { status: 201});
+    return new Response(JSON.stringify({ message: 'Transaction and OHLC data updated successfully.' , txid}), { status: 201});
     
   } catch (error) {
    console.log(error)

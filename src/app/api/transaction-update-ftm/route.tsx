@@ -44,13 +44,15 @@ if (tx_status === 'successful'){
               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
           `;
           // Execute the INSERT query with placeholders for values
-          await query(sql2, [tokenAddress, account, tx_status, token_amount, native_amount, price, time, trade, sum_token, sum_native, tx_hash]);
+          let result2= await query(sql2, [tokenAddress, account, tx_status, token_amount, native_amount, price, time, trade, sum_token, sum_native, tx_hash]);
           
           // Retrieve the last inserted row ID (primary key)
          // const primaryKey = result2[0].lastID;
           
           // Return the primary key as part of the response
-         
+          // const txid = result2[0].txid;  // Access the txid from the result
+          // return new Response(JSON.stringify({ txid }), { status: 201 });
+
     return new Response(JSON.stringify("Success"), { status: 201});
     
   } catch (error) {

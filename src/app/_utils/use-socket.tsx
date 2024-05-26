@@ -61,7 +61,7 @@ const useSocket = (listeners: EventListener[] = []) => {
     // "trade": "buy",
     // "txHash": "0xebb3fc27f430932ee895efdd98e5ae0f8dc114b52e3a0fb5270ad6205c0f08ec"
 
-    socket.on('refresh', (data: { deposit: string; amount: string; timestamp: string; description: string; ticker: any; name: any; }) => {
+    socket.on('refresh', (data: { deposit: string; amount: string; timestamp: string; token_description: string; token_ticker: any; token_name: any; }) => {
       console.log('[socket] Message at refresh:', data);
       // const [
       //     eventTypeStr, // 0
@@ -86,8 +86,8 @@ const useSocket = (listeners: EventListener[] = []) => {
       const tradeTime = parseInt(data.timestamp);
 
       // const channelString = `0~${exchange}~${fromSymbol}~${toSymbol}`;
-      let descriptionSnippet = data.description.substring(0, 10);
-      const channelString = `0~${data.ticker}~${data.name}~${descriptionSnippet}`;
+      let descriptionSnippet = data.token_description.substring(0, 10);
+      const channelString = `0~${data.token_ticker}~${data.token_name}~${descriptionSnippet}`;
 
       const subscriptionItem = channelToSubscription.get(channelString);
       console.log("subscriptionItem", subscriptionItem)
@@ -182,6 +182,7 @@ export function subscribeOnStream(
     // console.log(symbolInfo.description)
     // console.log(symbolInfo.ticker)
     const parsedSymbol = parseFullSymbol(`${symbolInfo.exchange}:${symbolInfo.name}`);
+    // console.log("description", symbolInfo?.description)
     // const channelString = `0~${parsedSymbol?.exchange}~${parsedSymbol?.fromSymbol}~${parsedSymbol?.toSymbol}`;
     let descriptionSnippet = symbolInfo?.description.substring(0, 10);
 
