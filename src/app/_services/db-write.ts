@@ -144,6 +144,17 @@ export const postTransactionAndOHLC = async (transactionData: any) => {
         throw new Error("incorrect chain id!")
     }
 
+    console.log("tokenAddr", contractAddress)
+    console.log("account", account)
+    console.log("tx_status",status)
+    console.log("token_amount",amount)
+    console.log("native_amount", deposit)
+    console.log("time",timestamp)
+    console.log("price", price)
+    console.log("volume", volume)
+    console.log("trade", trade)
+    console.log("tx_hash", txHash)
+
     try {
         const response = await fetch(url, {
             method: 'POST',
@@ -235,7 +246,7 @@ export const getTokenTrades = async (chainId: string, tokenAddress: string, ) =>
         }
         const rawData = await response.text();
         const data = JSON.parse(rawData);
-        console.log('Parsed JSON data:', data);
+        // console.log('Parsed JSON data:', data);
         // console.log(data[0])
         return data;
     } catch (error) {
@@ -260,7 +271,7 @@ export const fetchTokenInfo = async (chainId: string, tokenAddress: string) => {
         }
         const rawData = await response.text();
         const data = JSON.parse(rawData);
-        console.log('Parsed JSON data:', data);
+        // console.log('Parsed JSON data:', data);
         // console.log(data[0])
         return data;
     } catch (error) {

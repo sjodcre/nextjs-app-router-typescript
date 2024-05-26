@@ -96,3 +96,11 @@ export function parseFullSymbol(fullSymbol: string) {
     }
     return { exchange: match[1], fromSymbol: match[2], toSymbol: match[3] };
 }
+
+export function generateSymbol(exchange: any, fromSymbol: any, toSymbol: any) {
+    const short = `${fromSymbol}/${toSymbol}`;
+    return {
+        short,
+        full: `${exchange}:${short}`,
+    };
+}

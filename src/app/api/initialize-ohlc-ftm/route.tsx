@@ -55,7 +55,7 @@ export async function POST(req: Request) {
 
     //initialize balance table
     const sql4 = 'INSERT INTO token_balances_ftm (account, token_address, balance) VALUES ($1, $2, $3)';
-    await query(sql4, [account, tokenAddress, token_amount]);
+    await query(sql4, [tokenAddress, tokenAddress, token_amount]);
 
 
     return new Response(JSON.stringify({ message: 'Transaction and OHLC data updated successfully.' }), { status: 201 });

@@ -7,11 +7,18 @@ import { query } from "@/app/api/db";
 export async function GET(req: Request, route: { params: { id: string } }) {
 
 
-  const data = await req.json();
+  // const data = await req.json();
    
-  const { token_address } = data as { token_address: string};
+  // const { token_address } = data as { token_address: string};
 
-  if (!token_address ) {
+  // if (!token_address ) {
+  //   return new Response(JSON.stringify({error: 'Token address required'}), { status: 400 });
+  //   }
+  const url = new URL(req.url)
+
+  const tokenAddress = url.searchParams.get("token_address");
+
+  if (!tokenAddress ) {
     return new Response(JSON.stringify({error: 'Token address required'}), { status: 400 });
     }
 
@@ -22,9 +29,10 @@ export async function GET(req: Request, route: { params: { id: string } }) {
 
    
     const sql = `SELECT MAX(time) as latestTime FROM ${tableName} WHERE token_address = $1`;
-    const row = await query(sql,[token_address]);
-    if (row[0].latestTime) {
-      return new Response(JSON.stringify({latestTime: row[0].latestTime }), { status: 200 });
+    const row = await query(sql,[tokenAddress]);
+    // console.log("row", row[0].latesttime)
+    if (row[0].latesttime) {
+      return new Response(JSON.stringify({latestTime: row[0].latesttime }), { status: 200 });
         
     } else {
       return new Response(JSON.stringify({error: 'No data available for the specified token address' }), { status: 400 });

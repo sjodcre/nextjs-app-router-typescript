@@ -88,9 +88,11 @@ class CustomDatafeed {
                 // console.log("chainid:", this.chainId)
                 let url = ''
                 if (this.chainId === 'sei'){
-                    url = `http://localhost:3001/ohlc-sei?token_address=${this.tokenAddress}&resolution=${resolution}&from=${from}&to=${to}`
+                    url = `/api/ohlc-sei?token_address=${this.tokenAddress}&resolution=${resolution}&from=${from}&to=${to}`
+                    // url = `http://localhost:3001/ohlc-sei?token_address=${this.tokenAddress}&resolution=${resolution}&from=${from}&to=${to}`
                 } else if (this.chainId ==='ftm') {
-                    url = `http://localhost:3001/ohlc-ftm?token_address=${this.tokenAddress}&resolution=${resolution}&from=${from}&to=${to}`
+                    url = `/api/ohlc-ftm?token_address=${this.tokenAddress}&resolution=${resolution}&from=${from}&to=${to}`
+                    // url = `http://localhost:3001/ohlc-ftm?token_address=${this.tokenAddress}&resolution=${resolution}&from=${from}&to=${to}`
                 } else {
                     throw new Error('invalid chain id!')
                 }
@@ -110,11 +112,17 @@ class CustomDatafeed {
                         if (data.length < countBack) {
                         console.log(`Requested ${countBack} bars, but only ${data.length} are available.`);
                         // onHistoryCallback(correctedData, { noData: length === 0 });
+                        if (firstDataRequest) {
+                            this.lastBarsCache.set(`${symbolInfo.name}~${symbolInfo.ticker}~${symbolInfo.description}`, { ...correctedData[correctedData.length - 1] });
+                        }
                         onHistoryCallback(correctedData, { noData: length === 0 });
 
                         } else {
                             // Return the last 'countBack' number of bars
                             const resultBars = correctedData.slice(-countBack);
+                            if (firstDataRequest) {
+                                this.lastBarsCache.set(`${symbolInfo.name}~${symbolInfo.ticker}~${symbolInfo.description}`, { ...resultBars[resultBars.length - 1] });
+                            }
                             onHistoryCallback(resultBars, { noData: false });
                         }
                     } else {
@@ -122,9 +130,11 @@ class CustomDatafeed {
                         if (firstDataRequest){
                        
                         if (this.chainId === 'sei'){
-                            url = `http://localhost:3001/sei/data/latest-time?token_address=${this.tokenAddress}`
+                            url = `/api/sei/data/latest-time?token_address=${this.tokenAddress}`
+                            // url = `http://localhost:3001/sei/data/latest-time?token_address=${this.tokenAddress}`
                         } else if (this.chainId ==='ftm') {
-                            url = `http://localhost:3001/ftm/data/latest-time?token_address=${this.tokenAddress}`
+                            url = `/api/ftm/data/latest-time?token_address=${this.tokenAddress}`
+                            // url = `http://localhost:3001/ftm/data/latest-time?token_address=${this.tokenAddress}`
                         } else {
                             throw new Error('invalid chain id!')
                         }
@@ -190,9 +200,11 @@ class CustomDatafeed {
     public resolveSymbol(symbolName: string, onSymbolResolvedCallback: (symbolInfo: any) => void, onResolveErrorCallback: (error: string) => void) {
         let url = ''
         if (this.chainId === 'sei'){
-            url = `http://localhost:3001/token-info-sei?token_address=${this.tokenAddress}`
+            url = `/api/token-info-sei?token_address=${this.tokenAddress}`
+            // url = `http://localhost:3001/token-info-sei?token_address=${this.tokenAddress}`
         } else if (this.chainId ==='ftm') {
-            url = `http://localhost:3001/token-info-ftm?token_address=${this.tokenAddress}`
+            url = `/api/token-info-ftm?token_address=${this.tokenAddress}`
+            // url = `http://localhost:3001/token-info-ftm?token_address=${this.tokenAddress}`
         } else {
             throw new Error('invalid chain id!')
         }
@@ -201,13 +213,21 @@ class CustomDatafeed {
             fetch(url)
             .then(response => response.json())
             .then(data => {
+                console.log("data from token info", data)
+                let descriptionSnippet = '';
+                if (data.length > 0 && data[0].description) {
+                    descriptionSnippet = data[0].description.substring(0, 10);
+                    console.log(descriptionSnippet);
+                } else {
+                    console.log("Description is not available");
+                }
                 // console.log(data)
                 const symbolInfo: LibrarySymbolInfo = {
                     listed_exchange: '', 
                     format:'price', 
                     name: data[0].token_name,
                     ticker: data[0].token_ticker,
-                    description: data[0].token_ticker,
+                    description: descriptionSnippet,
                     type: 'crypto',
                     session: '24x7',
                     timezone: 'Etc/UTC',
@@ -249,7 +269,7 @@ class CustomDatafeed {
             onRealtimeCallback,
             subscriberUID,
             onResetCacheNeededCallback,
-            this.lastBarsCache.get(`${symbolInfo.exchange}:${symbolInfo.name}`)
+            this.lastBarsCache.get(`${symbolInfo.name}~${symbolInfo.ticker}~${symbolInfo.description}`)
         );
         
     }

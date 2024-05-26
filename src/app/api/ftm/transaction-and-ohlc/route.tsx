@@ -54,8 +54,9 @@ export  async function POST(req: Request) {
         // ohlc table
         const timeSlice = Math.floor(time / 300) * 300;
         const existing = await query(`SELECT * FROM ${ohlcTableName} WHERE token_address = $1 AND time = $2`, [tokenAddress, timeSlice]);
-        if (existing) {
-
+        console.log("existing", existing)
+        if (existing.length > 0) {
+            console.log("empty but entering?")
             const updatedOHLC = {
                 open: existing[0].open,
                 high: Math.max(existing[0].high, price),
@@ -71,8 +72,14 @@ export  async function POST(req: Request) {
         }
 
         //token_balance table
-        const currentBalance = (await query(`SELECT balance FROM token_balances_ftm WHERE account = $1 AND token_address =$2`, [account, tokenAddress])) || {balance: 0 };
-        let newBalance = currentBalance[0].balance;
+        const queryBalance = (await query(`SELECT balance FROM token_balances_ftm WHERE account = $1 AND token_address =$2`, [account, tokenAddress]));
+
+        let currentBalance = { balance: 0 }; // Default value
+        if (queryBalance.length>0){
+            currentBalance = queryBalance[0]
+        }
+        let newBalance = currentBalance.balance;
+        console.log("newBalance", newBalance)
         if (tx_status ==="successful") {
             if (trade === 'buy') {
                 newBalance += token_amount;
@@ -82,7 +89,7 @@ export  async function POST(req: Request) {
         }
         
     
-        if (currentBalance[0].balance === 0) {
+        if (currentBalance.balance === 0) {
             await query("INSERT INTO token_balances_ftm (account, token_address, balance) VALUES ($1, $2, $3)", [account, tokenAddress, newBalance]);
         } else {
             await query("UPDATE token_balances_ftm SET balance = $1 WHERE account = $2 AND token_address = $3", [newBalance, account, tokenAddress]);
@@ -92,7 +99,7 @@ export  async function POST(req: Request) {
     return new Response(JSON.stringify({ message: 'Transaction and OHLC data updated successfully.' }), { status: 201});
     
   } catch (error) {
-   
+   console.log(error)
     return new Response(JSON.stringify('Error:' + error), { status: 500 });
     //res.status(500).json({ message: 'Internal server error' });
   }

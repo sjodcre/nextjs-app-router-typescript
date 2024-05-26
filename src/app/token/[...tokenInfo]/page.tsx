@@ -87,7 +87,6 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     const updatePrice = async () => {
       const fetchedPrice = await fetchNativeTokenPrice(params.tokenInfo[0]);
       setnativeTokenPrice(fetchedPrice);
-      // console.log(fetchedPrice)
     };
 
     updatePrice(); // Initial fetch
@@ -126,7 +125,6 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
         console.log("src: ", from);
         console.log("dst: ", to)
         console.log("wad: ", value)
-        // console.log("event: ", event)
 
       })
 
@@ -210,7 +208,6 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
     onEvent("refresh", (value: any) => {
       console.log('Received from server: ' + value);
-      //console.log(value);
       updateData(value);
     
     });
@@ -252,13 +249,11 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
       });
-      console.log('marketcap = '+ formattedMarketCap);
       if(params.tokenInfo[1] == contractAddress ){
         setMarketCap(formattedMarketCap);
       }
      
     }
-   console.log(data);
    console.log("data updated");
     
   };
@@ -270,7 +265,6 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
    //get pending tx
   useEffect(() => {
-    // console.log("tradesData",trades.length)
     if (trades.length > 1 && !initialCheckDone){
       const changes = checkPendingTx(params.tokenInfo[0], params.tokenInfo[1]);
       setInitialCheckDone(true);
@@ -286,12 +280,11 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   const fetchData = async () => {
     const tokenInfoPromise = fetchTokenInfo(params.tokenInfo[0], params.tokenInfo[1]);
     const tradesDataPromise = getTokenTrades(params.tokenInfo[0], params.tokenInfo[1]);
-console.log(params.tokenInfo[0], params.tokenInfo[1]);
     // Wait for both promises to resolve
     const [tokenInfo, tradesData] = await Promise.all([tokenInfoPromise, tradesDataPromise]);
 
     // Update state with fetched data
-    setTokenDetails(tokenInfo);
+    setTokenDetails(tokenInfo[0]);
     setTrades(tradesData);
     setTokenSum(tradesData[0].sum_token);
     setNativeSum(tradesData[0].sum_native)
@@ -317,8 +310,7 @@ console.log(params.tokenInfo[0], params.tokenInfo[1]);
     setIsLoading(true); // Start loading
 
     const data = await getTopTokenHolders(params.tokenInfo[0], params.tokenInfo[1]); // Assume this fetches the data as shown in your example
-    console.log(data)
-
+    console.log("holders data", data)
     setHolders(data);
     // const sum = data.reduce((acc: any, holder: { balance: any; }) => acc + holder.balance, 0);
     // setTokenSum(sum);
@@ -335,7 +327,6 @@ console.log(params.tokenInfo[0], params.tokenInfo[1]);
 
   const handleSetPercentage = (percentage: number) => {
     // handleChainChange()
-    // // console.log(userBalance.token)
     // const fullAmount = userBalance.token; // Assuming `userBalance.token` holds the full token balance as a number
     // const amountToSet = (fullAmount * percentage / 100).toFixed(0); // Calculating the percentage and rounding it to the nearest whole number
 
@@ -343,7 +334,6 @@ console.log(params.tokenInfo[0], params.tokenInfo[1]);
       .then(async () => {
 
         // This code executes after successful network change
-        console.log(userBalance.token)
         const fullAmount = userBalance.token; // Assuming `userBalance.token` holds the full token balance as a number
         const amountToSet = (fullAmount * percentage / 100).toFixed(0); // Calculating the percentage and rounding it to the nearest whole number
 
@@ -392,7 +382,6 @@ console.log(params.tokenInfo[0], params.tokenInfo[1]);
         targetChainId = FTM_CHAIN_ID;
       }
 
-      // console.log( targetChainId)
       if (targetChainId !== null) {
         switchNetwork(targetChainId)
           .then(() => {
@@ -477,14 +466,9 @@ console.log(params.tokenInfo[0], params.tokenInfo[1]);
     const contract = new ethers.Contract(tokenAddress, ERC20TestArtifact.abi, signer);
 
     try {
-      // console.log(chainId)
-      // console.log(nativeTokenInfo.chainId)
+
       if (chainId === nativeTokenInfo.chainId) {
-        // console.log('pass here')
         const balance = await contract.balanceOf(signerAddr.toString());
-        // console.log("token address: ", tokenAddress);
-        // console.log("signer address: ", signer.address);
-        // console.log("Token Balance:", balance.toString());
         return balance;
       } else {
         return 0;
@@ -611,7 +595,13 @@ console.log(params.tokenInfo[0], params.tokenInfo[1]);
                       postTransactionAndOHLC(info).then(response => {
                         console.log('Backend response:', response);
                         // socket.emit("updated", "updated to db");
-                        emitEvent("updated",info);
+                        const updatedInfo = {
+                          ...info,
+                          token_ticker: tokenDetails?.token_ticker,
+                          token_name: tokenDetails?.token_name,
+                          token_description: tokenDetails?.token_description
+                        };
+                        emitEvent("updated",updatedInfo);
 
                       }).catch(error => {
                         console.error('Error posting data to backend:', error);
@@ -678,7 +668,6 @@ console.log(params.tokenInfo[0], params.tokenInfo[1]);
                   try {
                     const parsedLog = iface.parseLog(log);
                     if (parsedLog?.name === 'ContinuousBurn') {
-                      // console.log('ContinuousBurn Event Args:', parsedLog.args);
 
                       const info = {
                         selectedChain: chain,
@@ -691,11 +680,17 @@ console.log(params.tokenInfo[0], params.tokenInfo[1]);
                         trade: buySell.toString(),
                         txHash: txHash
                       };
-                      // console.log("Processed Event Data:", info);
                       postTransactionAndOHLC(info).then(response => {
                         console.log('Backend response:', response);
                         // socket.emit("updated", "updated to db");
-                        emitEvent("updated",info);
+                        const updatedInfo = {
+                          ...info,
+                          token_ticker: tokenDetails?.token_ticker,
+                          token_name: tokenDetails?.token_name,
+                          token_description: tokenDetails?.token_description
+                        };
+                        emitEvent("updated",updatedInfo);
+                        // emitEvent("updated",info);
 
                       }).catch(error => {
                         console.error('Error posting data to backend:', error);
