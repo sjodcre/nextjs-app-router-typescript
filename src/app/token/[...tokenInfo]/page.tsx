@@ -1,11 +1,11 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react";
-import {  TokenHolder, TokenPageDetails, TradeData } from "@/app/_utils/types";
+import { TokenHolder, TokenPageDetails, TradeData, Reply } from "@/app/_utils/types";
 import CandleChart from "@/app/_ui/candle-chart";
 import SlippageDialog from "@/app/_ui/slippage-dialog";
 import IndeterminateProgressBar from "@/app/_ui/indeterminate-progress-bar";
-import {  ethers } from "ethers";
+import { ethers } from "ethers";
 import ERC20TestArtifact from '../../../../artifacts/contracts/ERCC20Test.sol/ERC20Test.json'
 import { fetchTokenInfo, getTokenTrades, getTopTokenHolders, postTransactionAndOHLC, postTransactionFailed } from "@/app/_services/db-write";
 import { useSwitchNetwork, useWeb3ModalAccount, useWeb3ModalProvider } from "@web3modal/ethers5/react";
@@ -59,7 +59,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   const seiWebSocket = "wss://evm-ws-arctic-1.sei-apis.com";
   // const seiWebSocket = "wss://cool-aged-owl.sei-arctic.quiknode.pro/177cc0d1e96c821bc0cdd8bb9dbf72157f1a5e1d/";
   const ERC20TestContractAddress = params.tokenInfo[1];
-  const { isSocketConnected, emitEvent ,onEvent, offEvent} = useSocket();
+  const { isSocketConnected, emitEvent, onEvent, offEvent, disconnectSoc } = useSocket();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
 
@@ -115,7 +115,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
 
   //   try {
-      
+
   //     const wsProvider = new ethers.providers.WebSocketProvider(seiWebSocket)
   //     const contract = new ethers.Contract(
   //       ERC20TestContractAddress.toString(),
@@ -201,21 +201,22 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
       chainLogo: params.tokenInfo[0] === 'sei' ? '/sei-logo.png' : '/ftm-logo.png'
     });
   }, [params.tokenInfo, nativeTokenPrice])
-  
+
   //Fetch Data useeffect
   useEffect(() => {
 
     // Initial fetch of data
     fetchData();
-
+    ReplyList(params.tokenInfo[1]);
 
     onEvent("refresh", (value: any) => {
       // console.log('Received from server: ' + value);
       // console.log('check inside object',JSON.stringify(value,null,2))
       // updateData(value);
       fetchData();
+      ReplyList(params.tokenInfo[1]);
 
-    
+
     });
 
     return () => {
@@ -226,34 +227,57 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   }, []);
 
 
+
+  //Fetch Reply useeffect
+  useEffect(() => {
+
+    // Initial fetch of data
+
+    ReplyList(params.tokenInfo[1]);
+
+    onEvent("replyGet", (value: any) => {
+
+
+      ReplyList(params.tokenInfo[1]);
+
+
+    });
+
+    return () => {
+      offEvent("replyGet", fetchData);
+    };
+
+
+  }, []);
+
   const totalPages = useMemo(() => {
     return Math.ceil(trades.length / itemsPerPage);
   }, [trades, itemsPerPage]);
 
   // Get current trades to display
   const currentTrades = useMemo(() => {
-      const startIndex = (currentPage - 1) * itemsPerPage;
-      const endIndex = startIndex + itemsPerPage;
-      return trades.slice(startIndex, endIndex);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return trades.slice(startIndex, endIndex);
   }, [trades, currentPage, itemsPerPage]);
-  
-//UpdateData on Data Emit 
+
+  //UpdateData on Data Emit 
   const updateData = async (data: any) => {
 
     handleNewTrade(data);
     // const {amount, deposit, contractAddress, trade} = data;
     const price = data.deposit / data.amount;
 
-    let currentTokenSum = 0 ;
-    if (data.trade === 'buy'){
-      currentTokenSum =  tokenSum + data.amount ;
-    }else{
+    let currentTokenSum = 0;
+    if (data.trade === 'buy') {
+      currentTokenSum = tokenSum + data.amount;
+    } else {
       currentTokenSum = tokenSum - data.amount;
     }
 
     // getTopTokenHolders(params.tokenInfo[0], params.tokenInfo[1]);
     fetchHolders();
-    
+
     // Calculate market cap if tradesData and nativeTokenPrice are available
     if (nativeTokenPrice !== null) {
       const marketCap = currentTokenSum * price * nativeTokenPrice / 1E18;
@@ -262,13 +286,13 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
       });
-      if(params.tokenInfo[1] == data.contractAddress ){
+      if (params.tokenInfo[1] == data.contractAddress) {
         setMarketCap(formattedMarketCap);
       }
-     
+
     }
-   console.log("data updated");
-    
+    console.log("data updated");
+
   };
 
   //when user change wallet
@@ -276,9 +300,9 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     setTokenAmountToTrade('');
   }, [address])
 
-   //get pending tx
+  //get pending tx
   useEffect(() => {
-    if (trades.length > 1 && !initialCheckDone){
+    if (trades.length > 1 && !initialCheckDone) {
       const changes = checkPendingTx(params.tokenInfo[0], params.tokenInfo[1]);
       setInitialCheckDone(true);
 
@@ -292,14 +316,14 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   const handleNewTrade = (newTradeData: { txid: any; contractAddress: any; account: any; amount: any; deposit: any; timestamp: any; trade: any; txHash: any; }) => {
     console.log("inside handlenewtrade", newTradeData)
     console.log("id for new trade", newTradeData.txid)
-    
+
     const newTrade = {
       txid: newTradeData.txid,
       token_address: newTradeData.contractAddress,
       account: newTradeData.account,
       token_amount: newTradeData.amount,
       native_amount: newTradeData.deposit,
-      timestamp: newTradeData.timestamp,      
+      timestamp: newTradeData.timestamp,
       trade: newTradeData.trade,
       tx_hash: newTradeData.txHash
     };
@@ -517,9 +541,9 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     // const ERC20TestContract = new Contract(ERC20TestContractAddress, ERC20TestArtifact.abi, signer);
 
     // try {
-     
-      const toRet = mintToken(chain, ERC20TestContractAddress, walletProvider, nativeSum, tokenSum, nativeTokenBool,tokenAmountToTrade, slippage)
-      return toRet;
+
+    const toRet = mintToken(chain, ERC20TestContractAddress, walletProvider, nativeSum, tokenSum, nativeTokenBool, tokenAmountToTrade, slippage)
+    return toRet;
     // } catch (error) {
     //   console.log("Transaction error:", error);
 
@@ -536,12 +560,12 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     // }
   }
 
-  async function handleSellToken(walletProvider: any, tokenAmountToTrade: { toString: () => any | ethers.Overrides; }, chain:string) {
+  async function handleSellToken(walletProvider: any, tokenAmountToTrade: { toString: () => any | ethers.Overrides; }, chain: string) {
     const ERC20TestContractAddress = params.tokenInfo[1].toString();
 
     // try {
-      const toRet = burnToken(chain, ERC20TestContractAddress, nativeSum,tokenSum,tokenAmountToTrade,slippage, walletProvider)
-      return toRet;
+    const toRet = burnToken(chain, ERC20TestContractAddress, nativeSum, tokenSum, tokenAmountToTrade, slippage, walletProvider)
+    return toRet;
 
     // } catch (error) {
     //   console.error("Transaction error:", error);
@@ -603,7 +627,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
             ).then(({ result, txHash }) => {
               console.log("result status", result.status)
               if (result.status === 1) {
-               console.log("Transaction succeeded:", result);
+                console.log("Transaction succeeded:", result);
                 const iface = new Interface(ERC20TestArtifact.abi);
 
                 result.logs.forEach((log: any) => {
@@ -634,7 +658,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                           token_name: tokenDetails?.token_name,
                           token_description: tokenDetails?.token_description
                         };
-                        emitEvent("updated",updatedInfo);
+                        emitEvent("updated", updatedInfo);
 
                       }).catch(error => {
                         console.error('Error posting data to backend:', error);
@@ -645,7 +669,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                     console.error("Error parsing log:", error);
                   }
                 });
-              } else if (result.status === 0){
+              } else if (result.status === 0) {
                 console.log("Transaction failed with receipt:", result);
                 // Handle failure case
 
@@ -681,7 +705,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                 console.log('Backend response:', response);
               }).catch(error => {
                 console.error('Error posting data to backend:', error);
-              });      
+              });
               setTransactionDone(false);
             });
           } else if (buySell === 'sell') {
@@ -725,7 +749,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                           token_name: tokenDetails?.token_name,
                           token_description: tokenDetails?.token_description
                         };
-                        emitEvent("updated",updatedInfo);
+                        emitEvent("updated", updatedInfo);
                         // emitEvent("updated",info);
 
                       }).catch(error => {
@@ -737,7 +761,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                     console.error("Error parsing log:", error);
                   }
                 });
-              } else if (result.status === 0){
+              } else if (result.status === 0) {
                 console.log("Transaction failed with receipt:", result);
                 // Handle failure case
                 const info = {
@@ -751,7 +775,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                 }).catch(error => {
                   console.error('Error posting data to backend:', error);
                 });
-              } 
+              }
               // handle success, parse logs, etc.
               setTokenAmountToTrade('');
               setTransactionDone(true);
@@ -767,7 +791,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                 console.log('Backend response:', response);
               }).catch(error => {
                 console.error('Error posting data to backend:', error);
-              });      
+              });
               setTransactionDone(false);
             });
           }
@@ -789,7 +813,69 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
       toast.error(`Deployment failed: ` + error);
     }
   };
+  let creator = address;
+  /// Threads Code
+  const [replies, setReplies] = useState<Reply[]>([]);
+  const [newReply, setNewReply] = useState({
 
+    token_address: params.tokenInfo[1],
+    file_uri: '',
+    text: '',
+    creator: creator,
+    username: '',
+    chain: params.tokenInfo[0]
+
+
+  });
+  const ReplyList = (token_address: string) => {
+
+
+    fetch(`/api/thread/replies?token_address=${token_address}`)
+      .then((res) => res.json())
+      .then((data) => setReplies(data));
+
+    console.log("ref")
+  }
+
+  //popup model
+  const [showModal, setShowModal] = useState(false);
+  const [responseMessage, setResponseMessage] = useState('');
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setNewReply(prevData => ({
+      ...prevData,
+      [name]: value,
+    }));
+
+  };
+
+
+  const handleSubmit = async (e: React.FormEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+
+    try {
+      const response = await fetch(`/api/thread/replies`, {
+        method: 'POST',
+        body: JSON.stringify(newReply),
+      });
+      const responseData = await response.json();
+
+      if (response.ok) {
+        setResponseMessage('Username Updated');
+        emitEvent("replyPost", '');
+        setShowModal(false);
+      } else if (response.status === 400) {
+        setResponseMessage('Username already exists');
+      } else {
+        setResponseMessage('An error occurred.');
+      }
+
+    } catch (error) {
+      alert(error);
+      console.error('Error posting reply:', error);
+    }
+  };
 
   if (!params.tokenInfo[1] || params.tokenInfo[1] === "") {
     return <div>Error: Token not found</div>;  // Display error if tokenAddress is undefined or empty
@@ -863,10 +949,56 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
               >
                 Trades
               </div>
+
               {/* <div className="mt-4 text-white">
                   {activeTab === 'thread' ? 'Thread Page' : 'Trades Page'}
                 </div> */}
+
             </div>
+            {activeTab === 'thread' && (
+
+              <div>
+                <div className="grid grid-col-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-10 items-center border-green-950 border-8 border-double ">
+                  <img src={tokenDetails?.image_url} className="w-32 object-contain cursor-pointer"></img>
+                  <div>
+                    <div className="font-bold text-sm">
+                      {tokenDetails?.token_name} (ticker: {tokenDetails?.token_ticker})
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      {tokenDetails?.token_description}
+                    </div>
+                  </div>
+                </div>
+                {replies.length > 0 ? (
+                  <div>
+                    {replies.map((reply: Reply) => (
+                      <div className="grid gap-4 px-1 items-center border-green-950 border-8 border-double " key={reply.id}>
+
+                        <div className="flex flex-wrap gap-2 text-slate-400 text-xs items-start w-full">
+                          <a href={`/profile/${reply.creator}`}>
+                            <span className="flex gap-1  items-center">
+                              <span> {reply.username ? (<div className="px-1 rounded hover:underline flex gap-1 text-black bg-pink-400" >
+                                {reply.username}
+                              </div>) : (<div className="px-1 rounded hover:underline flex gap-1 text-black bg-pink-400" >
+                                {extractFirstSixCharac(reply?.creator || 'unknown')}
+                              </div>)} </span>
+                            </span>
+                          </a>
+                          <div>{reply.created_at}</div>
+                          <div className="cursor-pointer justify-self-end hover:underline">#{reply.id}</div></div>
+                        <div className="text-green-500">
+                          {reply.text}</div>
+                      </div>
+                    ))}
+
+                  </div>
+                ) : (
+                  <p>No threads found.</p>
+                )}
+              </div>
+            )}
+
+
             {activeTab === 'trades' && (
               <div className="w-full text-xs text-gray-400 bg-transparent rounded-lg">
                 <div className="bg-[#2e303a] rounded-lg grid grid-cols-4 sm:grid-cols-6">
@@ -894,16 +1026,69 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                     ))}
                     <div className="pagination">
                       <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
-                          Previous
+                        Previous
                       </button>
                       <button onClick={() => setCurrentPage(prev => (prev < totalPages ? prev + 1 : prev))} disabled={currentPage === totalPages}>
-                          Next
+                        Next
                       </button>
-                  </div>
+                    </div>
                   </div>
                 ) : (
                   <p>No trades found.</p>
                 )}
+              </div>
+            )}
+            {/* Button */}
+            {isConnected ? (<button
+              onClick={() => setShowModal(true)}
+              className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-500 border border-gray-300 rounded-md 
+              shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Post a reply
+            </button>) : ''}
+
+
+            {/* Background overlay */}
+            {showModal && (
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-75"
+                onClick={() => setShowModal(false)}
+              >
+                {/* Modal */}
+                <div
+                  className="bg-white rounded-lg overflow-hidden shadow-xl max-w-md w-full"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="px-4 py-5 sm:p-6">
+                    <div className="items-center">
+                      <div>
+                        <h3 className="text-lg font-medium text-gray-900">Add a comment</h3>
+                        <div className="flex">
+                          <textarea className="bg-[#2a2a3b] border border-slate-950 rounded-md h-24 w-full p-2 text-white" name="text" placeholder="comment" onChange={handleChange}></textarea>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+
+                    <button onClick={handleSubmit} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2
+                     bg-blue-500 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
+                    >
+                      Post
+                    </button>
+
+                    {/* Cancel button */}
+                    <button
+                      onClick={() => setShowModal(false)}
+                      className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+
+
+                </div>
               </div>
             )}
 

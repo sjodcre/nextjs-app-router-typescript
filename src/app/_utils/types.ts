@@ -59,3 +59,14 @@ export interface TradeData {
   // sum: number;
   tx_hash: string
 }
+
+export interface Reply {
+ 
+  id : string
+  token_address :string
+  file_uri :string
+  text :string
+  creator :string
+  username :string
+  created_at :string
+}
