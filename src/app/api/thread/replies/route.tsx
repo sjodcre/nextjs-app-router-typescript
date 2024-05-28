@@ -8,9 +8,10 @@ export async function GET(req: Request) {
   const url = new URL(req.url)
 
   const token_address = url.searchParams.get("token_address");
+  const chain = url.searchParams.get("chain");
 
-  const tableName = 'replies';
-  const sql = `SELECT * FROM ${tableName} WHERE token_address='${token_address}'`;
+ 
+  const sql = `SELECT * FROM replies_${chain} WHERE token_address='${token_address}'`;
 
   try {
 
@@ -44,7 +45,7 @@ export async function POST(req: Request) {
   try {
 
      await query(
-      `INSERT INTO ${tableName} (token_address, file_uri,text,creator,username,created_at) VALUES ($1, $2, $3,$4,$5,NOW())`,
+      `INSERT INTO ${tableName}_${chain} (token_address, file_uri,text,creator,username,created_at) VALUES ($1, $2, $3,$4,$5,NOW())`,
       [token_address, file_uri,text,creator,username]
     );
   

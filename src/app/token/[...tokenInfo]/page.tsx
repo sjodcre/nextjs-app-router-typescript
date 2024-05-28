@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react";
-import { TokenHolder, TokenPageDetails, TradeData, Reply } from "@/app/_utils/types";
+import { TokenHolder, TokenPageDetails, TradeData, Reply, TokenParams } from "@/app/_utils/types";
 import CandleChart from "@/app/_ui/candle-chart";
 import SlippageDialog from "@/app/_ui/slippage-dialog";
 import IndeterminateProgressBar from "@/app/_ui/indeterminate-progress-bar";
@@ -61,9 +61,8 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     file_uri: '',
     text: '',
     creator: user,
-    username: '',
-    chain: params.tokenInfo[0]
-
+    chain: params.tokenInfo[0],
+    username: ''
 
   });
 
@@ -699,7 +698,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
 
   const ReplyList = (token_address: string) => {
-    fetch(`/api/thread/replies?token_address=${token_address}`)
+    fetch(`/api/thread/replies?token_address=${token_address}&chain=${params.tokenInfo[0]}`)
       .then((res) => res.json())
       .then((data) => {
       console.log("data for replies", data)
@@ -711,6 +710,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   //popup model
   const [showModal, setShowModal] = useState(false);
   const [responseMessage, setResponseMessage] = useState('');
+  const [file,setFile] = useState<File>();
 
   const handleReplyChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -720,7 +720,42 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     }));
 
   };
+  const handleUploadImage = async (imageFile?: File): Promise<string> => {
+		if (!imageFile) {
+			toast.error('No image file provided');
+        return Promise.reject(new Error('No image file provided'));
+		}
 
+			try{
+				const data = new FormData()
+				data.set('file',imageFile)
+				const response = await fetch ("http://localhost:3000/api/deploy", {
+					method: 'POST',
+					body: data
+				})
+				const result = await response.json();
+				if (response.ok) {
+					toast.success(`Image uploaded. Arweave URL: ${result}`);
+					return result;
+				} else {
+				  throw new Error(result.error || 'Upload failed');
+				}
+
+			} catch (error: any) {
+				// console.error('Image upload error:', error);
+    			toast.error(`Error: ${error.message}`);
+				return Promise.reject(new Error(error.message || 'Upload failed'));
+
+			}		
+		
+	}
+
+  const updateReply = (property: any, value: any) => {
+    setNewReply((prevReply) => ({
+      ...prevReply,
+      [property]: value,
+    }));
+  };
 
   const handleReplySubmit = async (e: React.FormEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -728,8 +763,21 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
       toast.error("Text and creator fields cannot be empty.")
       setResponseMessage('Text and creator fields cannot be empty.');
       return; // Stop the function if validation fails
-    }
+    } 
 
+    if(file){
+      let url = '';
+      try {
+        url = await handleUploadImage(file);
+        console.log('Uploaded Image URL:', url);
+        updateReply('file_uri', url);
+      } catch (error) {
+        console.error('Failed to upload image:', error);
+        // Consider whether you want to continue or throw an error here
+      }
+  
+    }
+    
     try {
       const response = await fetch(`/api/thread/replies`, {
         method: 'POST',
@@ -872,8 +920,8 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                         <div className="flex flex-wrap gap-2 text-slate-400 text-xs items-start w-full">
                           <a href={`/profile/${reply.creator}`}>
                             <span className="flex gap-1  items-center">
-                              <span> {reply.username ? (<div className="px-1 rounded hover:underline flex gap-1 text-black bg-pink-400" >
-                                {reply.username}
+                              <span> {newReply.username ? (<div className="px-1 rounded hover:underline flex gap-1 text-black bg-pink-400" >
+                                {newReply.username}
                               </div>) : (<div className="px-1 rounded hover:underline flex gap-1 text-black bg-pink-400" >
                                 {extractFirstSixCharac(reply?.creator || 'unknown')}
                               </div>)} </span>
@@ -883,6 +931,8 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                           <div className="cursor-pointer justify-self-end hover:underline">#{reply.id}
                           </div>
                         </div>
+                        {reply.file_uri? (<img src={reply.file_uri} className="w-32 h-32 object-contain cursor-pointer" />) : ('')}
+                        
                         <div className="text-green-500">
                           {reply.text}
                         </div>
@@ -895,6 +945,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                       </button>
                       <button onClick={() => setCurrentThreadPage(prev => (prev < totalThreadPages ? prev + 1 : prev))} disabled={currentThreadPage === totalThreadPages}
                       className="px-4 py-2 border border-gray-300 rounded-md text-green-500 font-semibold">
+
                         Next
                       </button>
                     </div>
@@ -977,9 +1028,22 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                           <textarea className="bg-[#2a2a3b] border border-slate-950 rounded-md h-24 w-full p-2 text-white" name="text" placeholder="comment" onChange={handleReplyChange}></textarea>
                         </div>
                       </div>
+                      <div className="mb-4 py-5">
+				<label className="block  text-gray-900 text-sm font-bold mb-2 " htmlFor="image">
+					Image (OPTIONAL)
+				</label>
+				<input
+				className="shadow appearance-none border rounded w-full py-2 px-3 text-white leading-tight  bg-[#2a2a3b] border-slate-950 focus:outline-none focus:shadow-outline"
+				id="image"
+				type="file"
+				name="image"
+				onChange={(e) => {setFile(e.target.files?.[0])}}
+				/>
+				<p className="text-gray-500 text-xs italic">{file ? file.name : 'No file chosen'}</p>
+			</div>
                     </div>
                   </div>
-
+                  
                   <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
 
                     <button onClick={handleReplySubmit} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2
