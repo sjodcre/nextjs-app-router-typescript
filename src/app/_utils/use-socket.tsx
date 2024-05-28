@@ -22,6 +22,12 @@ function getNextFiveMinuteBarTime(barTime: number) {
   return date.getTime() / 1000;
 }
 
+function getNextThirtyMinuteBarTime(barTime: number) {
+  const date = new Date(barTime * 1000);
+  date.setMinutes(date.getMinutes() + 30); // Increment by 30 minutes
+  return date.getTime() / 1000;
+}
+
 const channelToSubscription = new Map();
 
 const useSocket = (listeners: EventListener[] = []) => {
@@ -51,34 +57,9 @@ const useSocket = (listeners: EventListener[] = []) => {
 
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
-// "selectedChain": "ftm",
-    // "contractAddress": "0x1D144Ec1c7782d0c1Ec8816218EfbE4271770eB1",
-    // "account": "0xf759c09456A4170DCb5603171D726C3ceBaDd3D5",
-    // "status": "successful",
-    // "amount": 40468786388071,
-    // "deposit": 10000000000000000,
-    // "timestamp": 1716625823,
-    // "trade": "buy",
-    // "txHash": "0xebb3fc27f430932ee895efdd98e5ae0f8dc114b52e3a0fb5270ad6205c0f08ec"
 
-    socket.on('refresh', (data: { deposit: string; amount: string; timestamp: string; token_description: string; token_ticker: any; token_name: any; }) => {
+    socket.on('refresh', (data: { chartResolution: number; deposit: string; amount: string; timestamp: string; token_description: string; token_ticker: any; token_name: any; }) => {
       console.log('[socket] Message at refresh:', data);
-      // const [
-      //     eventTypeStr, // 0
-      //     exchange, // Bitfinex
-      //     fromSymbol, // BTC
-      //     toSymbol, //USD
-      //     ,
-      //     ,
-      //     tradeTimeStr, //1548837377
-      //     ,
-      //     tradePriceStr, //3504.1
-      // ] = data.split('~');
-  
-      // if (parseInt(eventTypeStr) !== 0) {
-      //     // Skip all non-trading events
-      //     return;
-      // }
 
       // const tradePrice = parseFloat(tradePriceStr);
       // const tradeTime = parseInt(tradeTimeStr);
@@ -94,15 +75,26 @@ const useSocket = (listeners: EventListener[] = []) => {
       if (subscriptionItem === undefined) {
           return;
       }
-      // const lastDailyBar = subscriptionItem.lastDailyBar;
-      const lastFiveMinsBar = subscriptionItem.lastDailyBar;
+      const lastBar = subscriptionItem.lastBar;
+      // const lastFiveMinsBar = subscriptionItem.lastDailyBar;
 
+      let nextBarTime;
+      if (data.chartResolution ===5){
+        nextBarTime = getNextFiveMinuteBarTime(lastBar);
+
+      } else if (data.chartResolution ===30){
+        nextBarTime = getNextThirtyMinuteBarTime(lastBar);
+
+      } else {
+        nextBarTime = getNextFiveMinuteBarTime(lastBar);
+
+      }
       // const nextDailyBarTime = getNextDailyBarTime(lastDailyBar.time);
-      const nextFiveMinsBarTime = getNextFiveMinuteBarTime(lastFiveMinsBar);
+      // const nextFiveMinsBarTime = getNextFiveMinuteBarTime(lastFiveMinsBar);
       let bar;
-      if (tradeTime >= nextFiveMinsBarTime) {
+      if (tradeTime >= nextBarTime) {
           bar = {
-              time: nextFiveMinsBarTime,
+              time: nextBarTime,
               open: tradePrice,
               high: tradePrice,
               low: tradePrice,
@@ -111,9 +103,9 @@ const useSocket = (listeners: EventListener[] = []) => {
           console.log('[socket] Generate new bar', bar);
       } else {
           bar = {
-              ...lastFiveMinsBar,
-              high: Math.max(lastFiveMinsBar.high, tradePrice),
-              low: Math.min(lastFiveMinsBar.low, tradePrice),
+              ...lastBar,
+              high: Math.max(lastBar.high, tradePrice),
+              low: Math.min(lastBar.low, tradePrice),
               close: tradePrice,
           };
           console.log('[socket] Update the latest bar by price', tradePrice);
@@ -170,70 +162,69 @@ const useSocket = (listeners: EventListener[] = []) => {
 
 
 export function subscribeOnStream(
-    symbolInfo:LibrarySymbolInfo,
-    resolution: ResolutionString,
-    onRealtimeCallback:SubscribeBarsCallback ,
-    subscriberUID: string,
-    onResetCacheNeededCallback: () => void,
-    lastDailyBar: any
+  symbolInfo:LibrarySymbolInfo,
+  resolution: ResolutionString,
+  onRealtimeCallback:SubscribeBarsCallback ,
+  subscriberUID: string,
+  onResetCacheNeededCallback: () => void,
+  lastBar: any
 )
 {
-    // if (symbolInfo.base_name) {
-    //     console.log(symbolInfo.base_name[0])
+  // if (symbolInfo.base_name) {
+  //     console.log(symbolInfo.base_name[0])
+  // }
+  // console.log("symbolInfo", symbolInfo)
+  // console.log(symbolInfo.description)
+  // console.log(symbolInfo.ticker)
+  const parsedSymbol = parseFullSymbol(`${symbolInfo.exchange}:${symbolInfo.name}`);
+  // console.log("description", symbolInfo?.description)
+  let descriptionSnippet = symbolInfo?.description.substring(0, 10);
 
-    // }
-    // console.log("symbolInfo", symbolInfo)
-    // console.log(symbolInfo.description)
-    // console.log(symbolInfo.ticker)
-    const parsedSymbol = parseFullSymbol(`${symbolInfo.exchange}:${symbolInfo.name}`);
-    // console.log("description", symbolInfo?.description)
-    // const channelString = `0~${parsedSymbol?.exchange}~${parsedSymbol?.fromSymbol}~${parsedSymbol?.toSymbol}`;
-    let descriptionSnippet = symbolInfo?.description.substring(0, 10);
+  const channelString = `0~${symbolInfo?.ticker}~${symbolInfo?.name}~${descriptionSnippet}`;
 
-    const channelString = `0~${symbolInfo?.ticker}~${symbolInfo?.name}~${descriptionSnippet}`;
+  const handler = {
+      id: subscriberUID,
+      callback: onRealtimeCallback,
+  };
+  let subscriptionItem = channelToSubscription.get(channelString);
+  if (subscriptionItem) {
+      // Already subscribed to the channel, use the existing subscription
+      subscriptionItem.handlers.push(handler);
+      return;
+  }
+  subscriptionItem = {
+      subscriberUID,
+      resolution,
+      lastBar,
+      handlers: [handler],
+  };
+  channelToSubscription.set(channelString, subscriptionItem);
+  socket.emit('SubAdd', { subs: [channelString] });
 
-    const handler = {
-        id: subscriberUID,
-        callback: onRealtimeCallback,
-    };
-    let subscriptionItem = channelToSubscription.get(channelString);
-    if (subscriptionItem) {
-        // Already subscribed to the channel, use the existing subscription
-        subscriptionItem.handlers.push(handler);
-        return;
-    }
-    subscriptionItem = {
-        subscriberUID,
-        resolution,
-        lastDailyBar,
-        handlers: [handler],
-    };
-    channelToSubscription.set(channelString, subscriptionItem);
-    console.log('[subscribeBars]: Subscribe to streaming. Channel:', channelString);
-    socket.emit('SubAdd', { subs: [channelString] });
+  console.log('[subscribeBars]: Subscribe to streaming. Channel:', channelString);
 }
 
 export function unsubscribeFromStream(subscriberUID: string) {
 
-    // Find a subscription with id === subscriberUID
-    for (const channelString of channelToSubscription.keys()) {
-        const subscriptionItem = channelToSubscription.get(channelString);
-        const handlerIndex = subscriptionItem.handlers
-            .findIndex((handler: { id: string; }) => handler.id === subscriberUID);
+  // Find a subscription with id === subscriberUID
+  for (const channelString of channelToSubscription.keys()) {
+      const subscriptionItem = channelToSubscription.get(channelString);
+      const handlerIndex = subscriptionItem.handlers
+          .findIndex((handler: { id: string; }) => handler.id === subscriberUID);
 
-        if (handlerIndex !== -1) {
-            // Remove from handlers
-            subscriptionItem.handlers.splice(handlerIndex, 1);
+      if (handlerIndex !== -1) {
+          // Remove from handlers
+          subscriptionItem.handlers.splice(handlerIndex, 1);
 
-            if (subscriptionItem.handlers.length === 0) {
-                // Unsubscribe from the channel if it is the last handler
-                console.log('[unsubscribeBars]: Unsubscribe from streaming. Channel:', channelString);
-                socket.emit('SubRemove', { subs: [channelString] });
-                channelToSubscription.delete(channelString);
-                break;
-            }
-        }
-    }
+          if (subscriptionItem.handlers.length === 0) {
+              // Unsubscribe from the channel if it is the last handler
+              console.log('[unsubscribeBars]: Unsubscribe from streaming. Channel:', channelString);
+              socket.emit('SubRemove', { subs: [channelString] });
+              channelToSubscription.delete(channelString);
+              break;
+          }
+      }
+  }
 }
 
 export default useSocket;

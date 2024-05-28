@@ -25,7 +25,16 @@ app.prepare().then(() => {
       io.emit('refresh', data)
     })
 
+//   socket.on("SubAdd", (data) => {
+  //     // console.log('SubAdd event received')
+  //     if (data.subs && data.subs.length > 0) {
+  //         const channelString = data.subs[0]; // Assuming subs array contains channel strings
+  //         // console.log('Channel String:', channelString);
 
+  //         io.emit('channelChange',data.subs[0])
+    
+  //     }
+  // });
     socket.on('replyPost', () => {
       console.log("recieved reply post")
       //console.log(data)

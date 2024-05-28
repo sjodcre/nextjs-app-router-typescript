@@ -1,4 +1,4 @@
-import { getTransactionStatus } from "@/app/_utils/tx-tracing-api";
+import  getTransactionStatus from "@/app/_utils/tx-tracing-api";
 import { getPendingTransactions, postTransactionAndOHLC, postTransactionFailed } from "../_services/db-write";
 import { Interface } from "ethers/lib/utils";
 import ERC20TestArtifact from '../../../artifacts/contracts/ERCC20Test.sol/ERC20Test.json'

@@ -19,7 +19,6 @@ import useSocket from "@/app/_utils/use-socket";
 import { burnToken, mintToken } from "@/app/_services/blockchain";
 import { Interface } from "ethers/lib/utils";
 import { checkPendingTx } from "@/app/_utils/check-pending-tx";
-import { json } from "stream/consumers";
 
 
 
@@ -44,7 +43,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   const { switchNetwork } = useSwitchNetwork()
   const [initialCheckDone, setInitialCheckDone] = useState(false);
   const [user, setUser] = useState('');
-
+  const [isTrading, setIsTrading] = useState(false);
   const [userBalance, setUserBalance] = useState({
     token: 0,
     native: 0,
@@ -55,22 +54,32 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     chainId: 0,
     chainLogo: '',
   })
+  const [replies, setReplies] = useState<Reply[]>([]);
+  const [newReply, setNewReply] = useState({
+
+    token_address: params.tokenInfo[1],
+    file_uri: '',
+    text: '',
+    creator: user,
+    username: '',
+    chain: params.tokenInfo[0]
+
+
+  });
 
   const { isConnected, chainId, address } = useWeb3ModalAccount()
   const { walletProvider } = useWeb3ModalProvider()
-  const seiWebSocket = "wss://evm-ws-arctic-1.sei-apis.com";
-  // const seiWebSocket = "wss://cool-aged-owl.sei-arctic.quiknode.pro/177cc0d1e96c821bc0cdd8bb9dbf72157f1a5e1d/";
-  const ERC20TestContractAddress = params.tokenInfo[1];
   const { isSocketConnected, emitEvent, onEvent, offEvent, disconnectSoc } = useSocket();
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 15;
+  const [currentThreadPage, setCurrentThreadPage] = useState(1);
+  const itemsPerThreadPage = 5;
+  const [currentTradesPage, setCurrentTradesPage] = useState(1);
+  const itemsPerTradesPage = 15;
 
-
-  useEffect(() => {
-    if (isSocketConnected) {
-      emitEvent("someEvent", { key: 'value' });
-    }
-  }, [isConnected, emitEvent]);
+  // useEffect(() => {
+  //   if (isSocketConnected) {
+  //     emitEvent("someEvent", { key: 'value' });
+  //   }
+  // }, [isConnected, emitEvent]);
 
   //set bonding curve %
   useEffect(() => {
@@ -99,63 +108,6 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
     return () => clearInterval(intervalId); // Cleanup interval on component unmount
   }, []);
-
-  //web socket listener
-  // useEffect(() => {
-  //   // try {
-  //   //   let provider = new ethers.WebSocketProvider(createWebSocket());
-  //   //   startListening(provider);
-
-
-  //   //   return () => {
-  //   //     stopListening(provider);
-  //   // };
-  //   // } catch (error) {
-  //   //   console.error("Failed to set up contract listeners:", error);
-
-  //   // }
-
-
-  //   try {
-
-  //     const wsProvider = new ethers.providers.WebSocketProvider(seiWebSocket)
-  //     const contract = new ethers.Contract(
-  //       ERC20TestContractAddress.toString(),
-  //       ERC20TestArtifact.abi,
-  //       wsProvider);
-  //     // contract.removeAllListeners();
-  //     // console.log("WebSocket provider set up:", wsProvider);
-  //     console.log("Contract initialized and listening for events at address:", ERC20TestContractAddress);
-  //     contract.on("Transfer", (from, to, value) => {
-  //       console.log("src: ", from);
-  //       console.log("dst: ", to)
-  //       console.log("wad: ", value)
-
-  //     })
-
-  //     contract.on("*", (event) => {
-  //       console.log("event?", event)
-  //       // The `event.log` has the entire EventLog
-  //     });
-
-  //     const handleEvent = (account: any, amount: any, deposit: any) => {
-  //       console.log(`Event - Account: ${account}, Amount: ${amount.toString()}, Deposit: ${deposit.toString()} `);
-
-  //     };
-
-  //     contract.on("ContinuousMint", (account, amount, deposit) => handleEvent(account, amount, deposit));
-  //     contract.on("ContinuousBurn", (account, amount, reimburseAmount) => handleEvent(account, amount, reimburseAmount));
-
-  //     return () => {
-  //       contract.removeAllListeners();
-  //       wsProvider.destroy();
-  //     };
-  //   } catch (error) {
-  //     console.error("Failed to set up contract listeners:", error);
-
-  //   }
-
-  // }, []);
 
   //wallet provider readiness
   useEffect(() => {
@@ -218,7 +170,17 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
       fetchData();
       ReplyList(params.tokenInfo[1]);
 
-
+        //   onEvent('channelChange', (channelString: string) => {
+        //     // console.log("channel string update", channelString.subs[0])
+        //     const resolution= Number(channelString.toString().split('~')[0])
+        //     // const resoNum = Number(resolution)
+        //     if (!isNaN(resolution)) {
+        //       console.log(resolution);
+        //       setChartResolution(resolution);
+        //   } else {
+        //       console.error("Resolution error");  // Handle conversion failure
+        //   }
+        // })
     });
 
     return () => {
@@ -227,8 +189,6 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
 
   }, []);
-
-
 
   //Fetch Reply useeffect
   useEffect(() => {
@@ -252,50 +212,26 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
   }, []);
 
-  const totalPages = useMemo(() => {
-    return Math.ceil(trades.length / itemsPerPage);
-  }, [trades, itemsPerPage]);
+  const totalTradesPages = useMemo(() => {
+    return Math.ceil(trades.length / itemsPerTradesPage);
+  }, [trades, itemsPerTradesPage]);
 
   // Get current trades to display
   const currentTrades = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
+    const startIndex = (currentTradesPage - 1) * itemsPerTradesPage;
+    const endIndex = startIndex + itemsPerTradesPage;
     return trades.slice(startIndex, endIndex);
-  }, [trades, currentPage, itemsPerPage]);
+  }, [trades, currentTradesPage, itemsPerTradesPage]);
 
-  //UpdateData on Data Emit 
-  const updateData = async (data: any) => {
+  const totalThreadPages = useMemo(() => {
+    return Math.ceil(replies.length / itemsPerThreadPage);
+  }, [replies, itemsPerThreadPage]);
 
-    handleNewTrade(data);
-    // const {amount, deposit, contractAddress, trade} = data;
-    const price = data.deposit / data.amount;
-
-    let currentTokenSum = 0;
-    if (data.trade === 'buy') {
-      currentTokenSum = tokenSum + data.amount;
-    } else {
-      currentTokenSum = tokenSum - data.amount;
-    }
-
-    // getTopTokenHolders(params.tokenInfo[0], params.tokenInfo[1]);
-    fetchHolders();
-
-    // Calculate market cap if tradesData and nativeTokenPrice are available
-    if (nativeTokenPrice !== null) {
-      const marketCap = currentTokenSum * price * nativeTokenPrice / 1E18;
-      const formattedMarketCap = marketCap.toLocaleString('en-US', {
-        style: 'decimal',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      });
-      if (params.tokenInfo[1] == data.contractAddress) {
-        setMarketCap(formattedMarketCap);
-      }
-
-    }
-    console.log("data updated");
-
-  };
+  const currentThread = useMemo(() => {
+    const startIndex = (currentThreadPage - 1) * itemsPerThreadPage;
+    const endIndex = startIndex + itemsPerThreadPage;
+    return replies.slice(startIndex, endIndex);
+  }, [replies, currentThreadPage, itemsPerThreadPage]);
 
   //when user change wallet
   useEffect(() => {
@@ -325,25 +261,6 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
       }));
     }
   }, [address]);
-
-  const handleNewTrade = (newTradeData: { txid: any; contractAddress: any; account: any; amount: any; deposit: any; timestamp: any; trade: any; txHash: any; }) => {
-    console.log("inside handlenewtrade", newTradeData)
-    console.log("id for new trade", newTradeData.txid)
-
-    const newTrade = {
-      txid: newTradeData.txid,
-      token_address: newTradeData.contractAddress,
-      account: newTradeData.account,
-      token_amount: newTradeData.amount,
-      native_amount: newTradeData.deposit,
-      timestamp: newTradeData.timestamp,
-      trade: newTradeData.trade,
-      tx_hash: newTradeData.txHash
-    };
-
-    // Update the trades state to include the new trade
-    setTrades(currentTrades => [newTrade, ...currentTrades]);
-  };
 
   // Function to fetch data
   const fetchData = async () => {
@@ -468,67 +385,6 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     });
   }
 
-  // function createWebSocket() {
-  //   const ws = new WebSocket (process.env.NEXT_PUBLIC_WSS_PROVIDER || '');
-  //   ws.addEventListener("close", () => {
-  //     console.log("Disconnected. Reconnecting...");
-  //     setTimeout(() => {
-  //       let provider = new ethers.WebSocketProvider(createWebSocket());
-  //       startListening();
-  //     }, 3000);
-  //   });
-
-  //   ws.addEventListener("error", (error) => {
-  //     console.log("WebSocket error: ", error);
-  //   });
-
-  //   // ws.close();
-  //   return ws;
-  // }
-
-  // function startListening() {
-  //   const wsProvider = new ethers.WebSocketProvider(seiWebSocket)
-  //   const contract = new ethers.Contract(ERC20TestContractAddress.toString(), ERC20TestArtifact.abi, wsProvider);
-
-  //   // let contract = new ethers.Contract(
-  //   //   params.tokenInfo[1],
-  //   //   ERC20TestArtifact.abi,
-  //   //   wsProvider
-  //   // );
-  //   console.log("listener started...")
-  //   contract.removeAllListeners();
-
-  //   const handleEvent = (account:any, amount:any, deposit:any) => {
-  //     console.log(`Event - Account: ${account}, Amount: ${amount.toString()}, Deposit: ${deposit.toString()} `);
-
-  //   };
-  //   contract.on("Transfer", (src, dst, wad, event)=> {
-  //       console.log("src: ", src);
-  //       console.log("dst: ", dst)
-  //       console.log("wad: ", wad)
-  //       console.log("event: ", event)
-
-  //     })
-
-  //   contract.on("ContinuousMint", (account, amount, deposit) => handleEvent(account, amount, deposit));
-  //   contract.on("ContinuousBurn", (account, amount, reimburseAmount) => handleEvent(account, amount, reimburseAmount));
-  // }
-
-  // function stopListening(provider: ethers.ContractRunner | null | undefined) {
-  //   let contract = new ethers.Contract(
-  //     params.tokenInfo[1],
-  //     ERC20TestArtifact.abi,
-  //     provider
-  //   );
-
-  //   if (contract) {
-  //     contract.removeAllListeners();
-  //   }
-
-  //   console.log("listener ended...")
-
-  // }
-
   async function fetchERC20Balance(walletProvider: any, tokenAddress: string) {
     const signer = await walletProvider.getSigner();
     const signerAddr = await signer.getAddress();
@@ -552,49 +408,16 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   async function handleBuyToken(walletProvider: any, tokenAmountToTrade: { toString: () => string; }, chain: string) {
     const ERC20TestContractAddress = params.tokenInfo[1].toString();
     // const ERC20TestContract = new Contract(ERC20TestContractAddress, ERC20TestArtifact.abi, signer);
-
-    // try {
-
     const toRet = mintToken(chain, ERC20TestContractAddress, walletProvider, nativeSum, tokenSum, nativeTokenBool, tokenAmountToTrade, slippage)
     return toRet;
-    // } catch (error) {
-    //   console.log("Transaction error:", error);
 
-    //   if (isErrorWithMessage(error) && error.message.includes("transaction execution reverted")) {
-    //     const errorMessage = "Buy transaction failed! Error: Transaction Execution Reverted.";
-    //     // toast.error(errorMessage);
-    //     throw new Error(errorMessage); // Rethrow if you need further error handling
-    //   }
-
-    //   // Generic error if no specific message
-    //   const genericMessage = "Transaction failed due to unknown reasons!";
-    //   // toast.error(genericMessage);
-    //   throw new Error(genericMessage);
-    // }
   }
 
   async function handleSellToken(walletProvider: any, tokenAmountToTrade: { toString: () => any | ethers.Overrides; }, chain: string) {
     const ERC20TestContractAddress = params.tokenInfo[1].toString();
 
-    // try {
     const toRet = burnToken(chain, ERC20TestContractAddress, nativeSum, tokenSum, tokenAmountToTrade, slippage, walletProvider)
     return toRet;
-
-    // } catch (error) {
-    //   console.error("Transaction error:", error);
-
-    //   if (isErrorWithMessage(error) && error.message.includes("transaction execution reverted")) {
-    //     const errorMessage = "Buy transaction failed! Error: Transaction Execution Reverted.";
-    //     // toast.error(errorMessage);
-    //     throw new Error(errorMessage); // Rethrow if you need further error handling
-    //   }
-
-    //   // Generic error if no specific message
-    //   const genericMessage = "Transaction failed due to unknown reasons!";
-    //   // toast.error(genericMessage);
-    //   throw new Error(genericMessage);
-    // }
-    // console.log("minReturn", minReturn)
   }
 
 
@@ -602,7 +425,17 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   // place trade handler
   const handlePlaceTrade = async () => {
     try {
-      if (!isConnected) throw Error('User is not connected')
+      if (!isConnected){
+        setIsTrading(false); 
+        throw Error('User is not connected')
+      }
+
+      if(tokenAmountToTrade === "" || tokenAmountToTrade === "0") {
+        toast.error("Amount cannt be less than or equal to 0")
+        setIsTrading(false)
+        return
+      }
+
       let chain: string;
 
       await handleChainChange().then(async (updatedChainId) => {
@@ -612,6 +445,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
           chain = "ftm"
         } else {
           toast.error("Chain error! Using unsupported network")
+          setIsTrading(false); // Reset trading state on error
           return
         }
         if (walletProvider) {
@@ -621,6 +455,15 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
           const ERC20TestContractAddress = params.tokenInfo[1].toString();
 
           if (buySell === 'buy') {
+            if (!nativeTokenBool) {
+              const tokenAmount = parseInt(tokenAmountToTrade.toString(), 10);
+              if (Number.isNaN(tokenAmount) || tokenAmount <= 0) {
+                const error = new Error("Invalid token amount. Please enter a valid integer greater than 0.");
+                toast.error(error.message);
+                setIsTrading(false);
+                return  // Reject the promise to stop further execution
+              }
+            }
             toast.promise(
               handleBuyToken(walletProvider, tokenAmountToTrade, chain),
               {
@@ -704,6 +547,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
               }
               setTokenAmountToTrade('');
               setTransactionDone(true);
+              setIsTrading(false); // Reset trading state after success
             }).catch(error => {
               // console.error("Buy transaction error:", error);
               // console.log(error.transaction)
@@ -716,12 +560,25 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
               };
               postTransactionFailed(info).then(response => {
                 console.log('Backend response:', response);
+                setIsTrading(false);
               }).catch(error => {
                 console.error('Error posting data to backend:', error);
+                setIsTrading(false);
               });
               setTransactionDone(false);
+              setIsTrading(false);
+
             });
           } else if (buySell === 'sell') {
+
+            const tokenAmount = parseInt(tokenAmountToTrade.toString(), 10);
+            if (Number.isNaN(tokenAmount) || tokenAmount <= 0) {
+              const error = new Error("Invalid token amount. Please enter a valid integer greater than 0.");
+              toast.error(error.message);
+              setIsTrading(false);
+              return  // Reject the promise to stop further execution
+            }
+
             toast.promise(
               handleSellToken(walletProvider, tokenAmountToTrade, chain),
               {
@@ -788,10 +645,14 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                 }).catch(error => {
                   console.error('Error posting data to backend:', error);
                 });
+              }  else {
+                console.log("transaction result not found")
+                // return 'Transaction not found or pending';
               }
               // handle success, parse logs, etc.
               setTokenAmountToTrade('');
               setTransactionDone(true);
+              setIsTrading(false); 
             }).catch(error => {
               // console.error("Sell transaction error:", error);
               const info = {
@@ -802,10 +663,13 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
               };
               postTransactionFailed(info).then(response => {
                 console.log('Backend response:', response);
+                setIsTrading(false);
               }).catch(error => {
                 console.error('Error posting data to backend:', error);
+                setIsTrading(false);
               });
               setTransactionDone(false);
+              setIsTrading(false);
             });
           }
 
@@ -814,6 +678,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
         } else {
           // Handle the case where walletProvider is undefined
           console.error("Wallet provider is not available.");
+          setIsTrading(false);
         }
 
       })
@@ -824,22 +689,12 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     } catch (error: any) {
 
       toast.error(`Deployment failed: ` + error);
+      setIsTrading(false);
     }
   };
   
   /// Threads Code
-  const [replies, setReplies] = useState<Reply[]>([]);
-  const [newReply, setNewReply] = useState({
 
-    token_address: params.tokenInfo[1],
-    file_uri: '',
-    text: '',
-    creator: user,
-    username: '',
-    chain: params.tokenInfo[0]
-
-
-  });
 
   const ReplyList = (token_address: string) => {
     fetch(`/api/thread/replies?token_address=${token_address}`)
@@ -1007,7 +862,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                 </div>
                 {replies.length > 0 ? (
                   <div>
-                    {replies.map((reply: Reply) => (
+                    {currentThread.map((reply) => (
                       <div className="grid gap-4 px-1 items-center border-green-950 border-8 border-double " key={reply.id}>
 
                         <div className="flex flex-wrap gap-2 text-slate-400 text-xs items-start w-full">
@@ -1029,6 +884,14 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                         </div>
                       </div>
                     ))}
+                    <div className="pagination">
+                      <button onClick={() => setCurrentThreadPage(prev => Math.max(prev - 1, 1))} disabled={currentThreadPage === 1}>
+                        Previous
+                      </button>
+                      <button onClick={() => setCurrentThreadPage(prev => (prev < totalThreadPages ? prev + 1 : prev))} disabled={currentThreadPage === totalThreadPages}>
+                        Next
+                      </button>
+                    </div>
 
                   </div>
                 ) : (
@@ -1060,14 +923,14 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                 </div>
                 {trades.length > 0 ? (
                   <div>
-                    {trades.map(trade => (
+                    {currentTrades.map(trade => (
                       <TradeItem key={trade.txid} trade={trade} networkType={params.tokenInfo[0]} />
                     ))}
                     <div className="pagination">
-                      <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
+                      <button onClick={() => setCurrentTradesPage(prev => Math.max(prev - 1, 1))} disabled={currentTradesPage === 1}>
                         Previous
                       </button>
-                      <button onClick={() => setCurrentPage(prev => (prev < totalPages ? prev + 1 : prev))} disabled={currentPage === totalPages}>
+                      <button onClick={() => setCurrentTradesPage(prev => (prev < totalTradesPages ? prev + 1 : prev))} disabled={currentTradesPage === totalTradesPages}>
                         Next
                       </button>
                     </div>

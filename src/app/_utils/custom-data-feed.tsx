@@ -20,7 +20,9 @@ const configurationData : DatafeedConfiguration = {
         { value: "", name: "All Exchanges", desc: "" }
     ],
   
-    supported_resolutions: ["1" as ResolutionString, "5" as ResolutionString, "30" as ResolutionString, "60" as ResolutionString, "D" as ResolutionString]
+    // supported_resolutions: ["1" as ResolutionString, "5" as ResolutionString, "30" as ResolutionString, "60" as ResolutionString, "D" as ResolutionString]
+    supported_resolutions: ["5" as ResolutionString]
+
 }
 
 // async function getAllSymbols(): Promise<Symbol[]> {
@@ -238,7 +240,8 @@ class CustomDatafeed {
                     has_intraday: true,
                     visible_plots_set: 'ohlcv',
                     has_weekly_and_monthly: false,
-                    supported_resolutions: ['1' as ResolutionString, '5' as ResolutionString, '30' as ResolutionString, '60' as ResolutionString, 'D' as ResolutionString],
+                    supported_resolutions: ['5' as ResolutionString],
+                    // supported_resolutions: ['1' as ResolutionString, '5' as ResolutionString, '30' as ResolutionString, '60' as ResolutionString, 'D' as ResolutionString],
                     volume_precision: 2,
                     data_status: 'streaming',
                 };
@@ -263,6 +266,7 @@ class CustomDatafeed {
         onResetCacheNeededCallback: () => void
     ) {
         console.log('[subscribeBars]: Subscribed', subscriberUID);
+        // console.log("current resolution", resolution)
         subscribeOnStream(
             symbolInfo,
             resolution,

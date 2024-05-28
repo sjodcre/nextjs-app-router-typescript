@@ -166,7 +166,6 @@ const Home: React.FC = () => {
                         {/* Token card */}
                         <div className='max-h-[300px] overflow-hidden h-fit p-2 flex border border-transparent hover:border-green-700 gap-2 w-full'>
                             {/* You can replace this placeholder image with the actual token image */}
-                            <img className='mr-4 w-32 h-auto flex' src="https://via.placeholder.com/150" alt="Token Image" />
                             <ul className="text-xs leading-4 text-green-500 font-semibold">
                                 <li>Created By: {token.username}</li>
                                 <li>Market Cap: {token.marketcap} </li>

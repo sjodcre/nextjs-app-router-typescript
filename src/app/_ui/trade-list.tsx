@@ -97,9 +97,6 @@ const TradeItem = ({ trade, networkType }: { trade: TradeData, networkType: stri
                 {timeSince(trade.timestamp)}  {/* Use the new helper function for date formatting */}
 
             </div>
-            {/* <a href={`https://seitrace.com/tx/${trade.tx_hash}`} target="_blank" rel="noopener noreferrer" className="hidden sm:block text-right p-3 hover:text-blue-500 hover:underline">
-                {txHashShort}
-            </a> */}
             <a href={transactionUrl} target="_blank" rel="noopener noreferrer" className="hidden sm:block text-right p-3 hover:text-blue-500 hover:underline">
                 {txHashShort}
             </a>

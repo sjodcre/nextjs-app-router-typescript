@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAppSelector } from '@/app/_redux/store';
 import React from 'react';
 import PopUp from '@/app/_ui/popup';
+import { useWeb3ModalAccount, useWeb3ModalProvider } from '@web3modal/ethers5/react';
 
 
 
@@ -19,16 +20,21 @@ interface Profile {
 }
 
 interface CoinsHeld {
-
-  walletaddress: string;
-  tokenaddress: string;
-  tokenamount: string;
+  token_address: string;
+  balance: string;
+  token_ticker: string;
+  token_name: string;
+  image_url: string;  // Assuming this could be optional
 }
 
 interface CoinsCreated {
 
-  walletaddress: string;
-  tokenaddress: string;
+  creator: string;
+  token_address: string;
+  image_url: string;
+  token_name: string;
+  token_ticker: string;
+  token_description:string;
 
 }
 
@@ -42,37 +48,109 @@ const Profile: React.FC = () => {
 
   const url = usePathname();
   const id = url.substring("/profile/".length);
-
-  const chainType = useAppSelector((state) => state.chainReducer.value.chainType);
+  const { address, chainId, isConnected } = useWeb3ModalAccount()
+  const { walletProvider } = useWeb3ModalProvider();
+  const [currentChain, setCurrentChain] = useState('');
+  const [providerReady, setProviderReady] = useState(false);
+  const [currentHeldPage, setCurrentHeldPage] = useState(1);
+  const itemsPerPageHeld = 5; // This can also be dynamic if needed
+  const [currentCreatedPage, setCurrentCreatedPage] = useState(1);
+  const itemsPerPageCreated = 5; // This can also be dynamic if needed
+  // const chainType = useAppSelector((state) => state.chainReducer.value.chainType);
   const [profileData, setProfileData] = useState<Profile>({
     walletaddress: '',
     followerscount: '',
     followingcount: '',
     notificationscount: '',
-    username: '',
+    username: address || '',
 
   });
 
-  const [username, setUsername] = useState({
-    
-    username: '',
-
-  });
   const [coinHeldData, setCoinHeld] = useState<CoinsHeld[]>([]);
   const [coinCreatedData, setCoinCreated] = useState<CoinsCreated[]>([]);
 
+  // Pagination helper
+  const indexOfLastHeldItem = currentHeldPage * itemsPerPageHeld;
+  const indexOfFirstHeldItem = indexOfLastHeldItem - itemsPerPageHeld;
+  const currentItems = coinHeldData.slice(indexOfFirstHeldItem, indexOfLastHeldItem);
+  const indexOfLastCreatedItem = currentCreatedPage * itemsPerPageCreated;
+  const indexOfFirstCreatedItem = indexOfLastCreatedItem - itemsPerPageCreated;
+  const currentCreatedItems = coinCreatedData.slice(indexOfFirstCreatedItem, indexOfLastCreatedItem);
+
+  const nextHeldPage = () => {
+    setCurrentHeldPage(prev => prev + 1);
+  };
+
+  const prevHeldPage = () => {
+    if (currentHeldPage > 1) {
+      setCurrentHeldPage(prev => prev - 1);
+    }
+  };
+  const nextCreatedPage = () => {
+    setCurrentCreatedPage(prev => prev + 1);
+  };
+
+  const prevCreatedPage = () => {
+    if (currentCreatedPage > 1) {
+      setCurrentCreatedPage(prev => prev - 1);
+    }
+  };
 
   //tab
   const [openTab, setOpenTab] = React.useState(1);
 
-//popup model
-const [showModal, setShowModal] = useState(false);
-const [responseMessage, setResponseMessage] = useState('');
+  //popup model
+  const [showModal, setShowModal] = useState(false);
+  const [responseMessage, setResponseMessage] = useState('');
+  const SEI_CHAIN_ID = 713715;
+  const FTM_CHAIN_ID = 64165;
+
+  useEffect(() => {
+
+    if (walletProvider) {
+      setProviderReady(true);
+    } else {
+      setProviderReady(false);
+    }
+  }, [walletProvider]);
+
+
+  useEffect( () => {
+
+
+    if(chainId){
+      if (chainId === SEI_CHAIN_ID){
+        setCurrentChain("sei")
+      } else if (chainId === FTM_CHAIN_ID){
+        setCurrentChain("ftm")
+      }
+
+    }
+
+    // fetchCoinHeld();
+
+  }, [chainId]);
+
+  useEffect(() => {
+    // const fetchCoinHeld = async () => {
+    //   if (currentChain) { // Ensure currentChain is set
+    //     // Your fetch logic here
+    //     console.log(`Fetching coin held for ${currentChain}`);
+    //     // Fetch coin held logic...
+    //   }
+    // };
+    if (currentChain){
+      fetchCoinHeld(currentChain);
+      fetchCoinCreated(currentChain);
+
+    }
+
+  }, [currentChain]);
 
 
   const fetchProfile = async () => {
     try {
-      const response = await fetch(`/api/profile?id=${id}&chain=${chainType}`);
+      const response = await fetch(`/api/profile?id=${id}&chain=${currentChain}`);
       if (!response.ok) {
         throw new Error('Failed to fetch token');
       }
@@ -82,50 +160,65 @@ const [responseMessage, setResponseMessage] = useState('');
       console.error('Error fetching token:', error);
     }
   };
-  const fetchCoinHeld = async () => {
+  const fetchCoinHeld = async (currentChain:string) => {
     try {
-      const response = await fetch(`/api/coinsheld?id=${id}&chain=${chainType}`);
+      console.log("chain before fetch", chainId)
+      const response = await fetch(`/api/coinsheld?id=${id}&chain=${currentChain}`);
       if (!response.ok) {
         throw new Error('Failed to fetch token');
       }
-      const coinHeldData = await response.json();
-      setCoinHeld(coinHeldData);
+      const data = await response.json();
+      const mergedData = data.profiles.map((profile: { token_address: any; }) => ({
+        ...profile,
+        ...data.details.find((detail: { token_address: any; }) => detail.token_address === profile.token_address) || {}
+    }));
+
+    console.log("Merged Coin Held Data", mergedData);
+    setCoinHeld(mergedData);
     } catch (error) {
       console.error('Error fetching token:', error);
     }
   };
 
 
-  const fetchCoinCreated = async () => {
+  const fetchCoinCreated = async (currentChain:string) => {
     try {
-      const response = await fetch(`/api/coinscreated?id=${id}&chain=${chainType}`);
+      const response = await fetch(`/api/coinscreated?id=${id}&chain=${currentChain}`);
       if (!response.ok) {
         throw new Error('Failed to fetch token');
       }
       const coinCreatedData = await response.json();
+      console.log("created coins",coinCreatedData)
       setCoinCreated(coinCreatedData);
     } catch (error) {
       console.error('Error fetching token:', error);
     }
   };
 
-  useEffect(() => {
+  // useEffect(() => {
 
 
-    fetchCoinHeld();
-    fetchCoinCreated();
-    fetchProfile();
+  //   // fetchCoinCreated();
+  //   // fetchProfile();
 
-  }, [id]);
-
+  // }, [id]);
 
 
+
+
+  // const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const { name, value } = e.target;
+  //   setUsername(prevData => ({
+  //     ...prevData,
+  //     [name]: value,
+  //   }));
+  // };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setUsername(prevData => ({
+    const { value } = e.target;
+    setProfileData(prevData => ({
       ...prevData,
-      [name]: value,
+      username: value,  // Directly update the username property
     }));
   };
 
@@ -133,15 +226,15 @@ const [responseMessage, setResponseMessage] = useState('');
     e.preventDefault();
 
     try {
-      const response = await fetch(`/api/profile/update?id=${id}&chain=${chainType}`, {
+      const response = await fetch(`/api/profile/update?id=${id}&chain=${currentChain}`, {
         method: 'POST',
-        body: JSON.stringify(username),
+        body: JSON.stringify(profileData.username),
       });
       const responseData = await response.json();
 
       if (response.ok) {
         setResponseMessage('Username Updated');
-        profileData.username = username.username
+        profileData.username = profileData.username
       } else if (response.status === 400) {
         setResponseMessage('Username already exists');
       } else {
@@ -194,7 +287,7 @@ const [responseMessage, setResponseMessage] = useState('');
                     <div className='flex'>
                     <p className="mt-1 px-2 text-sm text-gray-500">Username</p>
                     {/* Email input */}
-                    <input className="flex h-10 rounded-md border border-slate-200 px-3 py-2 text-sm ring-offset-white text-black outline-none w-full pl-3" name="username" defaultValue={profileData.username} onChange={handleChange}></input>
+                    <input className="flex h-10 rounded-md border border-slate-200 px-3 py-2 text-sm ring-offset-white text-black outline-none w-full pl-3" name="username" value = {profileData.username}onChange={handleChange}></input>
                   </div>
                   <div className="text-xs text-orange-400 justify-self-end">{responseMessage && <p>{responseMessage}</p>}</div> 
                   </div>
@@ -258,7 +351,7 @@ const [responseMessage, setResponseMessage] = useState('');
               href="#link1"
               role="tablist"
             >
-              Coins Created
+              Coins Held
             </a>
           </li>
           <li className="-mb-px mr-1 last:mr-0 flex-auto text-center">
@@ -277,7 +370,7 @@ const [responseMessage, setResponseMessage] = useState('');
               href="#link2"
               role="tablist"
             >
-              Coins Held
+              Coins Created
             </a>
           </li>
 
@@ -287,42 +380,85 @@ const [responseMessage, setResponseMessage] = useState('');
             <div className="tab-content tab-space">
               <div className={openTab === 1 ? "block" : "hidden"} id="link1">
 
-
-                {coinCreatedData.map((coinData: CoinsCreated, index: number) => (
-                  <Link href={`/token/${coinData.tokenaddress}`} key={index}>
-                    {/* Token card */}
-                    <div className='max-h-[300px] overflow-hidden h-fit p-2 flex border hover:bg-white gap-2 w-full'>
-                      <img className='mr-4 w-12 h-auto flex' src="https://via.placeholder.com/150" alt="Token Image" />
-                      {/* You can replace this placeholder image with the actual token image */}
+                {/* {coinHeldData.map((coinData: CoinsHeld, index: number) => (
+                  <Link href={`/token/${currentChain}/${coinData.token_address}`} key={index}>
+                    <div className='max-h-[300px] overflow-hidden h-fit p-2 flex border hover:bg-white gap-2 w-full ' >
+                      <img className='mr-4 w-12 h-auto flex' src={coinData.image_url || "https://via.placeholder.com/150"} alt="Token Image" />
                       <ul className="text-xs font-normal leading-4 text-gray-500">
-                        <li>Wallet Address: {coinData.walletaddress}</li>
-                        <li>Token Address: {coinData.tokenaddress}</li>
+                        <li>Token Address: {coinData.token_address}</li>
+                        <li>Token Amout: {coinData.balance}</li>
+                        <li>Token Name: {coinData.token_name}</li>
+                        <li>Token Ticker: {coinData.token_ticker}</li>
                       </ul>
                     </div>
                   </Link>
+                ))} */}
 
+                {currentItems.map((coinData: CoinsHeld, index: number) => (
+                  <Link href={`/token/${currentChain}/${coinData.token_address}`} key={index}>
+                    <div className='max-h-[300px] overflow-hidden h-fit p-2 flex border hover:bg-white gap-2 w-full'>
+                      <img className='mr-4 w-12 h-auto flex' src={coinData.image_url || "https://via.placeholder.com/150"} alt="Token Image" />
+                      <ul className="text-xs font-normal leading-4 text-gray-500">
+                        <li>Token Address: {coinData.token_address}</li>
+                        <li>Token Amount: {coinData.balance}</li>
+                        <li>Token Name: {coinData.token_name}</li>
+                        <li>Token Ticker: {coinData.token_ticker}</li>
+                      </ul>
+                    </div>
+                  </Link>
                 ))}
+                <div className="flex justify-between mt-4">
+                  <button onClick={prevHeldPage} disabled={currentHeldPage === 1} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50">
+                    Previous
+                  </button>
+                  <button onClick={nextHeldPage} disabled={currentHeldPage * itemsPerPageHeld >= coinHeldData.length} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50">
+                    Next
+                  </button>
+                </div>
 
 
               </div>
               <div className={openTab === 2 ? "block" : "hidden"} id="link2">
 
-                {coinHeldData.map((coinData: CoinsHeld, index: number) => (
-                  <Link href={`/token/${coinData.tokenaddress}`} key={index}>
-                    {/* Token card */}
-                    <div className='max-h-[300px] overflow-hidden h-fit p-2 flex border hover:bg-white gap-2 w-full ' >
-                      <img className='mr-4 w-12 h-auto flex' src="https://via.placeholder.com/150" alt="Token Image" />
-                      {/* You can replace this placeholder image with the actual token image */}
+                {/* {coinCreatedData.map((coinData: CoinsCreated, index: number) => (
+                  <Link href={`/token/${coinData.token_address}`} key={index}>
+                    <div className='max-h-[300px] overflow-hidden h-fit p-2 flex border hover:bg-white gap-2 w-full'>
+                      <img className='mr-4 w-12 h-auto flex' src={coinData.image_url || "https://via.placeholder.com/150"} alt="Token Image" />
                       <ul className="text-xs font-normal leading-4 text-gray-500">
-                        <li>Wallet Address: {coinData.walletaddress}</li>
-                        <li>Token Address: {coinData.tokenaddress}</li>
-                        <li>Token Amout: {coinData.tokenamount}</li>
+                        <li>Token Address: {coinData.token_address}</li>
+                        <li>Creator: {coinData.creator}</li>
+                        <li>Token Name: {coinData.token_name}</li>
+                        <li>Token Ticker: {coinData.token_ticker}</li>
+                        <li>Token Description: {coinData.token_description ? (coinData.token_description.length > 20 ? coinData.token_description.slice(0, 20) + '...' : coinData.token_description) : 'No description'}</li>
+
+                      </ul>
+                    </div>
+                  </Link>
+
+                ))} */}
+                {currentCreatedItems.map((coinData: CoinsCreated, index: number) => (
+                  <Link href={`/token/${coinData.token_address}`} key={index}>
+                    <div className='max-h-[300px] overflow-hidden h-fit p-2 flex border hover:bg-white gap-2 w-full'>
+                      <img className='mr-4 w-12 h-auto flex' src={coinData.image_url || "https://via.placeholder.com/150"} alt="Token Image" />
+                      <ul className="text-xs font-normal leading-4 text-gray-500">
+                        <li>Token Address: {coinData.token_address}</li>
+                        <li>Creator: {coinData.creator}</li>
+                        <li>Token Name: {coinData.token_name}</li>
+                        <li>Token Ticker: {coinData.token_ticker}</li>
+                        <li>Token Description: {coinData.token_description ? (coinData.token_description.length > 20 ? coinData.token_description.slice(0, 20) + '...' : coinData.token_description) : 'No description'}</li>
 
                       </ul>
                     </div>
                   </Link>
                 ))}
-
+                <div className="flex justify-between mt-4">
+                  <button onClick={prevCreatedPage} disabled={currentCreatedPage === 1} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50">
+                    Previous
+                  </button>
+                  <button onClick={nextCreatedPage} disabled={currentCreatedPage * itemsPerPageCreated >= coinCreatedData.length} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50">
+                    Next
+                  </button>
+                </div> 
               </div>
 
             </div>

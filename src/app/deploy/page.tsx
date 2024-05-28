@@ -64,14 +64,13 @@ export default function Deploy() {
 	const [selectedChain, setSelectedChain] = useState<string>('sei');  // Default sort by market cap
 	const dispatch = useDispatch<AppDispatch>();
     const chainType = useAppSelector((state) => state.chainReducer.value.chainType);
-
+	const [isDeploying, setIsDeploying] = useState(false);
 	const toggleOptions = () => setShowOptions(!showOptions);
 	
 	useEffect(() => {
         dispatch(setChain(selectedChain));
 
     }, [dispatch, setChain, selectedChain]);
-
 
 	const handleChange = (e: { target: { name: any; value: any; }; }) => {
 		const { name, value } = e.target;
@@ -183,41 +182,6 @@ export default function Deploy() {
 		});
 	  }
 
-	//   async function deployTokenWithUIFeedback(tokenParams: TokenParams, walletProvider: any, file: File | undefined) {
-	// 	try {
-	// 		await handleChainChange();
-	
-	// 		console.log("chainId", chainId)
-	// 		const data = await deployToken(tokenParams, walletProvider);
-	// 		let url = '';
-	// 		try {
-	// 			url = await handleUploadImage(file);
-	// 			console.log('Uploaded Image URL:', url);
-	// 		} catch (error) {
-	// 			console.error('Failed to upload image:', error);
-	// 		}
-	// 		toast.success(`Contract deployed to: ${data.token_address}`);
-
-	
-	// 		const tokenListData = {
-	// 			...data,
-	// 			chainid: selectedChain,
-	// 			image_url: url,
-	// 			token_description: formData.description,
-	// 			twitter: formData.twitter, // Include Twitter data from formData.
-	// 			telegram: formData.telegram, // Include Telegram data from formData.
-	// 			website: formData.website, // Include Website data from formData.
-	// 		};
-	
-	// 		await postTokenData(tokenListData);
-	// 		await initOHLCData(selectedChain, data.token_address, data.creator, data.datetime, data.tx_hash);
-	// 		return tokenListData; // Resolve the promise with token list data
-	// 	} catch (error) {
-	// 		console.error(`Error in deployment: ${error}`);
-	// 		throw error; // Rethrow the error to handle it in toast.promise's error section
-	// 	}
-	// }
-
 	async function deployTokenWithUIFeedback(tokenParams: TokenParams, walletProvider: any, file: File | undefined): Promise<{ chainid: string; token_address: string }> {
 		return handleChainChange()  // This promise's resolution starts the next steps
 			.then(async () => {
@@ -262,6 +226,9 @@ export default function Deploy() {
 		// if (greeterContract || !signer) {
 		//   return;
 		// }
+		if (isDeploying) return;  // Prevent further clicks when deployment is in progress
+
+		setIsDeploying(true);
 		let hasError = false;
   		let newErrors: FormErrors  = {};
 		// Collect error messages
@@ -293,8 +260,10 @@ export default function Deploy() {
 					<div key={index}>{`${index + 1}. ${message}`}</div>
 					))}
 			 	</>, {
-				position: "top-center",
-				});
+			position: "top-center",
+			});
+			setIsDeploying(false);  // Reset the deployment flag
+
 			return;
 		}
 		try {
@@ -317,19 +286,26 @@ export default function Deploy() {
 					}
 				).then(tokenListData => {
 					router.push('/token/' + tokenListData.chainid + '/' + tokenListData.token_address);
+					setIsDeploying(false);  // Reset the deployment flag after success
 				}).catch(error => {
 					console.error("Failed to deploy token:", error);
+					setIsDeploying(false); 
+
 				});
 				
 			} else {
 				// Handle the case where walletProvider is undefined
 				console.error("Wallet provider is not available.");
+				setIsDeploying(false);
+
 			}
 
 		} catch (error: any) {
 
 			console.log(error);
 			toast.error(`Deployment failed: ` + error);
+			setIsDeploying(false); 
+
 		}	
 	};
 	
@@ -502,7 +478,7 @@ export default function Deploy() {
 					<span className="absolute -inset-1.5" />
 					<div className='relative ml-3'>
 						<button className='relative  flex bg-[#EED12E] text-black  px-6 hover:text-white rounded-lg py-2 text-sm font-medium leading-5'
-							type="button" onClick={handleDeploy}>
+							type="button" onClick={handleDeploy} disabled={isDeploying}>
 							Deploy
 						</button>
 					</div>
