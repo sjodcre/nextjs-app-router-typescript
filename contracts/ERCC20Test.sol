@@ -14,6 +14,8 @@ contract ERC20Test is BancorBondingCurve, ERC20, CappedGasPrice {
     uint256 public scale = 10**16;
     uint256 public reserveBalance = 10*scale;
     uint256 public reserveRatio;
+    address public feeReceiver = 0x372173ca23790098F17f376F59858a086Cae9Fb0; // Address to receive fees
+
 
 
     error ErrorZeroReserveTokenProvided();
@@ -35,10 +37,12 @@ contract ERC20Test is BancorBondingCurve, ERC20, CappedGasPrice {
     }
 
     function mint(uint256 minTokens) external payable validGasPrice {
-        uint256 tokensToMint = calculateContinuousMintReturn(msg.value);
+        uint256 fee = (msg.value * 1) / 101; // Calculate 1% fee
+        uint256 netValue = msg.value - fee; // Net value after fee
+        uint256 tokensToMint = calculateContinuousMintReturn(netValue);
         require(tokensToMint >= minTokens, "ErrorSlippageLimitExceeded");
 
-        _continuousMint(msg.value, tokensToMint);
+        _continuousMint(netValue, tokensToMint, fee);
     }
 
     function burn(uint256 _amount, uint256 minReturn) external validGasPrice {
@@ -47,7 +51,9 @@ contract ERC20Test is BancorBondingCurve, ERC20, CappedGasPrice {
         if (returnAmount < minReturn) {
             revert ErrorSlippageLimitExceeded();
         }
-        _continuousBurn(_amount, returnAmount);
+        uint256 fee = (returnAmount * 1) / 100; // Calculate 1% fee
+        uint256 netReturn = returnAmount - fee; // Net return after fee
+        _continuousBurn(_amount, netReturn,fee);
     }
 
     function calculateContinuousMintReturn(uint256 _amount) public view returns (uint256 mintAmount) {
@@ -58,16 +64,19 @@ contract ERC20Test is BancorBondingCurve, ERC20, CappedGasPrice {
         return calculateSaleReturn(totalSupply(), reserveBalance, uint32(reserveRatio), _amount);
     }
 
-     function _continuousMint(uint256 _deposit, uint256 amount) private {
+     function _continuousMint(uint256 _deposit, uint256 amount, uint256 fee) private {
         _mint(msg.sender, amount);
         reserveBalance += _deposit;
+        payable(feeReceiver).transfer(fee); // Transfer fee to the fee receiver
         emit ContinuousMint(msg.sender, amount, _deposit);
     }
 
-    function _continuousBurn(uint256 _amount, uint256 reimburseAmount) private {
+    function _continuousBurn(uint256 _amount, uint256 reimburseAmount, uint256 fee) private {
         _burn(msg.sender, _amount);
         reserveBalance -= reimburseAmount;
         payable(msg.sender).transfer(reimburseAmount);
+        payable(feeReceiver).transfer(fee); // Transfer fee to the fee receiver
+
         emit ContinuousBurn(msg.sender, _amount, reimburseAmount);
     }
 

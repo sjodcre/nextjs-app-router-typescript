@@ -19,7 +19,7 @@ export async function GET(req: Request) {
           // If a token is found, return it as a JSON response with a 200 status code
     return new Response(JSON.stringify(rows), { status: 200 });
     } else {
-      return new Response(JSON.stringify({ message: "No data found for the specified token address." }), { status: 400 });
+      return new Response(JSON.stringify([]), { status: 400 });
        
     }
     

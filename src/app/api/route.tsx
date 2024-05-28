@@ -30,14 +30,14 @@ export async function GET(req: Request) {
                     tl.token_name,
                     tl.token_address,
                     tl.creator,
-                    tl.DateTime,
-                    tl.Image_URL,
-                    tl.token_Description,
+                    tl.datetime,
+                    tl.image_url,
+                    tl.token_description,
                     th.timestamp,
                     p.username
                     FROM token_list_${chain} tl
                     JOIN transaction_history_${chain} th ON tl.token_address = th.token_address
-                    JOIN Profile_${chain} p ON tl.Creator = p.walletaddress
+                    JOIN profile_${chain} p ON tl.creator = p.walletaddress
                 ${orderByClause}
               `, []);
 
