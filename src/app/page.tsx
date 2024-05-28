@@ -10,19 +10,20 @@ import { AppDispatch, useAppSelector } from '@/app/_redux/store';
 
 interface Token {
 
-    tokenticker: string;
-    tokenname: string;
-    creator: string;
-    datetime: string;
-    image: string;
-    tokenaddress: string;
-    description: string;
-    username: string;
-    lastactivity: string;
-
-    marketcap: number;
-    repliescount: number;
-    lastreply: string;
+    token_address :string,
+    token_ticker :string,
+    token_name :string,
+    token_description :string,
+    image_url :string,
+    creator :string,
+    twitter :string,
+    telegram :string,
+    website :string,
+    token_datetime:number,
+    txid :string,
+    account :string,
+    reply_count: string
+    
     // Add other properties if available in the token object
 }
 
@@ -136,11 +137,13 @@ const Home: React.FC = () => {
 
                     </div>
                 </div>
-
-
             </div>
 
-
+            <div className="flex justify-center">
+          <a className="inline-flex items-center justify-center whitespace-nowrap rounded-md font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 dark:ring-offset-slate-950 dark:focus-visible:ring-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50 h-10 px-4 py-2 -mt-5 text-2xl text-slate-50 hover:font-bold hover:bg-transparent hover:text-slate-50" href="/deploy">
+            [Deploy a token]
+          </a>
+        </div>
 
 
             {/* Sorting dropdowns */}
@@ -162,16 +165,15 @@ const Home: React.FC = () => {
             {/* Token list */}
             <div className="grid grid-col-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-10 items-center border-green-950 border-8 border-double " >
                 {currentTokens.map((token: Token, index: number) => (
-                    <Link href={`/token/${token.tokenaddress}`} key={index}>
+                    <Link href={`/token/${selectedChain}/${token.token_address}`} key={index}>
                         {/* Token card */}
-                        <div className='max-h-[300px] overflow-hidden h-fit p-2 flex border border-transparent hover:border-green-700 gap-2 w-full'>
+                        <div className='max-h-[300px] overflow-hidden h-fit p-2 flex border border-white border-dashed hover:border-green-700 gap-2 w-full'>
                             {/* You can replace this placeholder image with the actual token image */}
                             <ul className="text-xs leading-4 text-green-500 font-semibold">
-                                <li>Created By: {token.username}</li>
+                                <li>Created By: {token.creator}</li>
                                 <li>Market Cap: {token.marketcap} </li>
-                                <li>Replies: {token.repliescount} </li>
-                                <li>Creation : {token.datetime} </li>
-                                <li>{token.tokenname} '(Ticker : {token.tokenticker}) : {token.description}"</li>
+                                <li>Replies: {token.reply_count} </li>
+                                 <li>{token.token_name} '(Ticker : {token.token_ticker}) : {token.token_description}"</li>
                             </ul>
                         </div>
                     </Link>

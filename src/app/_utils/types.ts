@@ -67,6 +67,5 @@ export interface Reply {
   file_uri :string
   text :string
   creator :string
-  username :string
   created_at :string
 }
