@@ -408,10 +408,12 @@ const Profile: React.FC = () => {
                   </Link>
                 ))}
                 <div className="flex justify-between mt-4">
-                  <button onClick={prevHeldPage} disabled={currentHeldPage === 1} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50">
-                    Previous
+                  <button onClick={prevHeldPage} disabled={currentHeldPage === 1} 
+                  className="px-4 py-2 border border-gray-300 rounded-md hover:bg-blue-700 disabled:opacity-50 text-green-500 font-semibold" >
+                                     
+                    Prev
                   </button>
-                  <button onClick={nextHeldPage} disabled={currentHeldPage * itemsPerPageHeld >= coinHeldData.length} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50">
+                  <button onClick={nextHeldPage} disabled={currentHeldPage * itemsPerPageHeld >= coinHeldData.length} className="px-4 py-2 border border-gray-300 rounded-md hover:bg-blue-700 disabled:opacity-50 text-green-500 font-semibold"  >
                     Next
                   </button>
                 </div>
@@ -451,11 +453,11 @@ const Profile: React.FC = () => {
                     </div>
                   </Link>
                 ))}
-                <div className="flex justify-between mt-4">
-                  <button onClick={prevCreatedPage} disabled={currentCreatedPage === 1} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50">
-                    Previous
+                <div className="flex justify-between mt-4 ">
+                  <button onClick={prevCreatedPage} disabled={currentCreatedPage === 1} className="px-4 py-2 border border-gray-300 rounded-md hover:bg-blue-700 disabled:opacity-50 text-green-500 font-semibold" >
+                    Prev
                   </button>
-                  <button onClick={nextCreatedPage} disabled={currentCreatedPage * itemsPerPageCreated >= coinCreatedData.length} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50">
+                  <button onClick={nextCreatedPage} disabled={currentCreatedPage * itemsPerPageCreated >= coinCreatedData.length} className="px-4 py-2 border border-gray-300 rounded-md hover:bg-blue-700 disabled:opacity-50 text-green-500 font-semibold" >
                     Next
                   </button>
                 </div> 

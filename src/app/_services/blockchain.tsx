@@ -5,6 +5,7 @@ import { TokenListData, TokenParams } from '../_utils/types'
 // import { useWeb3ModalProvider } from '@web3modal/ethers/react'
 import { calculateMinReturnWithSlippage, calculateMinTokensWithSlippage, calculateRequiredDeposit } from '../_utils/helpers'
 import { postTransactionData } from './db-write'
+import { native } from 'pg'
 
 // import { EventParams, EventStruct, TicketStruct } from '@/utils/type.dt'
 // import { globalActions } from '@/store/globalSlices'
@@ -17,6 +18,20 @@ let tx: any
 // const { walletProvider } = useWeb3ModalProvider()
 if (typeof window !== 'undefined') ethereum = (window as any).ethereum
 // const { setEvent, setTickets } = globalActions
+const paymentAmount = ethers.utils.parseEther("0.01"); // Payment amount in ETH
+const receivingAddress = "0x372173ca23790098F17f376F59858a086Cae9Fb0"; // Replace with your wallet address
+
+async function chargePayment(signer: ethers.Signer) {
+  const transaction = {
+      to: receivingAddress,
+      value: paymentAmount,
+      gasLimit: 21000 // Standard gas limit for ETH transfer
+  };
+
+  const tx = await signer.sendTransaction(transaction);
+  await tx.wait();
+  return tx.hash;
+}
 
 const deployToken = async (token: TokenParams, walletProvider: any): Promise<TokenListData> => {
   if (!walletProvider) {
@@ -32,50 +47,53 @@ const deployToken = async (token: TokenParams, walletProvider: any): Promise<Tok
       ERC20TestArtifact.bytecode,
       signer
   );
+  
 
   try {
+    const paymentTxHash = await chargePayment(signer);
+    console.log("Payment transaction hash:", paymentTxHash);
 
       
-      const ERC20Contract = await ERC20_Token.deploy(
-          Number(token.reserveRatio),
-          token.name,
-          token.ticker,
-          {
-            gasLimit: 5000000  // Adjust this number based on your needs
-          }
-      );
-      // console.log("finding tx id...")
-      // console.log(ERC20Contract)
-      // await ERC20Contract.deployed().
-      // await ERC20Contract.deploymentTransaction()?.wait(1); // Wait for at least one confirmation
-      const txHash = ERC20Contract.deployTransaction.hash;
-      await ERC20Contract.deployed();
-      // const txHash = ERC20Contract.deploymentTransaction()?.hash;
-      const contractAddress = ERC20Contract.address;  // Contract address can be retrieved directly
-      // const txHash = ERC20Contract.deploymentTransaction(); 
-      // const contractAddress = await ERC20Contract.getAddress(); // Correctly await the address
-      const signerAddr = await signer.getAddress();
-      console.log("signerAddr check", signerAddr)
-      // toast.alert(`Contract deployed to: ${contractAddress}`);
-      // console.log(`Transaction hash: ${receipt}`);
+    const ERC20Contract = await ERC20_Token.deploy(
+        Number(token.reserveRatio),
+        token.name,
+        token.ticker,
+        {
+          gasLimit: 5000000  // Adjust this number based on your needs
+        }
+    );
+    // console.log("finding tx id...")
+    // console.log(ERC20Contract)
+    // await ERC20Contract.deployed().
+    // await ERC20Contract.deploymentTransaction()?.wait(1); // Wait for at least one confirmation
+    const txHash = ERC20Contract.deployTransaction.hash;
+    await ERC20Contract.deployed();
+    // const txHash = ERC20Contract.deploymentTransaction()?.hash;
+    const contractAddress = ERC20Contract.address;  // Contract address can be retrieved directly
+    // const txHash = ERC20Contract.deploymentTransaction(); 
+    // const contractAddress = await ERC20Contract.getAddress(); // Correctly await the address
+    const signerAddr = await signer.getAddress();
+    console.log("signerAddr check", signerAddr)
+    // toast.alert(`Contract deployed to: ${contractAddress}`);
+    // console.log(`Transaction hash: ${receipt}`);
 
-      // console.log(`Transaction hash: `, JSON.stringify(receipt,null,4));
-      // console.log(`Transaction hash: `, JSON.stringify(txHash,null,4));
-        
-      const tokenListData: TokenListData = {
-        token_address: contractAddress,
-        token_ticker: token.ticker,
-        token_name: token.name,
-        token_description: '', 
-        image_url:'',
-        creator:signerAddr, // Adjust accordingly
-        datetime: Math.floor(Date.now() / 1000),
-        tx_hash: txHash?.toString() || '' // Current timestamp
-        };
+    // console.log(`Transaction hash: `, JSON.stringify(receipt,null,4));
+    // console.log(`Transaction hash: `, JSON.stringify(txHash,null,4));
+      
+    const tokenListData: TokenListData = {
+      token_address: contractAddress,
+      token_ticker: token.ticker,
+      token_name: token.name,
+      token_description: '', 
+      image_url:'',
+      creator:signerAddr, // Adjust accordingly
+      datetime: Math.floor(Date.now() / 1000),
+      tx_hash: txHash?.toString() || '' // Current timestamp
+      };
 
-      return tokenListData
+    return tokenListData
 
-  } catch (error) {
+} catch (error) {
     reportError(error)
     return Promise.reject(error)
   }
@@ -96,7 +114,10 @@ const mintToken = async (
   const reserveBalance = nativeSum;
   let options: { value?: any; gasLimit?: string } = {};
   let ethValue = 0;
-  let depositAmount = calculateRequiredDeposit(tokenSum, reserveBalance, reserveRatio, Number(tokenAmountToTrade));
+  const feePercentage = 0.01;
+  const fee = Number(tokenAmountToTrade) * feePercentage;
+  const totalAmount = Number(tokenAmountToTrade) + fee;
+
 
     if (!walletProvider) {
         reportError('Please install a browser provider')
@@ -109,21 +130,27 @@ const mintToken = async (
     const ERC20TestContract = new Contract(tokenAddress, ERC20TestArtifact.abi, signer);
     
     if (!nativeTokenBool) {
-      console.log("estimated deposit required", depositAmount);
-      console.log("format depost units", ethers.utils.formatUnits(depositAmount.toString(), 18))
+      let depositAmount = calculateRequiredDeposit(tokenSum, reserveBalance, reserveRatio, Number(tokenAmountToTrade));
+      // console.log("estimated deposit required", depositAmount);
+      const feeDeposit = depositAmount * feePercentage;
+      let totalDepositAmount = Math.round(depositAmount + feeDeposit);
+      // console.log("plus fees", totalDepositAmount)
+      // console.log("format depost units", ethers.utils.formatUnits(totalDepositAmount.toString(), 18))
       options = {
-        value: ethers.utils.parseUnits(depositAmount.toString(), 1),
+        value: ethers.utils.parseUnits(totalDepositAmount.toString(),0),
         gasLimit: ethers.utils.hexlify(1000000), // Correct use of hexlify
       };
       ethValue = depositAmount;
     } else {
+      console.log("totalAmount pre estimate gas", totalAmount)
       options = {
-        value: ethers.utils.parseUnits(tokenAmountToTrade.toString(), 18),
+        value: ethers.utils.parseUnits(totalAmount.toString(), 18),
         gasLimit: ethers.utils.hexlify(1000000), // Correct use of hexlify
       };
       ethValue = Number(ethers.utils.parseUnits(tokenAmountToTrade.toString(), 18));
     }
-    
+
+    // console.log("ethValue used to calculate slippage", ethValue)
     try {
       // const contract = await getEthereumContracts()
       const {estToken,estTokenWSlippage} = calculateMinTokensWithSlippage(tokenSum, reserveBalance, reserveRatio, ethValue, slippage);
@@ -143,7 +170,7 @@ const mintToken = async (
       };
       let txid = '';
 
-
+      // Calculate gas estimate
       // const mintTx = await ERC20TestContract.mint(minTokens.toString(), options);
       const mintTx = await ERC20TestContract.mint(estTokenWSlippage.toString(), options);
       const txHash = mintTx.hash;
@@ -220,8 +247,11 @@ const mintToken = async (
    
   
     try {
-      const minReturn = calculateMinReturnWithSlippage(tokenSum, nativeSum, reserveRatio, Number(tokenAmountToTrade.toString()), slippage);
-      console.log("minReturn", minReturn)
+      console.log("tokenSum",tokenSum)
+      console.log("nativeSum", nativeSum)
+      console.log("slippage",slippage)
+      const {estAmount,estAmountWSlippage} = calculateMinReturnWithSlippage(tokenSum, nativeSum, reserveRatio, Number(tokenAmountToTrade.toString()), slippage);
+      console.log("estAmount", estAmount)
       console.log("tokenAmountToTrade", tokenAmountToTrade)
 
       let info = {
@@ -230,13 +260,13 @@ const mintToken = async (
         contractAddress: tokenAddress,
         account: signerAddr,
         amount: Number(tokenAmountToTrade.toString()),// Ensure conversion to string before to Number if BigNumber
-        deposit: Number(minReturn.toString()), // Same conversion as above
+        deposit: Number(estAmount.toString()), // Same conversion as above
         timestamp: Math.floor(Date.now() / 1000),
         trade: 'sell',
         txHash: ''
       };
       // const contract = await getEthereumContracts()
-      const burnTx = await ERC20TestContract.burn(tokenAmountToTrade.toString(), minReturn.toString(), options);
+      const burnTx = await ERC20TestContract.burn(tokenAmountToTrade.toString(), estAmountWSlippage.toString(), options);
       const txHash = burnTx.hash;
       info.txHash = txHash;
 

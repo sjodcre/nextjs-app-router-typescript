@@ -49,6 +49,7 @@ const Home: React.FC = () => {
                 throw new Error('Failed to fetch tokens');
             }
             const data = await response.json();
+            console.log("data", data)
             setTokens(data);
         } catch (error) {
             console.error('Error fetching data:', error);
@@ -103,22 +104,58 @@ const Home: React.FC = () => {
 
                 </div>
             </div>
-            {/*  <label className='text-9xl flex justify-center'>Chain : {chainType} </label> */}
-            {/* <label htmlFor="sortOptions" className="mr-2 text-white">Chain:</label> */}
-            {/*   <div className="inline-flex">
-
-                <button className={` hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-l ${isSeiActive ? 'bg-blue-500 disable' : 'bg-gray-300'
-                    }`} onClick={handleClicks}>
-                    Sei
-                </button>
-                <button className={` hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-l ${isFtmActive ? 'bg-blue-500' : 'bg-gray-300'
-                    }`} onClick={handleClicks}>
-                    FTM
-                </button>
-
-
-
-                </div> */}
+            <div className="flex flex-col items-center w-full mt-4">
+                <a className="inline-flex items-center justify-center whitespace-nowrap rounded-md font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 
+                disabled:pointer-events-none disabled:opacity-50 dark:ring-offset-slate-950 dark:focus-visible:ring-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50 h-10 px-4 py-2 mb-4 text-2xl text-slate-50 hover:font-bold hover:bg-transparent 
+                hover:text-slate-50" href="/deploy">
+                    [start a new coin]
+                </a>
+                <div className="text-white max-w-[800px] grid gap-2">
+                    {/* <img alt="king of the hill" loading="lazy" width="166" height="32" decoding="async" data-nimg="1" class="h-8 justify-self-center" srcset="/_next/image?url=%2Fking-of-the-hill.png&amp;w=256&amp;q=75 1x, /_next/image?url=%2Fking-of-the-hill.png&amp;w=384&amp;q=75 2x" src="/_next/image?url=%2Fking-of-the-hill.png&amp;w=384&amp;q=75" style="color: transparent;"> */}
+                    <a href="/EqcNxUzQ18C8HsG6QGL4XWVvGV3cGbs7xcfGfE3o1xye">
+                        <div className="p-2 flex border border-transparent hover:border-white gap-2 w-full max-h-[300px] overflow-hidden">
+                            <div className="min-w-20">
+                                {/* <img alt="Get Money" loading="lazy" width="200" height="200" decoding="async" data-nimg="1" class="mr-4 w-20 h-auto" src="https://bafkreianj7sxceoziksoq73vuopuivsgumxp4qft6ijbfmmb3ay43g2mmy.ipfs.nftstorage.link/?img-width=200&amp;img-dpr=2&amp;img-onerror=redirect" style="color: transparent;"> */}
+                            </div>
+                            <div className="gap-1 grid h-fit">
+                                <div className="text-xs text-blue-200 flex items-center gap-2">
+                                    <div>
+                                        Created by
+                                    </div>
+                                    <button type="button">
+                                        <span className="flex gap-1  items-center">
+                                            {/* <img alt="" loading="lazy" width="16" height="16" decoding="async" data-nimg="1" class="w-4 h-4 rounded" src="https://pump.mypinata.cloud/ipfs/QmeSzchzEPqCU1jwTnsipwcBAeH7S4bmVvFGfF65iA1BY1?img-width=16&amp;img-dpr=2&amp;img-onerror=redirect" style="color: transparent;"> */}
+                                            <span className="px-1 rounded hover:underline flex gap-1 bg-transparent	" >
+                                            FRgyc4 
+                                            </span>
+                                        </span>
+                                    </button>
+                                </div>
+                                <div className="text-xs text-green-300 flex gap-1">
+                                    market cap: 35.78K
+                                    <div className="flex text-green-500">
+                                        [badge: 
+                                        <div>
+                                            <div>
+                                                <div className="cursor-pointer hover:opacity-7" aria-haspopup="dialog" aria-expanded="false" aria-controls="radix-:r11:" data-state="closed">
+                                                    {/* <img alt="king of the hill badge" loading="lazy" width="18" height="18" decoding="async" data-nimg="1" class="h-4" srcset="/_next/image?url=%2Fking.png&amp;w=32&amp;q=75 1x, /_next/image?url=%2Fking.png&amp;w=48&amp;q=75 2x" src="/_next/image?url=%2Fking.png&amp;w=48&amp;q=75" style="color: transparent;"> */}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        ]
+                                    </div>
+                                </div>
+                                <p className="text-xs flex items-center gap-2">
+                                    replies: 3
+                                </p>
+                                <p className="text-sm w-full font-bold">
+                                    Get Money [ticker: GM]
+                                </p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
 
             <div className='py-6  grid gap-8 item-start justify-center'>
                 <div className='relative'>

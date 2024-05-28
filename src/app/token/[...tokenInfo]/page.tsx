@@ -70,7 +70,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   const { walletProvider } = useWeb3ModalProvider()
   const { isSocketConnected, emitEvent, onEvent, offEvent, disconnectSoc } = useSocket();
   const [currentThreadPage, setCurrentThreadPage] = useState(1);
-  const itemsPerThreadPage = 5;
+  const itemsPerThreadPage = 15;
   const [currentTradesPage, setCurrentTradesPage] = useState(1);
   const itemsPerTradesPage = 15;
 
@@ -231,6 +231,8 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     const endIndex = startIndex + itemsPerThreadPage;
     return replies.slice(startIndex, endIndex);
   }, [replies, currentThreadPage, itemsPerThreadPage]);
+
+  // console.log("currentThread", currentThread)
 
   //when user change wallet
   useEffect(() => {
@@ -698,7 +700,9 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   const ReplyList = (token_address: string) => {
     fetch(`/api/thread/replies?token_address=${token_address}&chain=${params.tokenInfo[0]}`)
       .then((res) => res.json())
-      .then((data) => setReplies(data));
+      .then((data) => {
+      console.log("data for replies", data)
+      setReplies(data)});
 
     // console.log("ref")
   }
@@ -834,7 +838,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                 </span>
                 <a href="/profile/{tokenDetails?.creator ? `${tokenDetails.creator.slice(-6)}` : 'Unknown'}">
                   <div className="flex gap-1 items-center">
-                    {/* <img src="/pepe.png" className="w-4 h-4 rounded"></img> */}
+                    <img src="/logo.webp" className="w-4 h-4 rounded"></img>
                     <div className="px-1 rounded hover:underline flex gap-1 text-black bg-pink-400" >
                       {extractFirstSixCharac(tokenDetails?.creator || 'unknown')}
                     </div>
@@ -910,7 +914,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                 </div>
                 {replies.length > 0 ? (
                   <div>
-                    {currentThread.map((reply) => (
+                    {/* {currentThread.map((reply) => (
                       <div className="grid gap-4 px-1 items-center border-green-950 border-8 border-double " key={reply.id}>
 
                         <div className="flex flex-wrap gap-2 text-slate-400 text-xs items-start w-full">
@@ -933,13 +937,15 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                           {reply.text}
                         </div>
                       </div>
-                    ))}
-                    <div className="pagination text-white">
-                      <button onClick={() => setCurrentThreadPage(prev => Math.max(prev - 1, 1))} disabled={currentThreadPage === 1}>
-                        Previous
+                    ))} */}
+                    <div className="pagination">
+                      <button onClick={() => setCurrentThreadPage(prev => Math.max(prev - 1, 1))} disabled={currentThreadPage === 1} 
+                      className="mr-2 px-4 py-2 border border-gray-300 rounded-md text-green-500 font-semibold">
+                        Prev
                       </button>
-                       |  
-                      <button onClick={() => setCurrentThreadPage(prev => (prev < totalThreadPages ? prev + 1 : prev))} disabled={currentThreadPage === totalThreadPages}>
+                      <button onClick={() => setCurrentThreadPage(prev => (prev < totalThreadPages ? prev + 1 : prev))} disabled={currentThreadPage === totalThreadPages}
+                      className="px-4 py-2 border border-gray-300 rounded-md text-green-500 font-semibold">
+
                         Next
                       </button>
                     </div>
@@ -978,10 +984,12 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                       <TradeItem key={trade.txid} trade={trade} networkType={params.tokenInfo[0]} />
                     ))}
                     <div className="pagination">
-                      <button onClick={() => setCurrentTradesPage(prev => Math.max(prev - 1, 1))} disabled={currentTradesPage === 1}>
-                        Previous
+                      <button onClick={() => setCurrentTradesPage(prev => Math.max(prev - 1, 1))} disabled={currentTradesPage === 1}
+                      className="px-4 py-2 border border-gray-300 rounded-md text-green-500 font-semibold">
+                        Prev
                       </button>
-                      <button onClick={() => setCurrentTradesPage(prev => (prev < totalTradesPages ? prev + 1 : prev))} disabled={currentTradesPage === totalTradesPages}>
+                      <button onClick={() => setCurrentTradesPage(prev => (prev < totalTradesPages ? prev + 1 : prev))} disabled={currentTradesPage === totalTradesPages}
+                      className="px-4 py-2 border border-gray-300 rounded-md text-green-500 font-semibold">
                         Next
                       </button>
                     </div>
@@ -1119,12 +1127,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                         src={buySell === 'sell' ? tokenDetails?.image_url : (nativeTokenBool ? nativeTokenInfo.chainLogo : tokenDetails?.image_url)}
                         alt={buySell === 'sell' ? tokenDetails?.token_name : (nativeTokenBool ? nativeTokenInfo.chain : tokenDetails?.token_name)}
                       />
-
-                      {/* <span className="text-white mr-2">{nativeToken ? nativeTokenInfo.chain : tokenDetails?.token_ticker}</span>
-                          <img className="w-8 h-8 rounded-full bg-white" src={nativeToken ?  nativeTokenInfo.chainLogo: tokenDetails?.image_url}
-                                    alt={nativeToken ? nativeTokenInfo.chain: tokenDetails?.token_name} /> */}
                     </div>
-                    {/* <img className="w-8 h-8 rounded-full" src="https://www.liblogo.com/img-logo/so2809s56c-solana-logo-solana-crypto-logo-png-file-png-all.png" alt="SOL"></img> */}
 
 
 

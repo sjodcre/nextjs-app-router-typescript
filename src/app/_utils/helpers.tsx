@@ -68,12 +68,14 @@ export function calculateBurnReturn(_supply: number, _reserveBalance: number, _r
     return burnReturn;
 }
 
-export function calculateMinReturnWithSlippage(_supply: number, _reserveBalance: number, _reserveRatio: number, _sellAmount: number, slippagePercent: number): number {
+export function calculateMinReturnWithSlippage(_supply: number, _reserveBalance: number, _reserveRatio: number, _sellAmount: number, slippagePercent: number): {estAmount:number,estAmountWSlippage:number} {
     const burnReturnWithoutSlippage = calculateBurnReturn(_supply, _reserveBalance, _reserveRatio, _sellAmount);
     const slippageMultiplier = (100 - slippagePercent) / 100;
 
     // Calculate the minimum return based on the slippage percentage
-    return Math.round(burnReturnWithoutSlippage * slippageMultiplier);
+    return {estAmount: Math.round(burnReturnWithoutSlippage), estAmountWSlippage:  Math.round(burnReturnWithoutSlippage * slippageMultiplier)}
+
+    // return Math.round(burnReturnWithoutSlippage * slippageMultiplier);
 }
 
 export function getAccountUrl(chainid: string, holderAccount: string) {

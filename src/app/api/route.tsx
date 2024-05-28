@@ -26,6 +26,7 @@ export async function GET(req: Request) {
 
       
         const queryResult = await query(`
+
         WITH latest_transactions AS (
             SELECT 
                 DISTINCT ON (th.token_address) 

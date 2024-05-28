@@ -116,8 +116,10 @@ export const submitArTx = async (arweave: Arweave, tx: Transaction) => new Promi
 //     const response = await arweave.transactions.post(transaction);
     
 //     if (response.status === 200) {
+
 //         console.log(File uploaded: https://arweave.net/${transaction.id});
 //         return https://arweave.net/${transaction.id};
+
 //     } else {
 //         console.error('Failed to upload file:', response.status, response.statusText);
 //         throw new Error('File upload failed');
@@ -166,6 +168,7 @@ export const uploadImage = async (file: Buffer, fileName: string): Promise<strin
  
 
     // if (response.status === 200) {
+
     //             console.log(File uploaded: https://arweave.net/${transaction.id});
     //             return https://arweave.net/${transaction.id};
     //         } else {
