@@ -43,6 +43,8 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   const [transactionDone, setTransactionDone] = useState(false);
   const { switchNetwork } = useSwitchNetwork()
   const [initialCheckDone, setInitialCheckDone] = useState(false);
+  const [user, setUser] = useState('');
+
   const [userBalance, setUserBalance] = useState({
     token: 0,
     native: 0,
@@ -312,6 +314,17 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     //   socket.emit("updated", "updated to db");
     // }
   }, [trades]);
+
+  useEffect(() => {
+    // Ensure that the address is defined before setting the creator
+    if (address) {
+      setUser(address);
+      setNewReply(prevReply => ({
+        ...prevReply,
+        creator: address
+      }));
+    }
+  }, [address]);
 
   const handleNewTrade = (newTradeData: { txid: any; contractAddress: any; account: any; amount: any; deposit: any; timestamp: any; trade: any; txHash: any; }) => {
     console.log("inside handlenewtrade", newTradeData)
@@ -813,7 +826,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
       toast.error(`Deployment failed: ` + error);
     }
   };
-  let creator = address;
+  
   /// Threads Code
   const [replies, setReplies] = useState<Reply[]>([]);
   const [newReply, setNewReply] = useState({
@@ -821,27 +834,26 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     token_address: params.tokenInfo[1],
     file_uri: '',
     text: '',
-    creator: creator,
+    creator: user,
     username: '',
     chain: params.tokenInfo[0]
 
 
   });
+
   const ReplyList = (token_address: string) => {
-
-
     fetch(`/api/thread/replies?token_address=${token_address}`)
       .then((res) => res.json())
       .then((data) => setReplies(data));
 
-    console.log("ref")
+    // console.log("ref")
   }
 
   //popup model
   const [showModal, setShowModal] = useState(false);
   const [responseMessage, setResponseMessage] = useState('');
 
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleReplyChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setNewReply(prevData => ({
       ...prevData,
@@ -851,8 +863,13 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   };
 
 
-  const handleSubmit = async (e: React.FormEvent<HTMLButtonElement>) => {
+  const handleReplySubmit = async (e: React.FormEvent<HTMLButtonElement>) => {
     e.preventDefault();
+    if (!newReply.text.trim() || !newReply.creator.trim()) {
+      toast.error("Text and creator fields cannot be empty.")
+      setResponseMessage('Text and creator fields cannot be empty.');
+      return; // Stop the function if validation fails
+    }
 
     try {
       const response = await fetch(`/api/thread/replies`, {
@@ -958,16 +975,35 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
             {activeTab === 'thread' && (
 
               <div>
-                <div className="grid grid-col-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-10 items-center border-green-950 border-8 border-double ">
-                  <img src={tokenDetails?.image_url} className="w-32 object-contain cursor-pointer"></img>
-                  <div>
-                    <div className="font-bold text-sm">
-                      {tokenDetails?.token_name} (ticker: {tokenDetails?.token_ticker})
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      {tokenDetails?.token_description}
+                <div className="grid grid-cols-1 gap-4 items-start border-green-950 border-8 border-double ">
+
+                    <div className="flex flex-wrap gap-2 text-slate-400 text-xs items-start w-full">
+                      <a href={`/profile/${tokenDetails?.creator}`}>
+                          <span className="flex gap-1 items-center">
+                              <div className="px-1 rounded hover:underline flex gap-1 text-black bg-pink-400">
+                                  {extractFirstSixCharac(tokenDetails?.creator || 'unknown')}
+                              </div>
+                          </span>
+                      </a>
+                      <div>
+                        {tokenDetails?.datetime ? new Date(tokenDetails.datetime * 1000).toLocaleString('en-US', {
+                            year: 'numeric', month: '2-digit', day: '2-digit',
+                            hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+                        }) : 'Loading date...'}
                     </div>
                   </div>
+                    
+                    <div className="flex gap-4 items-start w-full">
+                        <img src={tokenDetails?.image_url || "https://via.placeholder.com/150"} className="w-32 h-32 object-contain cursor-pointer" />
+                        <div className="flex flex-col justify-between">
+                            <div className="font-bold text-sm text-gray-400">
+                                {tokenDetails?.token_name} (ticker: {tokenDetails?.token_ticker})
+                            </div>
+                            <div className="text-xs text-gray-400">
+                                {tokenDetails?.token_description}
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 {replies.length > 0 ? (
                   <div>
@@ -985,9 +1021,12 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                             </span>
                           </a>
                           <div>{reply.created_at}</div>
-                          <div className="cursor-pointer justify-self-end hover:underline">#{reply.id}</div></div>
+                          <div className="cursor-pointer justify-self-end hover:underline">#{reply.id}
+                          </div>
+                        </div>
                         <div className="text-green-500">
-                          {reply.text}</div>
+                          {reply.text}
+                        </div>
                       </div>
                     ))}
 
@@ -1039,7 +1078,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
               </div>
             )}
             {/* Button */}
-            {isConnected ? (<button
+            {isConnected && activeTab ==='thread'? (<button
               onClick={() => setShowModal(true)}
               className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-500 border border-gray-300 rounded-md 
               shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -1064,7 +1103,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                       <div>
                         <h3 className="text-lg font-medium text-gray-900">Add a comment</h3>
                         <div className="flex">
-                          <textarea className="bg-[#2a2a3b] border border-slate-950 rounded-md h-24 w-full p-2 text-white" name="text" placeholder="comment" onChange={handleChange}></textarea>
+                          <textarea className="bg-[#2a2a3b] border border-slate-950 rounded-md h-24 w-full p-2 text-white" name="text" placeholder="comment" onChange={handleReplyChange}></textarea>
                         </div>
                       </div>
                     </div>
@@ -1072,7 +1111,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
                   <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
 
-                    <button onClick={handleSubmit} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2
+                    <button onClick={handleReplySubmit} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2
                      bg-blue-500 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
                     >
                       Post
@@ -1237,7 +1276,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                 )}
               </div>
               <div className="gap-3 h-fit items-start flex">
-                <img src={tokenDetails?.image_url} className="w-32 object-contain cursor-pointer"></img>
+                <img src={tokenDetails?.image_url || "https://via.placeholder.com/150"} className="w-32 object-contain cursor-pointer"></img>
                 <div>
                   <div className="font-bold text-sm">
                     {tokenDetails?.token_name} (ticker: {tokenDetails?.token_ticker})
