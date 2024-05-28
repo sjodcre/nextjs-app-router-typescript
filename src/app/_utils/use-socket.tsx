@@ -154,6 +154,9 @@ const useSocket = (listeners: EventListener[] = []) => {
   const offEvent = useCallback((event: string, data: any) => {
     socket.off(event, data);
   }, []);
+  const disconnectSoc = () => {
+    socket.disconnect();
+  };
 
   return {
     isSocketConnected,
@@ -161,6 +164,7 @@ const useSocket = (listeners: EventListener[] = []) => {
     emitEvent,
     onEvent,
     offEvent,
+    disconnectSoc,
   };
 };
 

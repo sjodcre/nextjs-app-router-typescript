@@ -23,7 +23,7 @@ export async function GET(req: Request) {
     }
     
   } catch (error) {
-    console.error('Error fetching coin:', error);
+    console.error('Error fetching data:', error);
     // If an error occurs during fetching, return a 500 status code
     return new Response(JSON.stringify('Internal Server Error'), { status: 500 });
   }

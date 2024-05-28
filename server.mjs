@@ -26,6 +26,13 @@ app.prepare().then(() => {
     })
 
 
+    socket.on('replyPost', () => {
+      console.log("recieved reply post")
+      //console.log(data)
+      io.emit('replyGet')
+    })
+
+
   });
 
   httpServer
