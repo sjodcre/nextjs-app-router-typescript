@@ -1,264 +1,186 @@
-import { Contract, ContractFactory, ethers } from 'ethers'
-import address from '@/../contracts/contractAddress.json'
-import ERC20TestArtifact from '@/../artifacts/contracts/ERCC20Test.sol/ERC20Test.json'
-import { TokenListData, TokenParams } from '../_utils/types'
-// import { useWeb3ModalProvider } from '@web3modal/ethers/react'
-import { calculateMinReturnWithSlippage, calculateMinTokensWithSlippage, calculateRequiredDeposit } from '../_utils/helpers'
-import { postTransactionData } from './db-write'
-
-// import { EventParams, EventStruct, TicketStruct } from '@/utils/type.dt'
-// import { globalActions } from '@/store/globalSlices'
-// import { store } from '@/store'
+import Arweave from 'arweave';
+import fs from 'fs';
+import dotenv from 'dotenv';
+import Transaction from 'arweave/node/lib/transaction';
+import crypto from "crypto"
 
 
+// Load environment variables
+dotenv.config();
 
-let ethereum: any
-let tx: any
-// const { walletProvider } = useWeb3ModalProvider()
-if (typeof window !== 'undefined') ethereum = (window as any).ethereum
-// const { setEvent, setTickets } = globalActions
+class Tags {
+    _tags = new Map();
 
-const deployToken = async (token: TokenParams, walletProvider: any): Promise<TokenListData> => {
-  if (!walletProvider) {
-    reportError('Please install a browser provider')
-    return Promise.reject(new Error('Browser provider not installed'))
-  }
-
-  const provider = new ethers.providers.Web3Provider(walletProvider)
-  const signer = await provider.getSigner()
-  let signer2 = signer.connect
-  const ERC20_Token = new ContractFactory(
-      ERC20TestArtifact.abi,
-      ERC20TestArtifact.bytecode,
-      signer
-  );
-
-  try {
-
-      
-      const ERC20Contract = await ERC20_Token.deploy(
-          Number(token.reserveRatio),
-          token.name,
-          token.ticker,
-          {
-            gasLimit: 5000000  // Adjust this number based on your needs
-          }
-      );
-      // console.log("finding tx id...")
-      // console.log(ERC20Contract)
-      // await ERC20Contract.deployed().
-      // await ERC20Contract.deploymentTransaction()?.wait(1); // Wait for at least one confirmation
-      const txHash = ERC20Contract.deployTransaction.hash;
-      await ERC20Contract.deployed();
-      // const txHash = ERC20Contract.deploymentTransaction()?.hash;
-      const contractAddress = ERC20Contract.address;  // Contract address can be retrieved directly
-      // const txHash = ERC20Contract.deploymentTransaction(); 
-      // const contractAddress = await ERC20Contract.getAddress(); // Correctly await the address
-      const signerAddr = await signer.getAddress();
-      console.log("signerAddr check", signerAddr)
-      // toast.alert(`Contract deployed to: ${contractAddress}`);
-      // console.log(`Transaction hash: ${receipt}`);
-
-      // console.log(`Transaction hash: `, JSON.stringify(receipt,null,4));
-      // console.log(`Transaction hash: `, JSON.stringify(txHash,null,4));
-        
-      const tokenListData: TokenListData = {
-        token_address: contractAddress,
-        token_ticker: token.ticker,
-        token_name: token.name,
-        token_description: '', 
-        image_url:'',
-        creator:signerAddr, // Adjust accordingly
-        datetime: Math.floor(Date.now() / 1000),
-        tx_hash: txHash?.toString() || '' // Current timestamp
-        };
-
-      return tokenListData
-
-  } catch (error) {
-    reportError(error)
-    return Promise.reject(error)
-  }
+    constructor() {
+        this._tags = new Map();
+    }
+    get tags() {
+        return Array.from(this._tags.entries()).map(([name, value]) => ({ name, value }));
+    }
+    addTag(key: any, value: any) {
+        this._tags.set(key, value);
+    }
+    addTags(tags: any) {
+        tags.forEach(({ name, value }: any) => this.addTag(name, value));
+    }
+    addTagsToTransaction(tx: Transaction) {
+        this.tags.forEach(({ name, value }) => tx.addTag(name, value));
+    }
 }
 
-const mintToken = async (
-  chain: string,
-  tokenAddress: string,  
-  walletProvider: any, 
-  nativeSum: number,
-  tokenSum: number,
-  nativeTokenBool: boolean,
-  tokenAmountToTrade: { toString: () => string; },
-  slippage : number
-  ) => {
+// Initialize Arweave
+const arweave = Arweave.init({
+    host: 'arweave.net',
+    port: 443,
+    protocol: 'https'
+});
 
-  const reserveRatio = 50000;
-  const reserveBalance = nativeSum;
-  let options: { value?: any; gasLimit?: string } = {};
-  let ethValue = 0;
+// Content type detection function
+export const contentTypeOf = (name: string): string => {
+    if (name.endsWith(".png")) return "image/png";
+    if (name.endsWith(".jpg") || name.endsWith(".jpeg")) return "image/jpeg";
+    if (name.endsWith(".gif")) return "image/gif"
+    if (name.endsWith(".svg")) return "image/svg+xml"
+    if (name.endsWith(".webp")) return "image/webp"
+    if (name.endsWith(".bmp")) return "image/bmp"
+    if (name.endsWith(".ico")) return "image/vnd.microsoft.icon"
+    if (name.endsWith(".tiff")) return "image/tiff"
+    if (name.endsWith(".tif")) return "image/tiff"
+    if (name.endsWith(".avif")) return "image/avif"
+    if (name.endsWith(".apng")) return "image/apng"
+    if (name.endsWith(".jfif")) return "image/jpeg"
+    if (name.endsWith(".pjpeg")) return "image/jpeg"
+    if (name.endsWith(".pjp")) return "image/jpeg"
+    return "application/octet-stream";
+};
 
-    if (!walletProvider) {
-        reportError('Please install a browser provider')
-        return Promise.reject(new Error('Browser provider not installed'))
-      }
-    // const deposit_amt = toWei(amount);
-    const provider = new ethers.providers.Web3Provider(walletProvider)
-    const signer = await provider.getSigner()
-    const signerAddr = await signer.getAddress();
-    const ERC20TestContract = new Contract(tokenAddress, ERC20TestArtifact.abi, signer);
+const hashFile = (data: Buffer) => {
+    const hash = crypto.createHash('sha256')
+    hash.update(data)
+    return hash.digest('hex')
+}
+
+export const createArTx = async (arweave: Arweave, data: Buffer, wallet: any, contentType: string) => {
+
+    let tags = new Tags()
+    tags.addTag('Content-Type', contentType)
+    tags.addTag('User-Agent', "test")
+    tags.addTag('User-Agent-Version', "0.2.0")
+    tags.addTag('Type', 'file')
+    tags.addTag('File-Hash', hashFile(data))
+
+    let tx = await arweave.createTransaction({ data }, wallet)
+    tags.addTagsToTransaction(tx)
+
+    return tx
+}
+
+export const signArTx = async (arweave: Arweave, tx: Transaction, wallet: any) => {
+    await arweave.transactions.sign(tx, wallet)
+    return tx
+}
+
+export const submitArTx = async (arweave: Arweave, tx: Transaction) => new Promise(async (resolve, reject) => {
+    let uploader = await arweave.transactions.getUploader(tx)
+    try {
+        while (!uploader.isComplete) {
+            await uploader.uploadChunk()
+        }
+    } catch (err) {
+        if (uploader.lastResponseStatus > 0) {
+            return reject({
+                status: uploader.lastResponseStatus,
+                statusText: uploader.lastResponseError,
+            })
+        }
+    }
+
+    resolve(tx.id)
+})
+
+// Utility function to upload a file to Arweave
+// export const uploadFileToArweave = async (filePath: string): Promise<string> => {
+//     const data = fs.readFileSync(filePath);
+//     const fileName = filePath.split('/').pop() ?? '';
+//     console.log(fileName);
+//     const contentType = contentTypeOf(fileName);
+
+//     const wallet = JSON.parse(process.env.ARWEAVE_WALLET || '{}');
+//     const transaction = await arweave.createTransaction({ data: data }, wallet);
+//     // transaction.addTag('Content-Type', contentType);
+//     transaction.addTag('User-Agent', "beepx");
+//     transaction.addTag('User-Agent-Version', "0.2.0");
+//     transaction.addTag('Type', 'file');
+
+//     await arweave.transactions.sign(transaction, wallet);
+//     const response = await arweave.transactions.post(transaction);
     
-    if (!nativeTokenBool) {
-      let depositAmount = calculateRequiredDeposit(tokenSum, reserveBalance, reserveRatio, Number(tokenAmountToTrade));
-      console.log("estimated deposit required", depositAmount);
-      console.log("format depost units", ethers.utils.formatUnits(depositAmount.toString(), 18))
-      options = {
-        value: ethers.utils.parseUnits(depositAmount.toString(), 1),
-        gasLimit: ethers.utils.hexlify(1000000), // Correct use of hexlify
-      };
-      ethValue = depositAmount;
-    } else {
-      options = {
-        value: ethers.utils.parseUnits(tokenAmountToTrade.toString(), 18),
-        gasLimit: ethers.utils.hexlify(1000000), // Correct use of hexlify
-      };
-      ethValue = Number(ethers.utils.parseUnits(tokenAmountToTrade.toString(), 18));
-    }
+//     if (response.status === 200) {
+//         console.log(File uploaded: https://arweave.net/${transaction.id});
+//         return https://arweave.net/${transaction.id};
+//     } else {
+//         console.error('Failed to upload file:', response.status, response.statusText);
+//         throw new Error('File upload failed');
+//     }
+// };
+
+export const uploadImage = async (file: Buffer, fileName: string): Promise<string> => {
+    // let cache: any = {
+    //     images: [],
+
+    // }
+    // let fullurl = "https://arweave.net";
+
+    // let files = fs.readdirSync("./assets").filter((file) => file.endsWith(".json"))
+    // let file = files[0]
+    // let metadata = JSON.parse(fs.readFileSync("./assets/" + file, "utf-8"))
     
+    const wallet = JSON.parse(process.env.ARWEAVE_WALLET || '{}');
     try {
-      // const contract = await getEthereumContracts()
-      const {estToken,estTokenWSlippage} = calculateMinTokensWithSlippage(tokenSum, reserveBalance, reserveRatio, ethValue, slippage);
+        // let metadata = JSON.parse(fs.readFileSync("./public/assets/0.json" , "utf-8"))
 
-      console.log("estTokenWSlippage", estTokenWSlippage)
-      console.log("estToken", estToken)
-      let info = {
-        status: 'pending',
-        selectedChain: chain,
-        contractAddress: tokenAddress,
-        account: signerAddr,
-        amount: Number(estToken.toString()),// Ensure conversion to string before to Number if BigNumber
-        deposit: Number(options.value.toString()), // Same conversion as above
-        timestamp: Math.floor(Date.now() / 1000),
-        trade: 'buy',
-        txHash: ''
-      };
-      let txid = '';
+        // let image = fs.readFileSync("./public/assets/" + metadata.image)
+        // let image = fs.readFileSync(file)
 
+        // const fileName = '';
 
-      // const mintTx = await ERC20TestContract.mint(minTokens.toString(), options);
-      const mintTx = await ERC20TestContract.mint(estTokenWSlippage.toString(), options);
-      const txHash = mintTx.hash;
-      console.log("txHash", txHash);
-      info.txHash = txHash;
+        let tx = await createArTx(arweave, file, wallet, contentTypeOf(fileName))
+        tx = await signArTx(arweave, tx, wallet)
+        await submitArTx(arweave, tx)
+        // console.log(tx.id)
+        // cache.images.push({
+        //     name:  fileName,
+        //     txid: tx.id
+        // })
+        // fs.writeFileSync("./cache.json", JSON.stringify(cache, null, 4))
+        return tx.id
 
-      await postTransactionData(info).then(response => {
-        console.log('Backend response:', response);
-        // txid = response.primaryKey;
-      }).catch((error: any) => {
-        console.error('Error posting data to backend:', error);
-      });
+    } catch (e) {
+        // console.log('Current working directory:', process.cwd());
+        console.log("Failed to upload image: "+ e)
+        // toast.error ("image uploading failed");
+        throw new Error('File upload failed:'+ e);
+        // res.status(500).json({ error: 'Failed to upload to Arweave' });
 
-      const result = await mintTx.wait();
-
-      // await tx.wait()
-      return { result, txHash };
-
-      // return Promise.resolve(tx)
-    } catch (error) {
-      // console.log("is it this error?")
-      // reportError(error)
-      return Promise.reject(error)
     }
-  }
+ 
 
-  const getBalance = async (tokenAddress: string,walletProvider: any): Promise<any> => {
-    if (!walletProvider) {
-      reportError('Please install a browser provider')
-      return Promise.reject(new Error('Browser provider not installed'))
-    }
-    const provider = new ethers.providers.JsonRpcProvider(walletProvider)
-    const signer = await provider.getSigner()
-    const signerAddr = await signer.getAddress()
-    const ERC20TestContract = new Contract(tokenAddress, ERC20TestArtifact.abi, provider);
-    console.log("signerAddr check", signerAddr)
-    try {
-      // const contract = await getEthereumContracts()
-      tx = await ERC20TestContract.balanceOf(signerAddr)
-  
-      console.log(tx)
-      // await tx.wait()
-  
-      return tx
-    } catch (error) {
-      reportError(error)
-      return Promise.reject(error)
-    }
-  }
-  
-  
-  const burnToken = async (
-    chain:string,
-    tokenAddress: string,  
-    nativeSum : number,
-    tokenSum: number,
-    tokenAmountToTrade: { toString: () => any | ethers.Overrides; },
-    slippage : number,
-    walletProvider: any
-    ) => {
-    if (!walletProvider) {
-        reportError('Please install a browser provider')
-        return Promise.reject(new Error('Browser provider not installed'))
-      }
-    // const sellTokens = ethers.parseUnits(amount, 1);
-    const provider = new ethers.providers.Web3Provider(walletProvider)
-    const signer = await provider.getSigner()
-    const signerAddr = await signer.getAddress();
-    const ERC20TestContract = new Contract(tokenAddress, ERC20TestArtifact.abi, signer);
-    const options = {
-      gasLimit: ethers.utils.hexlify(1000000),
-    };
-    const reserveRatio = 50000;
-   
-  
-    try {
-      const minReturn = calculateMinReturnWithSlippage(tokenSum, nativeSum, reserveRatio, Number(tokenAmountToTrade.toString()), slippage);
-      console.log("minReturn", minReturn)
-      console.log("tokenAmountToTrade", tokenAmountToTrade)
+    // if (response.status === 200) {
+    //             console.log(File uploaded: https://arweave.net/${transaction.id});
+    //             return https://arweave.net/${transaction.id};
+    //         } else {
+    //             console.error('Failed to upload file:', response.status, response.statusText);
+    //             throw new Error('File upload failed');
+    //         }
 
-      let info = {
-        status: 'pending',
-        selectedChain: chain,
-        contractAddress: tokenAddress,
-        account: signerAddr,
-        amount: Number(tokenAmountToTrade.toString()),// Ensure conversion to string before to Number if BigNumber
-        deposit: Number(minReturn.toString()), // Same conversion as above
-        timestamp: Math.floor(Date.now() / 1000),
-        trade: 'sell',
-        txHash: ''
-      };
-      // const contract = await getEthereumContracts()
-      const burnTx = await ERC20TestContract.burn(tokenAmountToTrade.toString(), minReturn.toString(), options);
-      const txHash = burnTx.hash;
-      info.txHash = txHash;
+}
 
-      await postTransactionData(info).then(response => {
-        console.log('Backend response:', response);
-        // txid = response.primaryKey;
-      }).catch((error: any) => {
-        console.error('Error posting data to backend:', error);
-      }); 
-      const result = await burnTx.wait();
-
-      return { result, txHash };
-    } catch (error) {
-      // reportError(error)
-      return Promise.reject(error)
-    }
-  }
-
-
-  export {
-    deployToken,
-    mintToken,
-    getBalance,
-    burnToken
-  }
+// Example usage
+// uploadFileToArweave('./loner69.webp').then(url => {
+//     console.log('Uploaded Image URL:', url);
+//     // Here you might want to save the URL to your backend database
+// }).catch(console.error);
+// uploadImage('./loner69.webp').then(url => {
+//         console.log('Uploaded Image URL:', url);
+//         // Here you might want to save the URL to your backend database
+//     }).catch(console.error);
