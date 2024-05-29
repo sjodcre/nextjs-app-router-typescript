@@ -10,8 +10,6 @@ export async function GET(req: Request, route: { params: { id: string } }) {
 
     const chain= url.searchParams.get("chain")
     const id= url.searchParams.get("id")
-    console.log("chain", chain)
-    console.log("id",id)
     let tableName ='';
     let detailsTable = '';
     if (chain ==="sei"){

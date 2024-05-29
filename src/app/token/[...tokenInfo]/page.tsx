@@ -709,7 +709,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
   //popup model
   const [showModal, setShowModal] = useState(false);
-  const [responseMessage, setResponseMessage] = useState('');
+  
   const [file,setFile] = useState<File>();
 
   const handleReplyChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -761,8 +761,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     e.preventDefault();
     if (!newReply.text.trim() || !newReply.creator.trim()) {
       toast.error("Text and creator fields cannot be empty.")
-      setResponseMessage('Text and creator fields cannot be empty.');
-      return; // Stop the function if validation fails
+        return; // Stop the function if validation fails
     } 
 
     if(file){
@@ -786,14 +785,10 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
       const responseData = await response.json();
 
       if (response.ok) {
-        setResponseMessage('Username Updated');
+        
         emitEvent("replyPost", '');
         setShowModal(false);
-      } else if (response.status === 400) {
-        setResponseMessage('Username already exists');
-      } else {
-        setResponseMessage('An error occurred.');
-      }
+      } 
 
     } catch (error) {
       alert(error);

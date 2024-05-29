@@ -14,18 +14,18 @@ export async function GET(req: Request, route: { params: { id: string } }) {
     // Fetch token data based on the ID from the database using parameterized query
     const profile = await query(`
     SELECT *
-    FROM profile_${chain} 
-      where walletaddress = '${id}'
+    FROM profile
+      where account = '${id}'
     `, []);
 
-    if (profile.length === 0) {
+    if (profile.length !== 0) {
+       // If a token is found, return it as a JSON response with a 200 status code
+    return new Response(JSON.stringify(profile[0]), { status: 200 });
       
-      // If no token is found with the specified ID, return a 404 status code
-      return new Response(JSON.stringify(`Profile not found: ${id}`), { status: 404 });
     }
 
-    // If a token is found, return it as a JSON response with a 200 status code
-    return new Response(JSON.stringify(profile[0]), { status: 200 });
+   // If no token is found with the specified ID, return a 404 status code
+   return new Response(JSON.stringify({ message: 'Profile not found' }), { status: 404 });
     
   } catch (error) {
     console.error('Error fetching profile:', error);

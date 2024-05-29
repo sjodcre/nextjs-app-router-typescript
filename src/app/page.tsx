@@ -205,6 +205,7 @@ const Home: React.FC = () => {
                     <Link href={`/token/${selectedChain}/${token.token_address}`} key={index}>
                         {/* Token card */}
                         <div className='max-h-[300px] overflow-hidden h-fit p-2 flex border border-white border-dashed hover:border-green-700 gap-2 w-full'>
+                        <img src={token?.image_url || "https://via.placeholder.com/150"} className="w-32 h-32 object-contain cursor-pointer" />
                             {/* You can replace this placeholder image with the actual token image */}
                             <ul className="text-xs leading-4 text-green-500 font-semibold">
                                 <li>Created By: {token.creator}</li>
