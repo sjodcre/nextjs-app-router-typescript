@@ -45,7 +45,7 @@ export async function POST(req: Request) {
   try {
 
      await query(
-      `INSERT INTO ${tableName}_${chain} (token_address, file_uri,text,creator,created_at) VALUES ($1, $2, $3,$4,$5,NOW())`,
+      `INSERT INTO ${tableName}_${chain} (token_address, file_uri,text,creator,created_at) VALUES ($1, $2, $3,$4,NOW())`,
       [token_address, file_uri,text,creator]
     );
   
