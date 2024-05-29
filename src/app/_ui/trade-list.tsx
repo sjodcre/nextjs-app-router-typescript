@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { TradeData } from '../_utils/types';
-import { extractFirstSixCharac } from '../_utils/helpers';
+import { extractFirstSixCharac, formatTokenAmount } from '../_utils/helpers';
 
 const timeSince = (date: number) => {
     const seconds = Math.floor((new Date().getTime() - date * 1000) / 1000);
@@ -41,17 +41,19 @@ const TradeItem = ({ trade, networkType }: { trade: TradeData, networkType: stri
         return parseFloat((trade.native_amount/1E18).toString()).toFixed(4);
     }, [trade.native_amount]);
 
-    const formattedTokenAmount = useMemo(() => {
-        const amount = parseFloat((trade.token_amount/1E18).toString()) * 1e18; // Adjusting for token decimals
-        // console.log(amount)
-        if (amount < 1e6) {
-            return `${(amount / 1e3).toFixed(1)}k`;
-        } else if (amount >= 1e6 && amount < 1e9){
-            return `${(amount / 1e6).toFixed(2)}m`;
-        } else {
-            return `${(amount / 1e9).toFixed(2)}b`
-        }
-    }, [trade.token_amount]);
+    // const formattedTokenAmount = useMemo(() => {
+    //     const amount = parseFloat((trade.token_amount/1E18).toString()) * 1e18; // Adjusting for token decimals
+    //     // console.log(amount)
+    //     if (amount < 1e6) {
+    //         return `${(amount / 1e3).toFixed(1)}k`;
+    //     } else if (amount >= 1e6 && amount < 1e9){
+    //         return `${(amount / 1e6).toFixed(2)}m`;
+    //     } else {
+    //         return `${(amount / 1e9).toFixed(2)}b`
+    //     }
+    // }, [trade.token_amount]);
+    const formattedTokenAmount = useMemo(() => formatTokenAmount(trade.token_amount), [trade.token_amount]);
+
 
     const transactionUrl = useMemo(() => {
         switch (networkType) {

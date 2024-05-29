@@ -1,6 +1,7 @@
 // backend/listeners/blockchainListener.ts
 import { Contract, ethers } from "ethers";
-import ERC20TestArtifact from '../../../artifacts/contracts/ERCC20Test.sol/ERC20Test.json';
+// import ERC20TestArtifact from '../../../artifacts/contracts/ERC20Test.sol/ERC20Test.json';
+import ERC20TestArtifact from '@/../artifacts/contracts/ERC20Lock.sol/ERC20Lock.json'
 
 const seiWebSocket = "wss://evm-ws-arctic-1.sei-apis.com";
 

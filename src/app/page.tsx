@@ -22,7 +22,8 @@ interface Token {
     token_datetime:number,
     txid :string,
     account :string,
-    reply_count: string
+    reply_count: string,
+    marketcap: string,
     
     // Add other properties if available in the token object
 }

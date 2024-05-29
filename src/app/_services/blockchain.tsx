@@ -1,12 +1,12 @@
 import { Contract, ContractFactory, ethers } from 'ethers'
-import address from '@/../contracts/contractAddress.json'
-import ERC20TestArtifact from '@/../artifacts/contracts/ERCC20Test.sol/ERC20Test.json'
+// import ERC20TestArtifact from '@/../artifacts/contracts/ERC20Test.sol/ERC20Test.json'
+import ERC20TestArtifact from '@/../artifacts/contracts/ERC20Lock.sol/ERC20Lock.json'
+
 import { TokenListData, TokenParams } from '../_utils/types'
 // import { useWeb3ModalProvider } from '@web3modal/ethers/react'
 import { calculateMinReturnWithSlippage, calculateMinTokensWithSlippage, calculateRequiredDeposit } from '../_utils/helpers'
 import { postTransactionData } from './db-write'
-import { native } from 'pg'
-
+import ManagerArtifact from '@/../artifacts/contracts/Manager.sol/Manager.json'
 // import { EventParams, EventStruct, TicketStruct } from '@/utils/type.dt'
 // import { globalActions } from '@/store/globalSlices'
 // import { store } from '@/store'
@@ -18,68 +18,117 @@ let tx: any
 // const { walletProvider } = useWeb3ModalProvider()
 if (typeof window !== 'undefined') ethereum = (window as any).ethereum
 // const { setEvent, setTickets } = globalActions
-const paymentAmount = ethers.utils.parseEther("0.01"); // Payment amount in ETH
-const receivingAddress = "0x372173ca23790098F17f376F59858a086Cae9Fb0"; // Replace with your wallet address
 
-async function chargePayment(signer: ethers.Signer) {
-  const transaction = {
-      to: receivingAddress,
-      value: paymentAmount,
-      gasLimit: 21000 // Standard gas limit for ETH transfer
-  };
 
-  const tx = await signer.sendTransaction(transaction);
-  await tx.wait();
-  return tx.hash;
+async function deployManager(walletProvider: any) {
+  if (!walletProvider) {
+    reportError('Please install/connect a browser provider')
+    return Promise.reject(new Error('Browser provider not installed/not connected'))
+  }
+
+  const provider = new ethers.providers.Web3Provider(walletProvider); // Use MetaMask provider
+  const signer = provider.getSigner();
+  const feeReceiver = "0x0287b980Ffb856cfF0cB61B926219ccf977B6fB4"; // Replace with your address
+  const feeAmount = ethers.utils.parseUnits("0.1", 18);
+  const contractOwner = "0xf759c09456A4170DCb5603171D726C3ceBaDd3D5" 
+
+  const ManagerFactory = new ethers.ContractFactory(
+      ManagerArtifact.abi,
+      ManagerArtifact.bytecode,
+      signer
+  );
+
+  try {
+      const ManagerContract = await ManagerFactory.deploy(feeReceiver, feeAmount, contractOwner ,{
+          gasLimit: 5000000 // Adjust based on your needs
+      });
+
+      console.log("Deploying Manager contract...");
+
+      await ManagerContract.deployed();
+
+      console.log("Manager contract deployed at:", ManagerContract.address);
+
+      return ManagerContract.address;
+  } catch (error) {
+      console.error("Error deploying Manager contract:", error);
+      throw error;
+  }
 }
 
-const deployToken = async (token: TokenParams, walletProvider: any): Promise<TokenListData> => {
+const deployToken = async (selectedChain: string, token: TokenParams, mintAmount: number, walletProvider: any): Promise<TokenListData> => {
   if (!walletProvider) {
     reportError('Please install a browser provider')
     return Promise.reject(new Error('Browser provider not installed'))
   }
+  let managerContractAddress = '';
+  if (selectedChain === "sei"){
+    managerContractAddress = "0xF55f799E94F2908bd4482C875223fB827961C1E4"
 
+  } else if (selectedChain === "ftm"){
+    managerContractAddress = "0x3b3099a2bAA48dB599B3f813e72B5b61D2129571"
+    // managerContractAddress = "0x5DC6fdE66C0B6d739E5A93735572B555779Ab912" //test for bug
+  } else {
+    console.error("incorrect chain network!");
+      throw new Error("incorrect chain network!");
+  }
   const provider = new ethers.providers.Web3Provider(walletProvider)
   const signer = await provider.getSigner()
-  let signer2 = signer.connect
-  const ERC20_Token = new ContractFactory(
-      ERC20TestArtifact.abi,
-      ERC20TestArtifact.bytecode,
-      signer
-  );
+  const ManagerContract = new ethers.Contract(managerContractAddress, ManagerArtifact.abi, signer);
+  
+  // const ERC20_Token = new ContractFactory(
+  //     ERC20TestArtifact.abi,
+  //     ERC20TestArtifact.bytecode,
+  //     signer
+  // );
   
 
   try {
-    const paymentTxHash = await chargePayment(signer);
-    console.log("Payment transaction hash:", paymentTxHash);
 
-      
-    const ERC20Contract = await ERC20_Token.deploy(
-        Number(token.reserveRatio),
-        token.name,
-        token.ticker,
-        {
-          gasLimit: 5000000  // Adjust this number based on your needs
-        }
+    // const ERC20Contract = await ERC20_Token.deploy(
+    //     Number(token.reserveRatio),
+    //     token.name,
+    //     token.ticker,
+    //     {
+    //       gasLimit: 5000000  // Adjust this number based on your needs
+    //     }
+    // );
+
+    // const txHash = ERC20Contract.deployTransaction.hash;
+    // await ERC20Contract.deployed();
+    // const contractAddress = ERC20Contract.address;  // Contract address can be retrieved directly
+    console.log("minAmount", mintAmount)
+    const feeAmount = ethers.utils.parseUnits("0.1", 18) // Payment amount in ETH
+    const mintAmountWFees = mintAmount *1.01
+    const mintAmountParse = ethers.utils.parseUnits(mintAmountWFees.toString(), 18)
+    const totalPayment = feeAmount.add(mintAmountParse);
+    const mintValue = Number(mintAmountParse)
+    console.log("mintValue", mintValue)
+    const tx = await ManagerContract.deployERC20(
+      (token.reserveRatio).toString(),
+      token.name,
+      token.ticker,
+      mintValue.toString(),
+      {
+          value: totalPayment,
+          gasLimit: ethers.utils.hexlify(10000000) // Adjust this number based on your needs
+      }
     );
-    // console.log("finding tx id...")
-    // console.log(ERC20Contract)
-    // await ERC20Contract.deployed().
-    // await ERC20Contract.deploymentTransaction()?.wait(1); // Wait for at least one confirmation
-    const txHash = ERC20Contract.deployTransaction.hash;
-    await ERC20Contract.deployed();
-    // const txHash = ERC20Contract.deploymentTransaction()?.hash;
-    const contractAddress = ERC20Contract.address;  // Contract address can be retrieved directly
-    // const txHash = ERC20Contract.deploymentTransaction(); 
-    // const contractAddress = await ERC20Contract.getAddress(); // Correctly await the address
-    const signerAddr = await signer.getAddress();
-    console.log("signerAddr check", signerAddr)
-    // toast.alert(`Contract deployed to: ${contractAddress}`);
-    // console.log(`Transaction hash: ${receipt}`);
+     // Wait for the transaction to be mined
+     const receipt = await tx.wait();
+     console.log("Transaction receipt:", receipt);
 
-    // console.log(`Transaction hash: `, JSON.stringify(receipt,null,4));
-    // console.log(`Transaction hash: `, JSON.stringify(txHash,null,4));
-      
+     // Extract the deployed contract address from the event
+     const deployedEvent = receipt.events.find((event: any) => event.event === "ERC20Deployed");
+     const contractAddress = deployedEvent.args.contractAddress;
+     const txHash = receipt.transactionHash;
+     const signerAddr = await signer.getAddress();
+
+     console.log("Contract deployed at:", contractAddress);
+     console.log("Transaction hash:", txHash);
+     console.log("Signer address:", signerAddr);
+
+
     const tokenListData: TokenListData = {
       token_address: contractAddress,
       token_ticker: token.ticker,
@@ -271,7 +320,7 @@ const mintToken = async (
       info.txHash = txHash;
 
       await postTransactionData(info).then(response => {
-        console.log('Backend response:', response);
+        // console.log('Backend response: to update', response);
         // txid = response.primaryKey;
       }).catch((error: any) => {
         console.error('Error posting data to backend:', error);
@@ -290,5 +339,6 @@ const mintToken = async (
     deployToken,
     mintToken,
     getBalance,
-    burnToken
+    burnToken,
+    deployManager
   }

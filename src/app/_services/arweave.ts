@@ -98,33 +98,6 @@ export const submitArTx = async (arweave: Arweave, tx: Transaction) => new Promi
     resolve(tx.id)
 })
 
-// Utility function to upload a file to Arweave
-// export const uploadFileToArweave = async (filePath: string): Promise<string> => {
-//     const data = fs.readFileSync(filePath);
-//     const fileName = filePath.split('/').pop() ?? '';
-//     console.log(fileName);
-//     const contentType = contentTypeOf(fileName);
-
-//     const wallet = JSON.parse(process.env.ARWEAVE_WALLET || '{}');
-//     const transaction = await arweave.createTransaction({ data: data }, wallet);
-//     // transaction.addTag('Content-Type', contentType);
-//     transaction.addTag('User-Agent', "beepx");
-//     transaction.addTag('User-Agent-Version', "0.2.0");
-//     transaction.addTag('Type', 'file');
-
-//     await arweave.transactions.sign(transaction, wallet);
-//     const response = await arweave.transactions.post(transaction);
-    
-//     if (response.status === 200) {
-
-//         console.log(File uploaded: https://arweave.net/${transaction.id});
-//         return https://arweave.net/${transaction.id};
-
-//     } else {
-//         console.error('Failed to upload file:', response.status, response.statusText);
-//         throw new Error('File upload failed');
-//     }
-// };
 
 export const uploadImage = async (file: Buffer, fileName: string): Promise<string> => {
     // let cache: any = {
@@ -139,31 +112,17 @@ export const uploadImage = async (file: Buffer, fileName: string): Promise<strin
     
     const wallet = JSON.parse(process.env.ARWEAVE_WALLET || '{}');
     try {
-        // let metadata = JSON.parse(fs.readFileSync("./public/assets/0.json" , "utf-8"))
 
-        // let image = fs.readFileSync("./public/assets/" + metadata.image)
-        // let image = fs.readFileSync(file)
-
-        // const fileName = '';
 
         let tx = await createArTx(arweave, file, wallet, contentTypeOf(fileName))
         tx = await signArTx(arweave, tx, wallet)
         await submitArTx(arweave, tx)
-        // console.log(tx.id)
-        // cache.images.push({
-        //     name:  fileName,
-        //     txid: tx.id
-        // })
-        // fs.writeFileSync("./cache.json", JSON.stringify(cache, null, 4))
         return tx.id
 
     } catch (e) {
-        // console.log('Current working directory:', process.cwd());
         console.log("Failed to upload image: "+ e)
-        // toast.error ("image uploading failed");
         throw new Error('File upload failed:'+ e);
         // res.status(500).json({ error: 'Failed to upload to Arweave' });
-
     }
  
 
