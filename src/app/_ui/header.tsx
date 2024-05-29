@@ -79,6 +79,26 @@ const Header = () => {
     // console.log(`Balance: ${ethers.utils.formatEther(balance)} SEI`);
     return ethers.utils.formatEther(balance)
   }
+
+  useEffect(() => {
+    if (isConnected) {
+     initProfile();
+    }
+  }, [chainId,isConnected]);
+
+  const initProfile = async () => {
+    try {
+      const response = await fetch(`/api/initProfile?id=${address}&chain=${currentChain}`);
+      if (!response.ok) {
+        throw new Error('Failed to init');
+      }
+          } catch (error) {
+      console.error('Error init:', error);
+    }
+  };
+
+
+
   return (
 
     <div className="bg-black text-white py-4 px-10 flex justify-end items-center">
@@ -89,7 +109,7 @@ const Header = () => {
            <button 
           className={`w-40 h-8 rounded-full bg-[#EED12E] text-black hover:text-white text-sm font-medium leading-5`}
           onClick={() => open()}>
-          {isConnected ? 'Connected' : 'Connect Wallet'}
+          {isConnected ? 'Connected': 'Connect Wallet'}
         </button>
         {/* <button 
           className={`w-40 h-8 rounded-full bg-[#EED12E] text-black hover:text-white text-sm font-medium leading-5`}

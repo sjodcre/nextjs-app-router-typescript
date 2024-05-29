@@ -33,7 +33,7 @@ export async function GET(req: Request) {
                 th.token_address,
                 to_timestamp(th.timestamp)::timestamp AS transaction_timestamp
                 FROM 
-                public.transaction_history_sei th
+                public.transaction_history_${chain} th
             ORDER BY 
                 th.token_address, th.timestamp DESC
         ),
@@ -47,7 +47,7 @@ export async function GET(req: Request) {
                 r.creator,
                 r.created_at AS reply_timestamp
             FROM 
-                public.replies_sei r
+                public.replies_${chain} r
             ORDER BY 
                 r.token_address, r.created_at DESC
         )
@@ -66,7 +66,7 @@ export async function GET(req: Request) {
             lr.reply_timestamp AS latest_reply_timestamp,
             (SELECT COUNT(*) FROM public.replies_sei WHERE token_address = tl.token_address) AS reply_count
         FROM 
-            public.token_list_sei tl
+            public.token_list_${chain} tl
         LEFT JOIN 
             latest_transactions lt ON tl.token_address = lt.token_address
         LEFT JOIN 
