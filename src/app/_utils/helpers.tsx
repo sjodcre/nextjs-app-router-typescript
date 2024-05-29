@@ -106,3 +106,16 @@ export function generateSymbol(exchange: any, fromSymbol: any, toSymbol: any) {
         full: `${exchange}:${short}`,
     };
 }
+
+
+export const formatTokenAmount = (tokenAmount: number): string => {
+    const amount = parseFloat((tokenAmount / 1E18).toString()) * 1e18; // Adjusting for token decimals
+
+    if (amount < 1e6) {
+        return `${(amount / 1e3).toFixed(1)}k`;
+    } else if (amount >= 1e6 && amount < 1e9) {
+        return `${(amount / 1e6).toFixed(2)}m`;
+    } else {
+        return `${(amount / 1e9).toFixed(2)}b`;
+    }
+};

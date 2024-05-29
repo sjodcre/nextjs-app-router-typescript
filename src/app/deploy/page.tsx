@@ -2,13 +2,12 @@
 // import { useWeb3React } from '@web3-react/core';
 import { useState, MouseEvent, useEffect } from 'react';
 import { Contract, ContractFactory, Signer, ethers } from 'ethers';
-import ERC20TestArtifact from '../../../artifacts/contracts/ERCC20Test.sol/ERC20Test.json'
 
 import { useWeb3ModalProvider, useWeb3ModalAccount, useSwitchNetwork } from '@web3modal/ethers5/react'
 import { toast } from 'react-toastify'
 // import ConnectButton from "../_ui/connect-button";
 import { TokenParams } from '@/app/_utils/types';
-import { burnToken, deployToken, getBalance, mintToken } from '../_services/blockchain';
+import {  deployToken, deployManager } from '../_services/blockchain';
 import { initOHLCData, postTokenData } from '../_services/db-write';
 import { setChain, resetChain } from "@/app/_redux/features/chain-slice";
 import { useRouter } from 'next/navigation'
@@ -19,7 +18,7 @@ import { AppDispatch, useAppSelector } from '@/app/_redux/store';
 
 export default function Deploy() {
 	interface FormData {
-		[key: string]: string | File | undefined;
+		[key: string]: string | File | undefined | number;
 		name: string;
 		ticker: string;
 		description: string;
@@ -27,6 +26,7 @@ export default function Deploy() {
 		telegram?: string;
 		website?: string;
 		image?: File ;
+		mintAmount: number;
 	}
 
 	interface FormErrors {
@@ -39,6 +39,7 @@ export default function Deploy() {
 		twitter: '',
 		telegram: '',
 		website: '',
+		mintAmount:0,
 	};
 
 	const [formData, setFormData] = useState<FormData>(initialFormData);
@@ -72,30 +73,55 @@ export default function Deploy() {
 
     }, [dispatch, setChain, selectedChain]);
 
-	const handleChange = (e: { target: { name: any; value: any; }; }) => {
-		const { name, value } = e.target;
-		const error = validateField(name, value);
+	// const handleChange = (e: { target: { name: any; value: any; }; }) => {
+	// 	const { name, value } = e.target;
+	// 	const error = validateField(name, value);
+	// 	setFormData({
+	// 		...formData,
+	// 		[name]: value
+	// 	});
+	// 	setErrors({
+	// 		...errors,
+	// 		[name]: error
+	// 	});
+	// };
+	const handleChange = (e: { target: { name: any; value: any; type: string }; }) => {
+		const { name, value, type } = e.target;
+		let newValue: string | number = value;
+	
+		if (type === 'number') {
+			newValue = value === '' ? '' : Number(value); // Handle empty input
+		}
+	
+		const error = validateField(name, newValue);
 		setFormData({
 			...formData,
-			[name]: value
+			[name]: newValue
 		});
 		setErrors({
 			...errors,
 			[name]: error
 		});
-
-
 	};
+	
 
-	const validateField = (fieldName: string, value: string) => {
+	const validateField = (fieldName: string, value: string | number) => {
 		let error = '';
 
-		if (fieldName === 'name' && value.trim().length > 9) {
+		if (fieldName === 'name' && typeof value === 'string' && value.trim().length > 9) {
 			error = 'Name should be less than 10 characters';
 		}
 
-		if (fieldName === 'ticker' && value.trim().length > 9) {
+		if (fieldName === 'ticker' && typeof value === 'string' && value.trim().length > 9) {
 			error = 'Ticker should be less than 10 characters';
+		}
+
+		if (fieldName === 'mintAmount') {
+			if (typeof value !== 'number') {
+				error = 'Mint amount should be a number';
+			} else if (value < 0) {
+				error = 'Mint amount should be greater than or equal to 0';
+			}
 		}
 
 		return error;
@@ -182,11 +208,11 @@ export default function Deploy() {
 		});
 	  }
 
-	async function deployTokenWithUIFeedback(tokenParams: TokenParams, walletProvider: any, file: File | undefined): Promise<{ chainid: string; token_address: string }> {
+	async function deployTokenWithUIFeedback(tokenParams: TokenParams, mintAmount: number, walletProvider: any, file: File | undefined): Promise<{ chainid: string; token_address: string }> {
 		return handleChainChange()  // This promise's resolution starts the next steps
 			.then(async () => {
 				// Assuming chain change is successful, proceed with deployment
-				const data = await deployToken(tokenParams, walletProvider);
+				const data = await deployToken(selectedChain, tokenParams, mintAmount, walletProvider);
 				let url = '';
 				try {
 					url = await handleUploadImage(file);
@@ -221,6 +247,22 @@ export default function Deploy() {
 			});
 	}
 
+	const handleDeployManager = async () => {
+		try {
+			handleChainChange()  // This promise's resolution starts the next steps
+			.then(async () => {
+				// Assuming chain change is successful, proceed with deployment
+				const data = await deployManager(walletProvider);
+			}).catch((error) =>{
+				toast.error(`Deploy manager contract failed: ` + error);
+			})
+
+		} catch (error) {
+			console.log(error);
+			toast.error(`Deploy manager contract failed: ` + error);
+		}
+	}
+
 	const handleDeploy = async () => {
 		// Prevent deploying the Greeter contract multiple times or if signer is not defined
 		// if (greeterContract || !signer) {
@@ -237,7 +279,7 @@ export default function Deploy() {
 		Object.keys(formData).forEach(fieldName => {
 			if (fieldName !== 'image') { // Skip the image field
 				const value = formData[fieldName];
-				if (typeof value === 'string') { // Ensure value is a string before validating
+				if (typeof value === 'string' || typeof value === 'number') { // Ensure value is a string before validating
 					const error = validateField(fieldName, value);
 					newErrors[fieldName] = error;
 			
@@ -266,6 +308,13 @@ export default function Deploy() {
 
 			return;
 		}
+
+		if (file && file.size > 5 * 1024 * 1024) {  // Check if file size exceeds 7MB
+			toast.error('File size exceeds 5MB limit');
+			setIsDeploying(false);
+			return;
+		}
+		
 		try {
 			if (!isConnected) throw Error('User is not connected')
 
@@ -273,12 +322,11 @@ export default function Deploy() {
 				const tokenParams: TokenParams = {
 					reserveRatio: 50000,
 					name: formData.name,
-					ticker: formData.ticker
+					ticker: formData.ticker,
 				  };
 				let url = '';
-
 				toast.promise(
-					deployTokenWithUIFeedback(tokenParams, walletProvider, file),
+					deployTokenWithUIFeedback(tokenParams, formData.mintAmount, walletProvider, file),
 					{
 						pending: 'Deploying token...',
 						success: 'Token deployment successful! 👌',
@@ -324,7 +372,7 @@ export default function Deploy() {
  								focus:outline-none focus:ring-2 focus:ring-blue-500`}
  					onClick={handleSeiChainButton}
  					disabled={selectedChain === "sei"}>
- 					Sei
+ 					SEI
  				</button>
  				<button 
  					className={`hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 
@@ -406,6 +454,26 @@ export default function Deploy() {
 				onChange={(e) => {setFile(e.target.files?.[0])}}
 				/>
 				<p className="text-gray-500 text-xs italic">{file ? file.name : 'No file chosen'}</p>
+			</div>
+			
+			<div className="mb-4">
+				<label className="block text-[#EED12E] text-sm font-bold mb-2" htmlFor="mintAmount">
+					Creator Initial Mint Amount
+				</label>
+				<input
+					className={`shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${errors.mintAmount ? 'border-[#EED12E]' : ''
+						}`}
+					id="mintAmount"
+					type="number"
+					placeholder="0 optional"
+					name="mintAmount"
+					value={formData.mintAmount}
+					onChange={handleChange}
+					// onBlur={handleBlur}
+				/>
+				{errors.mintAmount && <p className="text-red-500 text-xs italic">{errors.mintAmount}</p>}
+
+				{/* Add similar input fields for other items */}
 			</div>
 
 			<button onClick={toggleOptions} className="mb-4 bg-[#EED12E] text-black px-4 py-2 rounded">

@@ -41,7 +41,7 @@ const Header = () => {
     if (providerReady) {
       if (walletProvider) {
         const ethersProvider = new ethers.providers.Web3Provider(walletProvider);
-        fetchERC20Balance(ethersProvider).then(balance => {
+        fetchBalance(ethersProvider).then(balance => {
           console.log("balance i got ", balance)
           setCurrentBalance(Number(balance))
         }).catch(error => {
@@ -72,7 +72,7 @@ const Header = () => {
   // const profile = "0x742d35cc6634c0532925a3b844bc454e4438f44e"; 
   // const otherProfile = "21SY6TNeVgm23crGFMRdLoifTmQxMknNUpZf44YXPLj2";
 
-  async function fetchERC20Balance(walletProvider: any) {
+  async function fetchBalance(walletProvider: any) {
     const signer = await walletProvider.getSigner();
     const signerAddr = await signer.getAddress();
     const balance = await walletProvider.getBalance(signerAddr);

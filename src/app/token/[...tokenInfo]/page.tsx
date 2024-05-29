@@ -5,13 +5,14 @@ import { TokenHolder, TokenPageDetails, TradeData, Reply, TokenParams } from "@/
 import CandleChart from "@/app/_ui/candle-chart";
 import SlippageDialog from "@/app/_ui/slippage-dialog";
 import IndeterminateProgressBar from "@/app/_ui/indeterminate-progress-bar";
-import { ethers } from "ethers";
-import ERC20TestArtifact from '../../../../artifacts/contracts/ERCC20Test.sol/ERC20Test.json'
+import { Contract, ethers } from "ethers";
+// import ERC20TestArtifact from '../../../../artifacts/contracts/ERC20Test.sol/ERC20Test.json'
+import ERC20TestArtifact from '@/../artifacts/contracts/ERC20Lock.sol/ERC20Lock.json'
 import { fetchTokenInfo, getTokenTrades, getTopTokenHolders, postTransactionAndOHLC, postTransactionFailed } from "@/app/_services/db-write";
 import { useSwitchNetwork, useWeb3ModalAccount, useWeb3ModalProvider } from "@web3modal/ethers5/react";
 import { toast } from "react-toastify";
 import TradeItem from "@/app/_ui/trade-list";
-import { extractFirstSixCharac, getAccountUrl } from "@/app/_utils/helpers";
+import { extractFirstSixCharac, formatTokenAmount, getAccountUrl } from "@/app/_utils/helpers";
 import { fetchNativeTokenPrice } from "@/app/_utils/native-token-pricing";
 import { useAppSelector } from "@/app/_redux/store";
 //import { socket } from "src/socket";
@@ -44,6 +45,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   const [initialCheckDone, setInitialCheckDone] = useState(false);
   const [user, setUser] = useState('');
   const [isTrading, setIsTrading] = useState(false);
+  const [lockedTokens, setLockedTokens] = useState<number>(0);
   const [userBalance, setUserBalance] = useState({
     token: 0,
     native: 0,
@@ -73,6 +75,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   const itemsPerThreadPage = 15;
   const [currentTradesPage, setCurrentTradesPage] = useState(1);
   const itemsPerTradesPage = 15;
+  const marketCapLimit = 50000;
 
   // useEffect(() => {
   //   if (isSocketConnected) {
@@ -85,7 +88,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     // Convert marketCap string to number, removing commas and parsing as integer
     const marketCapValue = parseInt(marketCap.replace(/,/g, ''), 10);
     // Calculate the new progress as a fraction of marketCap to 50,000
-    const newProgress = (marketCapValue / 50000) * 100;
+    const newProgress = (marketCapValue / marketCapLimit) * 100;
 
     // Ensure the progress doesn't exceed 100%
     if (newProgress > 100) {
@@ -123,6 +126,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
     if (providerReady) {
       if (walletProvider) {
+        console.log("here?")
         const ethersProvider = new ethers.providers.Web3Provider(walletProvider);
         fetchERC20Balance(ethersProvider, params.tokenInfo[1])
           .then(balance => {
@@ -139,11 +143,18 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
             console.log("fail to fetch user balance:", error)
 
           });
+        fetchLockedTokens(ethersProvider, params.tokenInfo[1])
+        .then(lockedTokens => {
+          setLockedTokens(Number(lockedTokens))
+        }) .catch(error => {
+          // Error handling
+          console.log("fail to fetch locked tokens:", error)
+        });
       } else {
         console.log("provider is not ready to read user")
       }
     }
-  }, [address, chainId, providerReady, transactionDone, switchNetwork]);
+  }, [providerReady, transactionDone]);
 
   //set native token info
   useEffect(() => {
@@ -312,6 +323,64 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     setTokenAmountToTrade(amount);  // Assuming tokenAmount is a string, if not, convert appropriately
   };
 
+  const handlePause = async () => {
+    if (walletProvider && address) {
+      const provider = new ethers.providers.Web3Provider(walletProvider)
+      const signer = await provider.getSigner()
+      const signerAddr = await signer.getAddress();
+      const ERC20LockContract = new ethers.Contract(params.tokenInfo[1], ERC20TestArtifact.abi, signer);
+      const options = {
+        gasLimit: ethers.utils.hexlify(5000000), // Correct use of hexlify
+      };
+      try {
+        const pauseResp = await ERC20LockContract.unpause(options);
+        console.log("pauseResp", pauseResp)
+      } catch (error){
+        console.error("Error getting locked amount:", error);
+      throw error;
+      }
+    }
+  }
+  // const handleWithdrawNative = async () => {
+  //   if (walletProvider && address) {
+  //     const withdrawAmount = ethers.utils.parseUnits("0.3", 18);
+  //     const provider = new ethers.providers.Web3Provider(walletProvider)
+  //     const signer = await provider.getSigner()
+  //     const signerAddr = await signer.getAddress();
+  //     const ERC20LockContract = new ethers.Contract(params.tokenInfo[1], ERC20TestArtifact.abi, signer);
+  //     const options = {
+  //       gasLimit: ethers.utils.hexlify(5000000), // Correct use of hexlify
+  //     };
+  //     try {
+  //       const withdrawResp = await ERC20LockContract.withdrawNativeTokens(withdrawAmount, options);
+  //       console.log("withdrwa resp", withdrawResp)
+  //     } catch (error){
+  //       console.error("Error getting locked amount:", error);
+  //     throw error;
+  //     }
+  //   }
+  // }
+
+  // const handleWithdrawToken = async () => {
+  //   if (walletProvider && address) {
+  //     const withdrawAmount = ethers.utils.parseUnits("0.002", 18);
+  //     const provider = new ethers.providers.Web3Provider(walletProvider)
+  //     const signer = await provider.getSigner()
+  //     const signerAddr = await signer.getAddress();
+  //     const ERC20LockContract = new ethers.Contract(params.tokenInfo[1], ERC20TestArtifact.abi, signer);
+  //     const options = {
+  //       gasLimit: ethers.utils.hexlify(5000000), // Correct use of hexlify
+  //     };
+  //     try {
+  //       const withdrawResp = await ERC20LockContract.withdrawERC20Tokens("0xc86b5f7bc63FD1696c0E3350Ad51fB9eCCEb02f0",withdrawAmount, options);
+  //       console.log("withdraw Resp", withdrawResp)
+  //     } catch (error){
+  //       console.error("Error getting locked amount:", error);
+  //     throw error;
+  //     }
+  //   }
+  // }
+
   const handleSetPercentage = (percentage: number) => {
     // handleChainChange()
     // const fullAmount = userBalance.token; // Assuming `userBalance.token` holds the full token balance as a number
@@ -321,8 +390,9 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
       .then(async () => {
 
         // This code executes after successful network change
-        const fullAmount = userBalance.token; // Assuming `userBalance.token` holds the full token balance as a number
-        const amountToSet = (fullAmount * percentage / 100).toFixed(0); // Calculating the percentage and rounding it to the nearest whole number
+        const fullAmount = userBalance.token;
+        const sellableAmount = fullAmount - lockedTokens;
+        const amountToSet = (sellableAmount * percentage / 100).toFixed(0); // Calculating the percentage and rounding it to the nearest whole number
 
         setTokenAmountToTrade(amountToSet.toString()); // Convert to string to match your state expectation
       })
@@ -332,6 +402,28 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
       });
   };
 
+  async function fetchLockedTokens (walletProvider: any, tokenAddress:string )  {
+    if (walletProvider && address) {
+      // const provider = new ethers.providers.Web3Provider(walletProvider)
+      const signer = await walletProvider.getSigner()
+      const signerAddr = await signer.getAddress();
+      const ERC20LockContract = new ethers.Contract(tokenAddress, ERC20TestArtifact.abi, signer);
+      // const options = {
+      //   gasLimit: ethers.utils.hexlify(1000000), // Correct use of hexlify
+      // };
+      try {
+        const lockedTokens = await ERC20LockContract.getLockedTokens(signerAddr.toString());
+        console.log("lockedTokens", lockedTokens)
+        console.log("lockedTokens to string", lockedTokens.toString());
+        return lockedTokens
+      } catch (error){
+        console.error("Error getting locked amount:", error);
+      throw error;
+      }
+
+    }
+
+  }
   // threads/trades tab change
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
@@ -422,9 +514,19 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   }
 
 
+  const formattedLockedTokens = useMemo(() => formatTokenAmount(lockedTokens), [lockedTokens]);
+
+   // Calculate the percentage using useMemo
+   const lockedPercentage = useMemo(() => {
+    if (userBalance.token === 0) return 0;
+    return ((lockedTokens / userBalance.token) * 100).toFixed(2);
+  }, [lockedTokens, userBalance.token]);
 
   // place trade handler
   const handlePlaceTrade = async () => {
+    if (isTrading) return; // Prevent further actions if already trading
+
+    setIsTrading(true); // Set trading state to true to block further trades
     try {
       if (!isConnected){
         setIsTrading(false); 
@@ -663,7 +765,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                 txHash: error.transaction.hash
               };
               postTransactionFailed(info).then(response => {
-                console.log('Backend response:', response);
+                console.log('Backend response tokeninfo:', response);
                 setIsTrading(false);
               }).catch(error => {
                 console.error('Error posting data to backend:', error);
@@ -693,7 +795,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
       setIsTrading(false);
     }
   };
-  
+
   /// Threads Code
 
 
@@ -846,6 +948,14 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                 </a>
               </div>
             </div>
+            {/* <div class="flex gap-1 h-fit items-center text-white">
+              <div class="cursor-pointer px-1 rounded hover:bg-gray-800 text-gray-500">
+                Pump chart
+              </div>
+              <div class="cursor-pointer px-1 rounded bg-green-300 text-black">
+                Current chart
+              </div>
+            </div> */}
             <div className="h-4/8">
               <div className="grid h-fit gap-2">
                 <div className="chart-container ">
@@ -1087,7 +1197,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                 </div>
                 <div className="flex justify-between w-full gap-2">
 
-                  <button
+                  {/* <button
                     className={`text-xs py-1 px-2 rounded bg-black text-gray-400 hover:bg-gray-800 hover:text-gray-300`}
                     onClick={handleToggleToken}
                     disabled={buySell === 'sell'}
@@ -1095,6 +1205,23 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                   >
                     switch to {nativeTokenBool ? tokenDetails?.token_ticker : nativeTokenInfo.chain}
                   </button>
+                  <div className={`text-xs py-1 px-2 rounded bg-black text-gray-400 hover:bg-gray-800 hover:text-gray-300`}>
+
+                  </div> */}
+                  {buySell === "sell" ? (
+                    <div className={`text-xs py-1 px-2 rounded bg-black text-gray-400 hover:bg-gray-800 hover:text-gray-300`}>
+                      Locked: {formattedLockedTokens || 0} ({lockedPercentage}%)
+                    </div>
+                  ) : (
+                    <button
+                      className={`text-xs py-1 px-2 rounded bg-black text-gray-400 hover:bg-gray-800 hover:text-gray-300`}
+                      onClick={handleToggleToken}
+                      disabled={buySell === 'sell'}
+                      style={{ visibility: buySell === 'sell' ? 'hidden' : 'visible' }}  // Use inline style for visibility
+                    >
+                      switch to {nativeTokenBool ? tokenDetails?.token_ticker : nativeTokenInfo.chain}
+                    </button>
+                  )}
                   <div>
                     <button
                       className="text-xs py-1 px-2 rounded text-gray-400 hover:bg-gray-800 bg-black"
@@ -1154,6 +1281,18 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                               onClick={() => handleSetAmount('100')}>
                               100 {nativeTokenInfo.chain}
                             </button>
+                            <button className="text-xs py-1 px-2 ml-1 rounded bg-black text-gray-400 hover:bg-gray-800 hover:text-gray-300"
+                              onClick={() => handlePause()}>
+                              pause 
+                            </button>
+                            {/* <button className="text-xs py-1 px-2 ml-1 rounded bg-black text-gray-400 hover:bg-gray-800 hover:text-gray-300"
+                              onClick={() => handleWithdrawNative()}>
+                              withdraw native 
+                            </button>
+                            <button className="text-xs py-1 px-2 ml-1 rounded bg-black text-gray-400 hover:bg-gray-800 hover:text-gray-300"
+                              onClick={() => handleWithdrawToken()}>
+                              withdraw token 
+                            </button> */}
                           </>
                         ) : (
                           <>
@@ -1182,7 +1321,8 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                 <button className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none 
                   focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 dark:ring-offset-slate-950 
                   dark:focus-visible:ring-slate-300 dark:bg-slate-50 dark:text-slate-900 dark:hover:bg-slate-50/90 h-10 px-4 bg-green-400 text-black w-full py-3 rounded-md hover:bg-green-200"
-                  onClick={handlePlaceTrade}>
+                  onClick={handlePlaceTrade}
+                  disabled={isTrading}>
                   place trade
                 </button>
               </div>

@@ -1,7 +1,8 @@
 import  getTransactionStatus from "@/app/_utils/tx-tracing-api";
 import { getPendingTransactions, postTransactionAndOHLC, postTransactionFailed } from "../_services/db-write";
 import { Interface } from "ethers/lib/utils";
-import ERC20TestArtifact from '../../../artifacts/contracts/ERCC20Test.sol/ERC20Test.json'
+// import ERC20TestArtifact from '../../../artifacts/contracts/ERC20Test.sol/ERC20Test.json'
+import ERC20TestArtifact from '@/../artifacts/contracts/ERC20Lock.sol/ERC20Lock.json'
 
 
 // Assuming `params` or specifically `tokenInfo` needs to be passed to access the right data
