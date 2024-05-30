@@ -14,7 +14,7 @@ export async function GET(req: Request, route: { params: { id: string } }) {
     // Fetch token data based on the ID from the database using parameterized query
     const profile = await query(`
     SELECT *
-    FROM profile
+    FROM profile_${chain}
       where account = '${id}'
     `, []);
 

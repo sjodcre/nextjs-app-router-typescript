@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     // Update token data in the database
 
     const existingUser = await query(
-      `SELECT * FROM profile WHERE username = '${username}'`,
+      `SELECT * FROM profile_${chain} WHERE username = '${username}'`,
       []
     );
 
@@ -28,20 +28,20 @@ export async function POST(req: Request) {
 
       if (username == '' && bio !='') {
         await query(
-          `UPDATE profile SET bio = '${bio}' WHERE account = '${id}'`, []
+          `UPDATE profile_${chain} SET bio = '${bio}' WHERE account = '${id}'`, []
         );
   
         return new Response(JSON.stringify('Updated Bio'), { status: 201 });
       }
       else if (bio == '' && username != '') {
         await query(
-          `UPDATE profile SET username = '${username}' WHERE account = '${id}'`, []
+          `UPDATE profile_${chain} SET username = '${username}' WHERE account = '${id}'`, []
         );
   
         return new Response(JSON.stringify('Updated Username'), { status: 202 });
       } else if (bio && username !== null) {
         await query(
-          `UPDATE profile SET username = '${username}' , bio = '${bio}' WHERE account = '${id}'`, []
+          `UPDATE profile_${chain} SET username = '${username}' , bio = '${bio}' WHERE account = '${id}'`, []
         );
   
         return new Response(JSON.stringify('Updated'), { status: 200 });

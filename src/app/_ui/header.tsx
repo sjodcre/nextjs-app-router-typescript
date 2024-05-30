@@ -81,10 +81,10 @@ const Header = () => {
   }
 
   useEffect(() => {
-    if (isConnected) {
+    if (currentChain) {
      initProfile();
     }
-  }, [chainId,isConnected]);
+  }, [currentChain,isConnected]);
 
   const initProfile = async () => {
     try {

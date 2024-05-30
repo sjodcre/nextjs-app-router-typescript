@@ -7,6 +7,7 @@ import React from 'react';
 import PopUp from '@/app/_ui/popup';
 import { useWeb3ModalAccount, useWeb3ModalProvider } from '@web3modal/ethers5/react';
 import { toast } from 'react-toastify';
+import { extractFirstSixCharac } from '@/app/_utils/helpers';
 
 
 
@@ -20,15 +21,26 @@ interface Profile {
 const initialProfileData: Profile = {
   account: '',
   bio: '',
-  username:  '',
+  username: '',
 };
 
-interface Follow {
+interface FolloweeData {
 
-  walletaddress: string;
-  followerscount: string;
-  followingcount: string;
+  followee: string;
+  followee_count: string;
 
+}
+interface FollowerData {
+
+  follower: string;
+  follower_count: string;
+
+}
+
+
+interface FollowData {
+  followerlist: FollowerData[];
+  followeelist: FolloweeData[];
 }
 
 interface CoinsHeld {
@@ -89,7 +101,7 @@ const Profile: React.FC = () => {
   const indexOfLastCreatedItem = currentCreatedPage * itemsPerPageCreated;
   const indexOfFirstCreatedItem = indexOfLastCreatedItem - itemsPerPageCreated;
   const currentCreatedItems = coinCreatedData.slice(indexOfFirstCreatedItem, indexOfLastCreatedItem);
-
+  const [isFollowing, setIsFollowing] = useState(false);
   const nextHeldPage = () => {
     setCurrentHeldPage(prev => prev + 1);
   };
@@ -154,23 +166,28 @@ const Profile: React.FC = () => {
     if (currentChain) {
       fetchCoinHeld(currentChain);
       fetchCoinCreated(currentChain);
+      fetchProfile();
+    fetchFollowed();
+    fetchFollowData();
 
 
     }
 
-  }, [currentChain]);
+  }, [currentChain,changes]);
 
-  useEffect(() => {
+ /*  useEffect(() => {
 
     fetchProfile();
-  }, []);
+    fetchFollowed();
+    fetchFollowData();
+  }, [isConnected,isFollowing,currentChain]);
 
-
+ */
 
 
   const fetchProfile = async () => {
     try {
-      const response = await fetch(`/api/profile?id=${id}`);
+      const response = await fetch(`/api/profile?id=${id}&chain=${currentChain}`);
       if (!response.ok) {
         if (response.status === 404) {
           console.error('Profile not found');
@@ -192,6 +209,7 @@ const Profile: React.FC = () => {
       console.error('Error fetching token:', error);
     }
   };
+
   const fetchCoinHeld = async (currentChain: string) => {
     try {
       console.log("chain before fetch", chainId)
@@ -252,7 +270,7 @@ const Profile: React.FC = () => {
       [name]: value,
     }));
     setChanges(true);
-     }
+  }
 
 
 
@@ -287,21 +305,21 @@ const Profile: React.FC = () => {
         toast.success("Bio Updated");
         setProfileUpdateData(initialProfileData);
         setChanges(false);
-        
+
       }
       else if (response.status === 200) {
         setShowModal(false);
         toast.success("Username and Bio Updated");
         setProfileUpdateData(initialProfileData);
         setChanges(false);
-        
+
       }
       else if (response.status === 202) {
         setShowModal(false);
         toast.success("Username Updated");
         setProfileUpdateData(initialProfileData);
         setChanges(false);
-        
+
       } else {
         setShowModal(false);
         toast.error('An error occurred, try again later')
@@ -317,7 +335,65 @@ const Profile: React.FC = () => {
     }
   };
 
+  const fetchFollowed = async () => {
+    try {
+      const response = await fetch(`/api/follow/status?follower=${address}&followee=${id}&chain=${currentChain}`);
+      if (response.status === 202) {
+        setIsFollowing(false);
+      }
+      else if (response.status === 201) {
+        setIsFollowing(true);
 
+      }
+    } catch (error) {
+      console.error('Error fetching token:', error);
+    }
+  };
+
+
+  const [followerlist, setFollowerlist] = useState<FollowerData[]>([]);
+  const [followeelist, setFolloweelist] = useState<FolloweeData[]>([]);
+  const fetchFollowData = async () => {
+    try {
+      const response = await fetch(`/api/follow/list?id=${id}&chain=${currentChain}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch follow data');
+      }
+      const data: FollowData = await response.json();
+      setFollowerlist(data.followerlist);
+      setFolloweelist(data.followeelist);
+
+
+    } catch (error) {
+      console.error('Error fetching token:', error);
+
+    };
+  }
+
+
+  const handleFollow = async (e: React.FormEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+
+    try {
+      const response = await fetch(`/api/follow/status?follower=${address}&followee=${id}&chain=${currentChain}`, {
+        method: 'POST',
+      });
+
+
+      if (response.status === 201) {
+        setIsFollowing(true);
+      } else if (response.status === 202) {
+        setIsFollowing(false);
+      }
+
+      //alert('Username updated successfully');
+      // setShowModal(false);
+      // profileData.username = username.username;
+    } catch (error) {
+      alert(error);
+      console.error('Error updating token:', error);
+    }
+  };
 
   return (
     <>
@@ -329,7 +405,7 @@ const Profile: React.FC = () => {
 
           {/* Button to open the modal */}
 
-          {id == profileData.account ? (<button
+          {id == address ? (<button
             onClick={() => setShowModal(true)}
             className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-500 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
@@ -398,9 +474,13 @@ const Profile: React.FC = () => {
 
           <p>Username: {profileData.username}</p>
 
-          <div className='flex '>
-            <p className=' pr-4'>Followers Count:{profileData.followerscount}</p>
-            <p>Following Count:{profileData.followingcount} </p>
+          <div className='flex justify-between w-full align-end '>
+            <p className=' pr-4'>{followerlist.length} Followers </p>
+            <button
+              className={`w-40 h-8 rounded-full bg-white text-black hover:text-black text-sm font-medium leading-5`}
+              onClick={handleFollow}>
+              {isFollowing ? 'Following' : 'Follow'}
+            </button>
           </div>
           <p>Bio:{profileData.bio}</p>
           <div className='text-xs sm:text-sm border border-slate-600 rounded p-2'>{profileData.account}</div>
@@ -448,6 +528,44 @@ const Profile: React.FC = () => {
                   role="tablist"
                 >
                   Coins Created
+                </a>
+              </li>
+              <li className="-mb-px mr-1 last:mr-0 flex-auto text-center">
+                <a
+                  className={
+                    "text-xs font-bold uppercase px-5 py-3 shadow-lg rounded block leading-normal " +
+                    (openTab === 3
+                      ? "text-black bg-white"
+                      : "text-white  bg-gray-600")
+                  }
+                  onClick={e => {
+                    e.preventDefault();
+                    setOpenTab(3);
+                  }}
+                  data-toggle="tab"
+                  href="#link3"
+                  role="tablist"
+                >
+                  Followers
+                </a>
+              </li>
+              <li className="-mb-px mr-1 last:mr-0 flex-auto text-center">
+                <a
+                  className={
+                    "text-xs font-bold uppercase px-5 py-3 shadow-lg rounded block leading-normal " +
+                    (openTab === 4
+                      ? "text-black bg-white"
+                      : "text-white  bg-gray-600")
+                  }
+                  onClick={e => {
+                    e.preventDefault();
+                    setOpenTab(4);
+                  }}
+                  data-toggle="tab"
+                  href="#link4"
+                  role="tablist"
+                >
+                  Following
                 </a>
               </li>
 
@@ -539,11 +657,64 @@ const Profile: React.FC = () => {
                       </button>
                     </div>
                   </div>
+                  <div className={openTab === 3 ? "block" : "hidden"} id="link3">
+                    {followerlist.map((follower, index) => (
+                      <Link href={`/profile/${follower.follower}`} key={index}>
+                        <div className='max-h-[300px] overflow-hidden h-fit p-2 flex border hover:bg-white gap-2 w-full justify-center'>
 
+                          <li className=' list-none'>
+                            {extractFirstSixCharac(follower.follower || 'unknown')}   {follower.follower_count} Followers
+                          </li>
+                        </div>
+                      </Link>
+                    ))}
+
+
+                    <div className="flex justify-between mt-4">
+                      <button onClick={prevHeldPage} disabled={currentHeldPage === 1}
+                        className="px-4 py-2 border border-gray-300 rounded-md hover:bg-blue-700 disabled:opacity-50 text-green-500 font-semibold" >
+
+                        Prev
+                      </button>
+                      <button onClick={nextHeldPage} disabled={currentHeldPage * itemsPerPageHeld >= coinHeldData.length} className="px-4 py-2 border border-gray-300 rounded-md hover:bg-blue-700 disabled:opacity-50 text-green-500 font-semibold"  >
+                        Next
+                      </button>
+                    </div>
+
+
+                  </div>
+                  <div className={openTab === 4 ? "block" : "hidden"} id="link4">
+                    {followeelist.map((followee, index) => (
+                      <Link href={`/profile/${followee.followee}`} key={index}>
+                        <div className='max-h-[300px] overflow-hidden h-fit p-2 flex border hover:bg-white gap-2 w-full justify-center'>
+
+                          <li className=' list-none'>
+                            {extractFirstSixCharac(followee.followee || 'unknown')}   {followee.followee_count} Followers
+                          </li>
+                        </div>
+                      </Link>
+                    ))}
+
+
+                    <div className="flex justify-between mt-4">
+                      <button onClick={prevHeldPage} disabled={currentHeldPage === 1}
+                        className="px-4 py-2 border border-gray-300 rounded-md hover:bg-blue-700 disabled:opacity-50 text-green-500 font-semibold" >
+
+                        Prev
+                      </button>
+                      <button onClick={nextHeldPage} disabled={currentHeldPage * itemsPerPageHeld >= coinHeldData.length} className="px-4 py-2 border border-gray-300 rounded-md hover:bg-blue-700 disabled:opacity-50 text-green-500 font-semibold"  >
+                        Next
+                      </button>
+                    </div>
+
+
+                  </div>
                 </div>
               </div>
             </div>
-          </div></>) : ''};
+          </div>
+
+        </>) : ''};
 
 
     </>
