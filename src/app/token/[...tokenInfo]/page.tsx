@@ -280,7 +280,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     const tradesDataPromise = getTokenTrades(params.tokenInfo[0], params.tokenInfo[1]);
     // Wait for both promises to resolve
     const [tokenInfo, tradesData] = await Promise.all([tokenInfoPromise, tradesDataPromise]);
-
+    console.log("tradesData", tradesData)
     // Update state with fetched data
     setTokenDetails(tokenInfo[0]);
     setTrades(tradesData);
@@ -308,8 +308,9 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     setIsLoading(true); // Start loading
 
     const data = await getTopTokenHolders(params.tokenInfo[0], params.tokenInfo[1]); // Assume this fetches the data as shown in your example
-    // console.log("holders data", data)
     setHolders(data);
+    console.log("holders", holders)
+    console.log("tokenSum", tokenSum)
     // const sum = data.reduce((acc: any, holder: { balance: any; }) => acc + holder.balance, 0);
     // setTokenSum(sum);
     setIsLoading(false); // End loading
@@ -333,8 +334,18 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
         gasLimit: ethers.utils.hexlify(5000000), // Correct use of hexlify
       };
       try {
-        const pauseResp = await ERC20LockContract.unpause(options);
-        console.log("pauseResp", pauseResp)
+        const pauseStatue = await ERC20LockContract.paused();
+        if (pauseStatue === false) {
+          toast.info("Currently not paused. pausing...")
+          const pauseResp = await ERC20LockContract.pause(options);
+          console.log("pauseResp", pauseResp)
+        } else {
+          toast.info("Currently paused. unpausing...")
+          const pauseResp = await ERC20LockContract.unpause(options);
+          console.log("pauseResp", pauseResp)
+        }
+        // const pauseResp = await ERC20LockContract.unpause(options);
+        console.log("pauseResp", pauseStatue)
       } catch (error){
         console.error("Error getting locked amount:", error);
       throw error;
@@ -413,8 +424,8 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
       // };
       try {
         const lockedTokens = await ERC20LockContract.getLockedTokens(signerAddr.toString());
-        console.log("lockedTokens", lockedTokens)
-        console.log("lockedTokens to string", lockedTokens.toString());
+        // console.log("lockedTokens", lockedTokens)
+        // console.log("lockedTokens to string", lockedTokens.toString());
         return lockedTokens
       } catch (error){
         console.error("Error getting locked amount:", error);
@@ -525,7 +536,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   // place trade handler
   const handlePlaceTrade = async () => {
     if (isTrading) return; // Prevent further actions if already trading
-
+    console.log("token balance",userBalance.token)
     setIsTrading(true); // Set trading state to true to block further trades
     try {
       if (!isConnected){
@@ -607,7 +618,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                         txHash: txHash
                       };
                       // console.log("Processed Event Data:", info);
-                      postTransactionAndOHLC(info).then(response => {
+                      postTransactionAndOHLC(info, false).then(response => {
                         console.log('Backend response:', response.message);
                         // socket.emit("updated", "updated to db");
                         const updatedInfo = {
@@ -710,7 +721,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                         trade: buySell.toString(),
                         txHash: txHash
                       };
-                      postTransactionAndOHLC(info).then(response => {
+                      postTransactionAndOHLC(info, false).then(response => {
                         // let txid = response.primaryKey
                         // console.log('primary key', txid)
                         console.log('Backend response:', response.message);
@@ -1249,11 +1260,14 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                         src={buySell === 'sell' ? tokenDetails?.image_url : (nativeTokenBool ? nativeTokenInfo.chainLogo : tokenDetails?.image_url)}
                         alt={buySell === 'sell' ? tokenDetails?.token_name : (nativeTokenBool ? nativeTokenInfo.chain : tokenDetails?.token_name)}
                       />
-                    </div>
 
+                    </div>
+                    
 
 
                   </div>
+                  {buySell === 'sell' && <p className="text-gray-500 text-xs italic">You can only sell unlocked tokens</p>}
+
                   <div className="flex mt-2 bg-[#2e303a] p-1 rounded-lg">
                     {nativeTokenBool && (
                       <div>

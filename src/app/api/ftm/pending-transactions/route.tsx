@@ -4,9 +4,13 @@ import { query } from "../../db";
 
 
 export async function GET(req: Request) {
-  try {
-    const pendingTransactions = await query("SELECT * FROM transaction_history_ftm WHERE tx_status = 'pending'", []);
+  const url = new URL(req.url)
 
+  const token_address = url.searchParams.get("token_address");
+
+  try {
+    const pendingTransactions = await query("SELECT * FROM transaction_history_ftm WHERE tx_status = 'pending' AND token_address = $1", [token_address]);
+    // console.log("pending results from db", pendingTransactions)
     // If a token is found, return it as a JSON response with a 200 status code
     return new Response(JSON.stringify(pendingTransactions), { status: 200 });
   } catch (error) {

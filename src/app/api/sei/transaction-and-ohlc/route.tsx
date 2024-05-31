@@ -38,18 +38,22 @@ export  async function POST(req: Request) {
         if (tx_status ==="successful") {
             sum_native = trade === 'buy' ? sum_native + native_amount : sum_native - native_amount;
         }
-        // const result = await db.get(`SELECT sum_token FROM ${transactionTableName} WHERE token_address = ? ORDER BY timestamp DESC LIMIT 1`, [tokenAddress]);
-        // let sum_token = result ? result.sum : 1E16;
-        // sum_token = trade === 'buy' ? sum_token + token_amount : sum_token - token_amount;
-        // const result2 = await db.get(`SELECT sum_native FROM ${transactionTableName} WHERE token_address = ? ORDER BY timestamp DESC LIMIT 1`, [tokenAddress]);
-        // let sum_native = result2 ? result2.sum : 1E17;
-        // sum_native = trade === 'buy' ? sum_native + native_amount : sum_native - native_amount;
 
-        console.log(sum_token, sum_native);
 
         // transaction_history table
         let result2 = await query(`UPDATE ${transactionTableName} SET sum_native = $1 ,sum_token = $2, tx_status = $3 , timestamp = $4 , token_amount = $5 WHERE tx_hash = $6 RETURNING txid` , [sum_native, sum_token, tx_status, time , token_amount, tx_hash]);
         console.log("transaction&ohlc result", result2)
+        // const sqlCheck = `SELECT * FROM ${transactionTableName} WHERE tx_hash = $1 `;
+        // const existingRow = await query(sqlCheck, [tx_hash]);
+        // let result2;
+        // if (existingRow.length === 0) {
+        //     const sql = `INSERT INTO ${transactionTableName} (token_address, account, token_amount, native_amount, price_per_token, timestamp, trade, sum_token, sum_native, tx_hash, tx_status)
+        // VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING txid` ;
+        //     // Insert transaction data into the transaction history table
+        //      result2 = await query(sql, [tokenAddress, account, token_amount, native_amount, price, time, trade, sum_token, sum_native, tx_hash, tx_status]);
+        // } else {
+        //     result2 = await query(`UPDATE ${transactionTableName} SET sum_native = $1 ,sum_token = $2, tx_status = $3 , timestamp = $4 , token_amount = $5 WHERE tx_hash = $6 RETURNING txid` , [sum_native, sum_token, tx_status, time , token_amount, tx_hash]);
+        // }
         const txid = result2[0].txid;
 
                           

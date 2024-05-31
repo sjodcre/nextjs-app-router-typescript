@@ -8,7 +8,7 @@ import ERC20TestArtifact from '@/../artifacts/contracts/ERC20Lock.sol/ERC20Lock.
 // Assuming `params` or specifically `tokenInfo` needs to be passed to access the right data
 export async function checkPendingTx( chain: string, tokenAddr: string){
   try {
-    const pendingTransactions = await getPendingTransactions(chain);
+    const pendingTransactions = await getPendingTransactions(chain, tokenAddr);
     const pendingTxs = pendingTransactions.filter(tx => tx.tx_status === 'pending');
 
     console.log("pendingTxs", pendingTxs);
@@ -39,7 +39,7 @@ export async function checkPendingTx( chain: string, tokenAddr: string){
                         trade: 'buy',
                         txHash: txHash
                       };
-                    postTransactionAndOHLC(info).then(response => {
+                    postTransactionAndOHLC(info, false).then(response => {
                     console.log('Backend response:', response);
                     // socket.emit("updated", "updated to db");                    
                     }).catch(error => {
@@ -58,7 +58,7 @@ export async function checkPendingTx( chain: string, tokenAddr: string){
                         trade: 'sell',
                         txHash: txHash
                       };
-                    postTransactionAndOHLC(info).then(response => {
+                    postTransactionAndOHLC(info, false).then(response => {
                     console.log('Backend response:', response);
                     // socket.emit("updated", "updated to db");                    
                     }).catch(error => {

@@ -40,7 +40,7 @@ async function deployManager(walletProvider: any) {
 
   try {
       const ManagerContract = await ManagerFactory.deploy(feeReceiver, feeAmount, contractOwner ,{
-          gasLimit: 5000000 // Adjust based on your needs
+          gasLimit: 10000000 // Adjust based on your needs
       });
 
       console.log("Deploying Manager contract...");
@@ -63,17 +63,19 @@ const deployToken = async (selectedChain: string, token: TokenParams, mintAmount
   }
   let managerContractAddress = '';
   if (selectedChain === "sei"){
-    managerContractAddress = "0xF55f799E94F2908bd4482C875223fB827961C1E4"
+    // managerContractAddress = "0xF55f799E94F2908bd4482C875223fB827961C1E4"
+    managerContractAddress = "0x4F5b661a97235Bd129416eDbF070b35842EB7691" //test bug
 
   } else if (selectedChain === "ftm"){
-    managerContractAddress = "0x3b3099a2bAA48dB599B3f813e72B5b61D2129571"
-    // managerContractAddress = "0x5DC6fdE66C0B6d739E5A93735572B555779Ab912" //test for bug
+    // managerContractAddress = "0x9CE7A39Eaa1B8df86f48828799276d213C1a4761"
+    managerContractAddress = "0xceA6cEC23F5B1a18A97fFae0a8c06B26775Abc64" //test bug
   } else {
     console.error("incorrect chain network!");
       throw new Error("incorrect chain network!");
   }
   const provider = new ethers.providers.Web3Provider(walletProvider)
   const signer = await provider.getSigner()
+  const signerAddr = await signer.getAddress();
   const ManagerContract = new ethers.Contract(managerContractAddress, ManagerArtifact.abi, signer);
   
   // const ERC20_Token = new ContractFactory(
@@ -108,6 +110,7 @@ const deployToken = async (selectedChain: string, token: TokenParams, mintAmount
       (token.reserveRatio).toString(),
       token.name,
       token.ticker,
+      signerAddr.toString(),
       mintValue.toString(),
       {
           value: totalPayment,
@@ -122,7 +125,6 @@ const deployToken = async (selectedChain: string, token: TokenParams, mintAmount
      const deployedEvent = receipt.events.find((event: any) => event.event === "ERC20Deployed");
      const contractAddress = deployedEvent.args.contractAddress;
      const txHash = receipt.transactionHash;
-     const signerAddr = await signer.getAddress();
 
      console.log("Contract deployed at:", contractAddress);
      console.log("Transaction hash:", txHash);
@@ -203,7 +205,7 @@ const mintToken = async (
     try {
       // const contract = await getEthereumContracts()
       const {estToken,estTokenWSlippage} = calculateMinTokensWithSlippage(tokenSum, reserveBalance, reserveRatio, ethValue, slippage);
-
+      
       console.log("estTokenWSlippage", estTokenWSlippage)
       console.log("estToken", estToken)
       let info = {
@@ -212,12 +214,11 @@ const mintToken = async (
         contractAddress: tokenAddress,
         account: signerAddr,
         amount: Number(estToken.toString()),// Ensure conversion to string before to Number if BigNumber
-        deposit: Number(options.value.toString()), // Same conversion as above
+        deposit: ethValue, // Same conversion as above
         timestamp: Math.floor(Date.now() / 1000),
         trade: 'buy',
         txHash: ''
       };
-      let txid = '';
 
       // Calculate gas estimate
       // const mintTx = await ERC20TestContract.mint(minTokens.toString(), options);
@@ -290,7 +291,7 @@ const mintToken = async (
     const signerAddr = await signer.getAddress();
     const ERC20TestContract = new Contract(tokenAddress, ERC20TestArtifact.abi, signer);
     const options = {
-      gasLimit: ethers.utils.hexlify(1000000),
+      gasLimit: ethers.utils.hexlify(5000000),
     };
     const reserveRatio = 50000;
    
