@@ -64,7 +64,7 @@ const deployToken = async (selectedChain: string, token: TokenParams, mintAmount
   let managerContractAddress = '';
   if (selectedChain === "sei"){
     // managerContractAddress = "0xF55f799E94F2908bd4482C875223fB827961C1E4"
-    managerContractAddress = "0x4F5b661a97235Bd129416eDbF070b35842EB7691" //test bug
+    managerContractAddress = "0x4f37dbac5910A3463a9EF18B083b579B5Fa57D03" //test bug
 
   } else if (selectedChain === "ftm"){
     // managerContractAddress = "0x9CE7A39Eaa1B8df86f48828799276d213C1a4761"

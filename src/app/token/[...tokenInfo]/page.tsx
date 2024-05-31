@@ -286,20 +286,18 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     setTrades(tradesData);
     setTokenSum(tradesData[0].sum_token);
     setNativeSum(tradesData[0].sum_native);
-
     // getTopTokenHolders(params.tokenInfo[0], params.tokenInfo[1]);
     fetchHolders();
-
-    // Calculate market cap if tradesData and nativeTokenPrice are available
-    if (tradesData && tradesData.length > 0 && nativeTokenPrice) {
-      const marketCap = tradesData[0].sum_token * tradesData[0].price_per_token * nativeTokenPrice / 1E18;
-      const formattedMarketCap = marketCap.toLocaleString('en-US', {
+console.log('marketee'+ tradesData[0].marketcap)
+   
+     // const marketCap = tradesData[0].sum_token * tradesData[0].price_per_token * nativeTokenPrice / 1E18;
+      const formattedMarketCap = tradesData[0].marketcap.toLocaleString('en-US', {
         style: 'decimal',
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
       });
-      setMarketCap(formattedMarketCap);
-    }
+     setMarketCap(formattedMarketCap);
+    
     console.log("data fetch");
   };
 
@@ -615,7 +613,8 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                         deposit: Number(parsedLog.args[2].toString()), // Same conversion as above
                         timestamp: Math.floor(Date.now() / 1000),
                         trade: buySell.toString(),
-                        txHash: txHash
+                        txHash: txHash,
+                        nativeTokenPrice :nativeTokenPrice
                       };
                       // console.log("Processed Event Data:", info);
                       postTransactionAndOHLC(info, false).then(response => {
@@ -719,7 +718,8 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                         deposit: Number(parsedLog.args[2].toString()), // Same conversion as above
                         timestamp: Math.floor(Date.now() / 1000),
                         trade: buySell.toString(),
-                        txHash: txHash
+                        txHash: txHash,
+                        nativeTokenPrice :nativeTokenPrice
                       };
                       postTransactionAndOHLC(info, false).then(response => {
                         // let txid = response.primaryKey
