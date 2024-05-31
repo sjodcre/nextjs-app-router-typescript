@@ -9,8 +9,9 @@ export async function GET(req: Request) {
   const url = new URL(req.url)
 
   const id = url.searchParams.get("id")
+  const chain = url.searchParams.get("chain")
 
-  const tableName = `profile`;
+  const tableName = `profile_${chain}`;
 
 
 
