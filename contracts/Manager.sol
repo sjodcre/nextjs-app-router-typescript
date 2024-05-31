@@ -17,16 +17,20 @@ contract Manager {
         feeAmount = _feeAmount;
         contractOwner = _contractOwner;
     }
-
-    function deployERC20(uint256 _reserveRatio, string memory _name, string memory _symbol, uint256 initialMintValue) external payable {
+    function deployERC20(uint256 _reserveRatio, string memory _name, string memory _symbol, address initialMinter, uint256 initialMintValue) external payable {
+    // function deployERC20(uint256 _reserveRatio, string memory _name, string memory _symbol, address initialMinter, uint256 initialMintValue) external payable {
         // require(msg.value >= feeAmount, "Insufficient fee");
         require(msg.value >= feeAmount + initialMintValue, "Insufficient fee and initial mint value");
 
+        uint256 mintFee = (initialMintValue * 1) / 101; // Calculate 1% fee
+        uint256 netValue = initialMintValue - mintFee; // Net value after fee
+        payable(feeReceiver).transfer(mintFee);
         // Transfer the fee to the fee receiver
         payable(feeReceiver).transfer(feeAmount);
 
         // Deploy the ERC20 contract with the initial mint value
-        ERC20Lock newToken = new ERC20Lock(_reserveRatio, _name, _symbol, contractOwner, initialMintValue);
+        // ERC20Lock newToken = new ERC20Lock(_reserveRatio, _name, _symbol, contractOwner, initialMinter, netValue);
+        ERC20Lock newToken = new ERC20Lock{value: netValue}(_reserveRatio, _name, _symbol, contractOwner, initialMinter, netValue);
 
         // Deploy the ERC20 contract
         // ERC20Lock newToken = new ERC20Lock(_reserveRatio, _name, _symbol);
@@ -35,8 +39,8 @@ contract Manager {
         emit ERC20Deployed(address(newToken), msg.sender);
 
         // If there is an initial mint value, transfer it to the new contract
-        if (initialMintValue > 0) {
-            payable(address(newToken)).transfer(initialMintValue);
-        }
+        // if (initialMintValue > 0) {
+        //     payable(address(newToken)).transfer(initialMintValue);
+        // }
     }
 }

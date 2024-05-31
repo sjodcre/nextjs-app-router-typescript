@@ -8,11 +8,12 @@ import { toast } from 'react-toastify'
 // import ConnectButton from "../_ui/connect-button";
 import { TokenParams } from '@/app/_utils/types';
 import {  deployToken, deployManager } from '../_services/blockchain';
-import { initOHLCData, postTokenData } from '../_services/db-write';
+import { initOHLCData, postTokenData, postTransactionAndOHLC, postTransactionData } from '../_services/db-write';
 import { setChain, resetChain } from "@/app/_redux/features/chain-slice";
 import { useRouter } from 'next/navigation'
 import { useDispatch } from 'react-redux';
 import { AppDispatch, useAppSelector } from '@/app/_redux/store';
+import { calculateExpectedReturn, calculateMinTokensWithSlippage } from '../_utils/helpers';
 
 
 
@@ -234,8 +235,40 @@ export default function Deploy() {
 				};
 	
 				await postTokenData(tokenListData);
-				await initOHLCData(selectedChain, data.token_address, data.creator, data.datetime, data.tx_hash);
+				await initOHLCData(selectedChain, data.token_address, data.creator, data.datetime, data.tx_hash)
+				.then(async response => {
+					console.log('Backend response:', response);
+					if (mintAmount > 0) {
+						const depositAmount = Number(ethers.utils.parseUnits(mintAmount.toString(), 18));
+	
+						const tokensWithoutSlippage = calculateExpectedReturn(10**16, 10**17, 50000, depositAmount);
+						console.log("tokensWithoutSlippage", tokensWithoutSlippage)
+						const info = {
+							selectedChain: selectedChain,
+							contractAddress: data.token_address,
+							account: data.creator,
+							status: "successful",
+							amount: tokensWithoutSlippage, // Ensure conversion to string before to Number if BigNumber
+							deposit: depositAmount, // Same conversion as above
+							timestamp: Math.floor(Date.now() / 1000),
+							trade: 'buy',
+							txHash: data.tx_hash
+						  };
+	
+						await postTransactionAndOHLC(info, true).then(response => {
+						console.log('Backend response:', response);
+						// txid = response.primaryKey;
+						}).catch((error: any) => {
+						console.error('Error posting data to backend tx ohlc:', error);
+						});
+					}
+				}).catch((error: any) => {
+					console.error('Error posting data to backend init:', error);
+					});
+				;
 				// return tokenListData;  // Successful deployment, resolve with this data
+				// console.log("mintAMount", mintAmount)
+				
 				return {
 					chainid: selectedChain,
 					token_address: data.token_address
@@ -268,6 +301,11 @@ export default function Deploy() {
 		// if (greeterContract || !signer) {
 		//   return;
 		// }
+		// const depositAmount = Number(ethers.utils.parseUnits(formData.mintAmount.toString(), 18));
+
+		// const tokensWithoutSlippage = calculateExpectedReturn(10**16, 10**17, 50000, depositAmount);
+		// console.log("tokensWithoutSlippage", tokensWithoutSlippage)
+
 		if (isDeploying) return;  // Prevent further clicks when deployment is in progress
 
 		setIsDeploying(true);

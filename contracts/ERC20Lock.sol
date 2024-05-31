@@ -29,19 +29,25 @@ contract ERC20Lock is BancorBondingCurve, ERC20Pausable, CappedGasPrice, Ownable
         uint256 _reserveRatio,
         string memory _name,
         string memory _symbol,
-        address initialOwner,
+        address contractOwner,
+        address initialMinter,
         uint256 initialMintValue
 
-    ) ERC20(_name, _symbol) CappedGasPrice() Ownable(initialOwner) {
+    ) ERC20(_name, _symbol) CappedGasPrice() Ownable(contractOwner) payable {
         reserveRatio = _reserveRatio;
         _mint(address(this), 1 * scale);
 
-        // if (initialMintValue > 0) {
-        //     uint256 fee = (initialMintValue * 1) / 101; // Calculate 1% fee
-        //     uint256 netValue = initialMintValue - fee; // Net value after fee
-        //     uint256 tokensToMint = calculateContinuousMintReturn(netValue);
-        //     _continuousMint(netValue, tokensToMint, fee);
-        // }
+        if (initialMintValue > 0) {
+            // uint256 fee = (initialMintValue * 1) / 101; // Calculate 1% fee
+            // uint256 netValue = initialMintValue - fee; // Net value after fee
+            // uint256 tokensToMint = calculateContinuousMintReturn(netValue);
+            // _continuousMint(netValue, tokensToMint, fee);
+            uint256 tokensToMint = calculateContinuousMintReturn(initialMintValue);
+            _mint(initialMinter, tokensToMint);
+            reserveBalance += initialMintValue;
+            emit ContinuousMint(msg.sender, tokensToMint, initialMintValue);
+
+        }
     }
 
     function mint(uint256 minTokens) external payable validGasPrice whenNotPaused {
@@ -60,9 +66,8 @@ contract ERC20Lock is BancorBondingCurve, ERC20Pausable, CappedGasPrice, Ownable
         if (returnAmount < minReturn) {
             revert ErrorSlippageLimitExceeded();
         }
-        uint256 fee = (returnAmount * 1) / 100; // Calculate 1% fee
-        uint256 netReturn = returnAmount - fee; // Net return after fee
-        _continuousBurn(_amount, netReturn, fee);
+
+        _continuousBurn(_amount, returnAmount);
     }
 
     function calculateContinuousMintReturn(uint256 _amount) public view returns (uint256 mintAmount) {
@@ -80,10 +85,12 @@ contract ERC20Lock is BancorBondingCurve, ERC20Pausable, CappedGasPrice, Ownable
         emit ContinuousMint(msg.sender, amount, _deposit);
     }
 
-    function _continuousBurn(uint256 _amount, uint256 reimburseAmount, uint256 fee) private {
+    function _continuousBurn(uint256 _amount, uint256 reimburseAmount) private {
         _burn(msg.sender, _amount);
         reserveBalance -= reimburseAmount;
-        payable(msg.sender).transfer(reimburseAmount);
+        uint256 fee = (reimburseAmount * 1) / 100; // Calculate 1% fee
+        uint256 netReturn = reimburseAmount - fee; // Net return after fee
+        payable(msg.sender).transfer(netReturn);
         payable(feeReceiver).transfer(fee); // Transfer fee to the fee receiver
         emit ContinuousBurn(msg.sender, _amount, reimburseAmount);
     }

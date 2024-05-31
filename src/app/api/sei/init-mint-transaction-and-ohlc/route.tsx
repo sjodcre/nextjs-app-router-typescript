@@ -15,8 +15,8 @@ export  async function POST(req: Request) {
     return new Response(JSON.stringify({ error: 'Invalid input data'}), { status: 400});
    }
  // Define table names based on chain id
- const transactionTableName = 'transaction_history_ftm';
- const ohlcTableName = 'ohlc_ftm';
+ const transactionTableName = 'transaction_history_sei';
+ const ohlcTableName = 'ohlc_sei';
 
 
 
@@ -39,23 +39,23 @@ export  async function POST(req: Request) {
             sum_native = trade === 'buy' ? sum_native + native_amount : sum_native - native_amount;
         }
 
+
+        // transaction_history table
+        // let result2 = await query(`UPDATE ${transactionTableName} SET sum_native = $1 ,sum_token = $2, tx_status = $3 , timestamp = $4 , token_amount = $5 WHERE tx_hash = $6 RETURNING txid` , [sum_native, sum_token, tx_status, time , token_amount, tx_hash]);
+        // console.log("transaction&ohlc result", result2)
         // const sqlCheck = `SELECT * FROM ${transactionTableName} WHERE tx_hash = $1 `;
         // const existingRow = await query(sqlCheck, [tx_hash]);
         // let result2;
-        // console.log("existingRow", existingRow)
-        // console.log("existingRow length", existingRow.length)
         // if (existingRow.length === 0) {
-        //     const sql = `INSERT INTO ${transactionTableName} (token_address, account, token_amount, native_amount, price_per_token, timestamp, trade, sum_token, sum_native, tx_hash, tx_status)
-        // VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING txid` ;
-        //     // Insert transaction data into the transaction history table
-        //      result2 = await query(sql, [tokenAddress, account, token_amount, native_amount, price, time, trade, sum_token, sum_native, tx_hash, tx_status]);
+            const sql2= `INSERT INTO ${transactionTableName} (token_address, account, token_amount, native_amount, price_per_token, timestamp, trade, sum_token, sum_native, tx_hash, tx_status)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING txid` ;
+            // Insert transaction data into the transaction history table
+             const result2 = await query(sql2, [tokenAddress, account, token_amount, native_amount, price, time, trade, sum_token, sum_native, tx_hash, tx_status]);
         // } else {
         //     result2 = await query(`UPDATE ${transactionTableName} SET sum_native = $1 ,sum_token = $2, tx_status = $3 , timestamp = $4 , token_amount = $5 WHERE tx_hash = $6 RETURNING txid` , [sum_native, sum_token, tx_status, time , token_amount, tx_hash]);
         // }
-        let result2 = await query(`UPDATE ${transactionTableName} SET sum_native = $1 ,sum_token = $2, tx_status = $3 , timestamp = $4 , token_amount = $5 WHERE tx_hash = $6 RETURNING txid` , [sum_native, sum_token, tx_status, time , token_amount, tx_hash]);
-
-        // transaction_history table
         const txid = result2[0].txid;
+
                           
         // ohlc table
         const timeSlice = Math.floor(time / 300) * 300;
@@ -78,7 +78,7 @@ export  async function POST(req: Request) {
         }
 
         //token_balance table
-        const queryBalance = (await query(`SELECT balance FROM token_balances_ftm WHERE account = $1 AND token_address =$2`, [account, tokenAddress]));
+        const queryBalance = (await query(`SELECT balance FROM token_balances_sei WHERE account = $1 AND token_address =$2`, [account, tokenAddress]));
 
         let currentBalance = { balance: 0 }; // Default value
         if (queryBalance.length>0){
@@ -96,9 +96,9 @@ export  async function POST(req: Request) {
         
     
         if (currentBalance.balance === 0) {
-            await query("INSERT INTO token_balances_ftm (account, token_address, balance) VALUES ($1, $2, $3)", [account, tokenAddress, newBalance]);
+            await query("INSERT INTO token_balances_sei (account, token_address, balance) VALUES ($1, $2, $3)", [account, tokenAddress, newBalance]);
         } else {
-            await query("UPDATE token_balances_ftm SET balance = $1 WHERE account = $2 AND token_address = $3", [newBalance, account, tokenAddress]);
+            await query("UPDATE token_balances_sei SET balance = $1 WHERE account = $2 AND token_address = $3", [newBalance, account, tokenAddress]);
         }
 
          

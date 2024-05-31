@@ -16,17 +16,17 @@ interface EventListener {
 //   return date.getTime() / 1000;
 // }
 
-function getNextFiveMinuteBarTime(barTime: number) {
-  const date = new Date(barTime * 1000);
+function getNextFiveMinuteBarTime(barTime: any) {
+  const date = new Date(barTime.time);
   date.setMinutes(date.getMinutes() + 5); // Increment by 5 minutes
   return date.getTime() / 1000;
 }
 
-function getNextThirtyMinuteBarTime(barTime: number) {
-  const date = new Date(barTime * 1000);
-  date.setMinutes(date.getMinutes() + 30); // Increment by 30 minutes
-  return date.getTime() / 1000;
-}
+// function getNextThirtyMinuteBarTime(barTime: number) {
+//   const date = new Date(barTime * 1000);
+//   date.setMinutes(date.getMinutes() + 30); // Increment by 30 minutes
+//   return date.getTime() / 1000;
+// }
 
 const channelToSubscription = new Map();
 
@@ -77,24 +77,28 @@ const useSocket = (listeners: EventListener[] = []) => {
       }
       const lastBar = subscriptionItem.lastBar;
       // const lastFiveMinsBar = subscriptionItem.lastDailyBar;
+      console.log("lastBar", lastBar)
+      let nextBarTime = getNextFiveMinuteBarTime(lastBar);
 
-      let nextBarTime;
-      if (data.chartResolution ===5){
-        nextBarTime = getNextFiveMinuteBarTime(lastBar);
+      // let nextBarTime;
+      // if (data.chartResolution ===5){
+      //   nextBarTime = getNextFiveMinuteBarTime(lastBar);
 
-      } else if (data.chartResolution ===30){
-        nextBarTime = getNextThirtyMinuteBarTime(lastBar);
+      // } else if (data.chartResolution ===30){
+      //   nextBarTime = getNextThirtyMinuteBarTime(lastBar);
 
-      } else {
-        nextBarTime = getNextFiveMinuteBarTime(lastBar);
+      // } else {
+      //   nextBarTime = getNextFiveMinuteBarTime(lastBar);
 
-      }
+      // }
       // const nextDailyBarTime = getNextDailyBarTime(lastDailyBar.time);
       // const nextFiveMinsBarTime = getNextFiveMinuteBarTime(lastFiveMinsBar);
+      console.log("nextFiveMinsBarTime", nextBarTime)
+      console.log("tradeTime", tradeTime)
       let bar;
       if (tradeTime >= nextBarTime) {
           bar = {
-              time: nextBarTime,
+              time: nextBarTime*1000,
               open: tradePrice,
               high: tradePrice,
               low: tradePrice,

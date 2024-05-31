@@ -123,7 +123,7 @@ export const postTransactionData = async (transactionData: any) => {
 
 }
 
-export const postTransactionAndOHLC = async (transactionData: any) => {
+export const postTransactionAndOHLC = async (transactionData: any, initialMint: boolean) => {
     const { selectedChain, contractAddress, account, status, amount, deposit, timestamp, trade, txHash} = transactionData;
 
     // const normalizedAmount = normalizeValue(parseFloat(amount.toString())); // Ensuring number type if needed
@@ -136,11 +136,15 @@ export const postTransactionAndOHLC = async (transactionData: any) => {
     const price = parseFloat(deposit) / parseFloat(amount); // This assumes both values are normalized to the same scale
     const volume = parseFloat(amount);
     let url = '';
-    if (selectedChain ==='ftm'){
+    if (selectedChain ==='ftm' && initialMint === false){
         url = '/api/ftm/transaction-and-ohlc'
-    } else if (selectedChain === 'sei') {
+    } else if (selectedChain === 'sei' && initialMint === false) {
         url = '/api/sei/transaction-and-ohlc'
-    } else {
+    } else if (selectedChain === 'ftm' && initialMint === true) {
+        url = '/api/ftm/init-mint-transaction-and-ohlc'
+    }else if (selectedChain === 'sei' && initialMint === true) {
+        url = '/api/sei/init-mint-transaction-and-ohlc'
+    }else {
         throw new Error("incorrect chain id!")
     }
 
@@ -289,12 +293,12 @@ export const fetchTokenInfo = async (chainId: string, tokenAddress: string) => {
         });
 };
 
-export const getPendingTransactions = async (chainId: string): Promise<any[]> => {
+export const getPendingTransactions = async (chainId: string, tokenAddress: string): Promise<any[]> => {
     let url = '';
     if (chainId === 'sei') {
-        url = `/api/sei/pending-transactions`;
+        url = `/api/sei/pending-transactions?token_address=${tokenAddress}`;
     } else if (chainId ==='ftm') {
-        url = `/api/ftm/pending-transactions`
+        url = `/api/ftm/pending-transactions?token_address=${tokenAddress}`
     }else {
         throw new Error('Unsupported chain ID or functionality not yet implemented for this chain!');
     }

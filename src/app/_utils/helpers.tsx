@@ -12,7 +12,7 @@ export const extractFirstSixCharac = (input: string): string => {
     return '';  // Return an empty string if conditions are not met
 };
 
-function calculateExpectedReturn(_supply: number, _reserveBalance: number, _reserveRatio: number, _depositAmount: number) {
+export function calculateExpectedReturn(_supply: number, _reserveBalance: number, _reserveRatio: number, _depositAmount: number) {
     const MAX_RESERVE_RATIO = 1000000;  // Adjust based on your contract
 
     // Compute (1 + _depositAmount / _reserveBalance)
