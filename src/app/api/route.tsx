@@ -19,7 +19,7 @@ export async function GET(req: Request) {
         } else if (sortBy === 'replies') {
             orderByClause = `ORDER BY reply_count ${order} NULLS LAST`;
         } else if (sortBy === 'marketcap') {
-            orderByClause = `ORDER BY marketcap ${order} NULLS LAST`;
+            orderByClause = `ORDER BY lt.marketcap ${order} NULLS LAST`;
         } else if (sortBy === 'creationTime') {
             orderByClause = `ORDER BY tl.datetime ${order} NULLS LAST`;
         }
@@ -31,6 +31,7 @@ export async function GET(req: Request) {
             SELECT 
                 DISTINCT ON (th.token_address) 
                 th.token_address,
+                th.marketcap,
                 to_timestamp(th.timestamp)::timestamp AS transaction_timestamp
                 FROM 
                 public.transaction_history_${chain} th
@@ -63,6 +64,7 @@ export async function GET(req: Request) {
             tl.website,
             to_timestamp(tl.datetime)::timestamp AS token_datetime,
             lt.transaction_timestamp,
+            lt.marketcap,
             lr.reply_timestamp AS latest_reply_timestamp,
             (SELECT COUNT(*) FROM public.replies_sei WHERE token_address = tl.token_address) AS reply_count
         FROM 

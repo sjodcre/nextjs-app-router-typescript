@@ -79,7 +79,7 @@ export const initOHLCData = async (selectedChain: string, tokenAddress: string, 
 }
 
 export const postTransactionData = async (transactionData: any) => {
-    const { status, selectedChain, contractAddress, account, amount, deposit, timestamp, trade, txHash } = transactionData;
+    const { status, selectedChain, contractAddress, account, amount, deposit, timestamp, trade, txHash ,nativeTokenPrice} = transactionData;
 
     const price = parseFloat(deposit) / parseFloat(amount); // This assumes both values are normalized to the same scale
     const volume = parseFloat(amount);
@@ -108,7 +108,8 @@ export const postTransactionData = async (transactionData: any) => {
                 price,
                 volume,
                 trade: trade,
-                tx_hash: txHash
+                tx_hash: txHash,
+                nativeTokenPrice
             })
         });
 
@@ -124,7 +125,7 @@ export const postTransactionData = async (transactionData: any) => {
 }
 
 export const postTransactionAndOHLC = async (transactionData: any, initialMint: boolean) => {
-    const { selectedChain, contractAddress, account, status, amount, deposit, timestamp, trade, txHash} = transactionData;
+    const { selectedChain, contractAddress, account, status, amount, deposit, timestamp, trade, txHash, nativeTokenPrice} = transactionData;
 
     // const normalizedAmount = normalizeValue(parseFloat(amount.toString())); // Ensuring number type if needed
     // const normalizedDeposit = normalizeValue(parseFloat(deposit.toString()));
@@ -164,7 +165,8 @@ export const postTransactionAndOHLC = async (transactionData: any, initialMint: 
                 price,
                 volume,
                 trade: trade,
-                tx_hash: txHash
+                tx_hash: txHash,
+                nativeTokenPrice
             })
         });
 

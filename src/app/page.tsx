@@ -23,7 +23,7 @@ interface Token {
     txid :string,
     account :string,
     reply_count: string,
-    marketcap: string,
+    marketcap: number,
     
     // Add other properties if available in the token object
 }
@@ -67,6 +67,7 @@ const Home: React.FC = () => {
     const indexOfLastToken = currentPage * itemsPerPage;
     const indexOfFirstToken = indexOfLastToken - itemsPerPage;
     const currentTokens = tokens.slice(indexOfFirstToken, indexOfLastToken);
+    
 
     const handleSortChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         setSortBy(event.target.value);
@@ -210,7 +211,11 @@ const Home: React.FC = () => {
                             {/* You can replace this placeholder image with the actual token image */}
                             <ul className="text-xs leading-4 text-green-500 font-semibold">
                                 <li>Created By: {token.creator}</li>
-                                <li>Market Cap: {token.marketcap} </li>
+                                <li>Market Cap: {token.marketcap.toLocaleString('en-US', {
+        style: 'decimal',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })}</li>
                                 <li>Replies: {token.reply_count} </li>
                                  <li>{token.token_name} '(Ticker : {token.token_ticker}) : {token.token_description}"</li>
                             </ul>
