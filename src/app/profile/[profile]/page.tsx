@@ -173,7 +173,7 @@ const Profile: React.FC = () => {
 
     }
 
-  }, [currentChain,changes]);
+  }, [currentChain,changes,isFollowing]);
 
  /*  useEffect(() => {
 
@@ -476,11 +476,14 @@ const Profile: React.FC = () => {
 
           <div className='flex justify-between w-full align-end '>
             <p className=' pr-4'>{followerlist.length} Followers </p>
-            <button
+
+            {id == address ? '': (<button
               className={`w-40 h-8 rounded-full bg-white text-black hover:text-black text-sm font-medium leading-5`}
               onClick={handleFollow}>
+                
               {isFollowing ? 'Following' : 'Follow'}
-            </button>
+            </button>)}
+            
           </div>
           <p>Bio:{profileData.bio}</p>
           <div className='text-xs sm:text-sm border border-slate-600 rounded p-2'>{profileData.account}</div>
