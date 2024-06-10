@@ -95,159 +95,131 @@ const Home: React.FC = () => {
 
     return (
         <>
-            {/* <Header /> */}
-          
-            <div className='grid gap-8 item-start justify-center '>
+  <div className="min-h-screen bg-black text-green-400 font-mono p-4">
+    <div className="flex justify-center items-center py-8">
+      <div className="text-9xl font-semibold border-2 border-green-400 rounded-lg shadow-lg p-4 bg-black text-white">
+        HELLO
+      </div>
+    </div>
 
-                <div className='  relative text-9xl justify-center bg-black text-white border-2 font-mono font-semibold rounded-lg border-green-400 shadow-[0_0_2px_#00ff00,inset_0_0_2px_#00ff00,0_0_5px_#00ff00,0_0_15px_#00ff00,0_0_30px_#08f]'>
+    <div className="flex flex-col items-center mt-4">
+      <a
+        className="inline-flex items-center justify-center whitespace-nowrap rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2 
+        h-10 px-6 py-2 mb-6 text-2xl text-black bg-green-400 hover:bg-green-500"
+        href="/deploy"
+      >
+        [start a new coin]
+      </a>
 
-
-                    HELLO
-
-                </div>
+      <div className="text-white max-w-[800px] grid gap-4">
+        <a href="/EqcNxUzQ18C8HsG6QGL4XWVvGV3cGbs7xcfGfE3o1xye">
+          <div className="p-4 flex border border-green-400 rounded-lg hover:bg-gray-800 gap-4 w-full max-h-[300px] overflow-hidden">
+            <div className="min-w-20"></div>
+            <div className="grid gap-2">
+              <div className="text-xs text-blue-200 flex items-center gap-2">
+                <span>Created by</span>
+                <button type="button" className="px-1 rounded hover:underline bg-transparent">
+                  FRgyc4
+                </button>
+              </div>
+              <div className="text-xs text-green-300 flex gap-1 items-center">
+                <span>market cap: 35.78K</span>
+                <span className="text-green-500 ml-2">[badge: ]</span>
+              </div>
+              <p className="text-xs">replies: 3</p>
+              <p className="text-sm font-bold">Get Money [ticker: GM]</p>
             </div>
-            <div className="flex flex-col items-center w-full mt-4">
-                <a className="inline-flex items-center justify-center whitespace-nowrap rounded-md font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 
-                disabled:pointer-events-none disabled:opacity-50 dark:ring-offset-slate-950 dark:focus-visible:ring-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50 h-10 px-4 py-2 mb-4 text-2xl text-slate-50 hover:font-bold hover:bg-transparent 
-                hover:text-slate-50" href="/deploy">
-                    [start a new coin]
-                </a>
-                <div className="text-white max-w-[800px] grid gap-2">
-                    {/* <img alt="king of the hill" loading="lazy" width="166" height="32" decoding="async" data-nimg="1" class="h-8 justify-self-center" srcset="/_next/image?url=%2Fking-of-the-hill.png&amp;w=256&amp;q=75 1x, /_next/image?url=%2Fking-of-the-hill.png&amp;w=384&amp;q=75 2x" src="/_next/image?url=%2Fking-of-the-hill.png&amp;w=384&amp;q=75" style="color: transparent;"> */}
-                    <a href="/EqcNxUzQ18C8HsG6QGL4XWVvGV3cGbs7xcfGfE3o1xye">
-                        <div className="p-2 flex border border-transparent hover:border-white gap-2 w-full max-h-[300px] overflow-hidden">
-                            <div className="min-w-20">
-                                {/* <img alt="Get Money" loading="lazy" width="200" height="200" decoding="async" data-nimg="1" class="mr-4 w-20 h-auto" src="https://bafkreianj7sxceoziksoq73vuopuivsgumxp4qft6ijbfmmb3ay43g2mmy.ipfs.nftstorage.link/?img-width=200&amp;img-dpr=2&amp;img-onerror=redirect" style="color: transparent;"> */}
-                            </div>
-                            <div className="gap-1 grid h-fit">
-                                <div className="text-xs text-blue-200 flex items-center gap-2">
-                                    <div>
-                                        Created by
-                                    </div>
-                                    <button type="button">
-                                        <span className="flex gap-1  items-center">
-                                            {/* <img alt="" loading="lazy" width="16" height="16" decoding="async" data-nimg="1" class="w-4 h-4 rounded" src="https://pump.mypinata.cloud/ipfs/QmeSzchzEPqCU1jwTnsipwcBAeH7S4bmVvFGfF65iA1BY1?img-width=16&amp;img-dpr=2&amp;img-onerror=redirect" style="color: transparent;"> */}
-                                            <span className="px-1 rounded hover:underline flex gap-1 bg-transparent	" >
-                                            FRgyc4 
-                                            </span>
-                                        </span>
-                                    </button>
-                                </div>
-                                <div className="text-xs text-green-300 flex gap-1">
-                                    market cap: 35.78K
-                                    <div className="flex text-green-500">
-                                        [badge: 
-                                        <div>
-                                            <div>
-                                                <div className="cursor-pointer hover:opacity-7" aria-haspopup="dialog" aria-expanded="false" aria-controls="radix-:r11:" data-state="closed">
-                                                    {/* <img alt="king of the hill badge" loading="lazy" width="18" height="18" decoding="async" data-nimg="1" class="h-4" srcset="/_next/image?url=%2Fking.png&amp;w=32&amp;q=75 1x, /_next/image?url=%2Fking.png&amp;w=48&amp;q=75 2x" src="/_next/image?url=%2Fking.png&amp;w=48&amp;q=75" style="color: transparent;"> */}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        ]
-                                    </div>
-                                </div>
-                                <p className="text-xs flex items-center gap-2">
-                                    replies: 3
-                                </p>
-                                <p className="text-sm w-full font-bold">
-                                    Get Money [ticker: GM]
-                                </p>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-            </div>
+          </div>
+        </a>
+      </div>
+    </div>
 
-            <div className='py-6  grid gap-8 item-start justify-center'>
-                <div className='relative'>
-                    <div className='absolute -inset-1 bg-gradient-to-r  from-green-400 to-green-950 rounded-lg blur'></div>
-                    <div className='relative px-7 py-4  bg-black rounded-lg leading-none flex items-center divide-x divide-gray-600'>
-
-                        <button className={`pr-6 font-semibold text-gray-100 `} disabled={isSeiActive} onClick={handleClicks}>
-                            SEI
-                        </button>
-                        <button className={`pl-6 font-semibold text-purple-600 `} disabled={isFtmActive} onClick={handleClicks}>
-                            FTM
-                        </button>
-
-
-
-
-                    </div>
-                </div>
-            </div>
-
-            <div className="flex justify-center">
-          <a className="inline-flex items-center justify-center whitespace-nowrap rounded-md font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 dark:ring-offset-slate-950 dark:focus-visible:ring-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50 h-10 px-4 py-2 -mt-5 text-2xl text-slate-50 hover:font-bold hover:bg-transparent hover:text-slate-50" href="/deploy">
-            [Deploy a token]
-          </a>
+    <div className="py-6 grid gap-4 items-start justify-center">
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-green-950 rounded-lg blur"></div>
+        <div className="relative px-7 py-4 bg-black rounded-lg leading-none flex items-center divide-x divide-gray-600">
+          <button
+            className="pr-6 font-semibold text-gray-100 hover:text-green-400"
+            disabled={isSeiActive}
+            onClick={handleClicks}
+          >
+            SEI
+          </button>
+          <button
+            className="pl-6 font-semibold text-purple-600 hover:text-green-400"
+            disabled={isFtmActive}
+            onClick={handleClicks}
+          >
+            FTM
+          </button>
         </div>
+      </div>
+    </div>
 
+    <div className="mt-6 mb-4 flex justify-center font-semibold text-green-400">
+      <label htmlFor="sortOptions" className="mr-2">
+        Sort By:
+      </label>
+      <select
+        id="sortOptions"
+        value={sortBy}
+        onChange={handleSortChange}
+        className="px-3 py-2 bg-black border border-green-400 rounded text-green-400"
+      >
+        <option value="lastUpdatedTime">Bump Order</option>
+        <option value="lastReplyTime">Last Reply</option>
+        <option value="replies">Replies</option>
+        <option value="marketcap">Market Cap</option>
+        <option value="creationTime">Creation Time</option>
+      </select>
+      <select
+        id="orderOptions"
+        value={order}
+        onChange={handleOrderChange}
+        className="ml-2 px-3 py-2 bg-black border border-green-400 rounded text-green-400"
+      >
+        <option value="asc">Ascending</option>
+        <option value="desc">Descending</option>
+      </select>
+    </div>
 
-            {/* Sorting dropdowns */}
-            <div className="mb-4 flex  font-semibold ">
-                <label htmlFor="sortOptions" className="mr-2">Sort By:</label>
-                <select id="sortOptions" value={sortBy} onChange={handleSortChange} className="px-2 py-1 ">
-                    <option value="lastUpdatedTime">Bump Order</option>
-                    <option value="lastReplyTime">Last Reply</option>
-                    <option value="replies">Replies</option>
-                    <option value="marketcap">Market Cap</option>
-                    <option value="creationTime">Creation Time</option>
-                </select>
-                <select id="orderOptions" value={order} onChange={handleOrderChange} className="ml-2 px-2 py-1 ">
-                    <option value="asc">Ascending</option>
-                    <option value="desc">Descending</option>
-                </select>
-            </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-4 items-center border-green-950 border-8 border-double">
+      {currentTokens.map((token: Token, index: number) => (
+        <Link href={`/token/${selectedChain}/${token.token_address}`} key={index}>
+          <div className="max-h-[300px] overflow-hidden h-fit p-4 flex border border-white border-dashed hover:border-green-700 gap-4 w-full rounded-lg bg-black">
+            <img src={token?.image_url || "https://via.placeholder.com/150"} className="w-32 h-32 object-contain cursor-pointer" />
+            <ul className="text-xs leading-4 text-green-500 font-semibold">
+              <li>Created By: {token.creator}</li>
+              <li>Market Cap:{token.marketcap !== null ? token.marketcap.toLocaleString("en-US", { style: "decimal", minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ""}</li>
+              <li>Replies: {token.reply_count}</li>
+              <li>{token.token_name} '(Ticker: {token.token_ticker}): {token.token_description}"</li>
+            </ul>
+          </div>
+        </Link>
+      ))}
+    </div>
 
-            {/* Token list */}
-            <div className="grid grid-col-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-10 items-center border-green-950 border-8 border-double " >
-                {currentTokens.map((token: Token, index: number) => (
-                    <Link href={`/token/${selectedChain}/${token.token_address}`} key={index}>
-                        {/* Token card */}
-                        <div className='max-h-[300px] overflow-hidden h-fit p-2 flex border border-white border-dashed hover:border-green-700 gap-2 w-full'>
-                        <img src={token?.image_url || "https://via.placeholder.com/150"} className="w-32 h-32 object-contain cursor-pointer" />
-                            {/* You can replace this placeholder image with the actual token image */}
-                            <ul className="text-xs leading-4 text-green-500 font-semibold">
-                                <li>Created By: {token.creator}</li>
-                                <li>Market Cap: {token.marketcap.toLocaleString('en-US', {
-        style: 'decimal',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      })}</li>
-                                <li>Replies: {token.reply_count} </li>
-                                 <li>{token.token_name} '(Ticker : {token.token_ticker}) : {token.token_description}"</li>
-                            </ul>
-                        </div>
-                    </Link>
-                ))}
-            </div>
-
-            {/* Pagination */}
-            <div className="flex justify-center items-center mt-4  text-green-500 font-semibold">
-
-                <button
-                    onClick={() => setCurrentPage(currentPage > 1 ? currentPage - 1 : currentPage)}
-                    disabled={currentPage === 1}
-                    className="mr-2 px-4 py-2 border border-gray-300 rounded-md"
-                >
-                    &lt; Prev
-                </button>
-                <div className="mr-2">
-                    Page {currentPage} of {Math.ceil(tokens.length / itemsPerPage)}
-                </div>
-                <button
-                    onClick={() => setCurrentPage(currentPage < Math.ceil(tokens.length / itemsPerPage) ? currentPage + 1 : currentPage)}
-                    disabled={currentPage === Math.ceil(tokens.length / itemsPerPage)}
-                    className="px-4 py-2 border border-gray-300 rounded-md"
-                >
-                    Next &gt;
-                </button>
-
-            </div>
-
-        </>
+    <div className="flex justify-center items-center mt-8 text-green-500 font-semibold">
+      <button
+        onClick={() => setCurrentPage(currentPage > 1 ? currentPage - 1 : currentPage)}
+        disabled={currentPage === 1}
+        className="mr-2 px-4 py-2 border border-green-400 rounded-md hover:bg-green-600 disabled:opacity-50"
+      >
+        &lt; Prev
+      </button>
+      <div className="mr-2">
+        Page {currentPage} of {Math.ceil(tokens.length / itemsPerPage)}
+      </div>
+      <button
+        onClick={() => setCurrentPage(currentPage < Math.ceil(tokens.length / itemsPerPage) ? currentPage + 1 : currentPage)}
+        disabled={currentPage === Math.ceil(tokens.length / itemsPerPage)}
+        className="px-4 py-2 border border-green-400 rounded-md hover:bg-green-600 disabled:opacity-50"
+      >
+        Next &gt;
+      </button>
+    </div>
+  </div>
+</>
     );
 };
 
