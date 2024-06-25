@@ -75,7 +75,9 @@
     ]
   },
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "modules/Lock.ts"
+    
   ],
   "include": [
     "next-env.d.ts",
