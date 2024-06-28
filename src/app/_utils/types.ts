@@ -57,7 +57,8 @@ export interface TradeData {
   timestamp: number;
   trade: 'buy' | 'sell';
   // sum: number;
-  tx_hash: string
+  tx_hash: string;
+  marketcap: number;
 }
 
 export interface Reply {

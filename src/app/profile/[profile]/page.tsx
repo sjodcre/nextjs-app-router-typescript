@@ -175,7 +175,7 @@ const Profile: React.FC = () => {
 
     }
 
-  }, [currentChain,changes]);
+  }, [currentChain,changes,isFollowing]);
 
  /*  useEffect(() => {
 
@@ -398,111 +398,101 @@ const Profile: React.FC = () => {
   };
 
   return (
-    <>
-      {profileExist ? (
-        <><div className='text-white'>
+<>
+  {profileExist ? (
+    <div className="text-green-400 bg-black min-h-screen p-6 font-mono">
+      {id == address && (
+        <button
+          onClick={() => setShowModal(true)}
+          className="w-full px-4 py-2 text-sm font-medium text-black bg-green-400 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+        >
+          EDIT PROFILE
+        </button>
+      )}
 
-
-          {/* model */}
-
-          {/* Button to open the modal */}
-
-          {id == address ? (<button
-            onClick={() => setShowModal(true)}
-            className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-500 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+      {showModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-75"
+          onClick={() => setShowModal(false)}
+        >
+          <div
+            className="bg-black rounded-lg overflow-hidden shadow-xl max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
           >
-            EDIT PROFILE
-          </button>) : ''}
-
-
-
-          {/* Background overlay */}
-          {showModal && (
-            <div
-              className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-75"
-              onClick={() => setShowModal(false)}
-            >
-              {/* Modal */}
-              <div
-                className="bg-white rounded-lg overflow-hidden shadow-xl max-w-md w-full"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="px-4 py-5 sm:p-6">
-                  {/* Modal content */}
-                  <div className="flex items-center">
-
-
-                    <div className="ml-4">
-                      <h3 className="text-lg font-medium text-gray-900">EDIT PROFILE</h3>
-                      <div className='flex'>
-                        <p className="mt-1 px-2 text-sm text-gray-500">Username </p>
-                        <input className="flex h-10 rounded-md border border-slate-200 px-3 py-2  ring-offset-white text-black outline-none w-full pl-3" name="username" defaultValue={profileData.username} onChange={handleChange}></input>
-                      </div>
-                      <div>
-                        <p className="mt-1 px-2 text-sm text-gray-500">Bio</p>
-                        <div className="flex">
-                          <textarea className="rounded-md border border-slate-200   h-24 w-full p-2 text-black outline-none" name="bio" placeholder="bio" defaultValue={profileData.bio} onChange={handleReplyChange}></textarea>
-                        </div>
-                      </div>
-
-                    </div>
+            <div className="px-4 py-5 sm:p-6">
+              <div className="flex items-center">
+                <div className="ml-4">
+                  <h3 className="text-lg font-medium text-green-400">EDIT PROFILE</h3>
+                  <div className="flex flex-col mt-4">
+                    <label className="px-2 text-sm text-green-500">Username</label>
+                    <input
+                      className="rounded-md border border-gray-600 bg-black text-green-400 px-3 py-2 outline-none"
+                      name="username"
+                      defaultValue={profileData.username}
+                      onChange={handleChange}
+                    />
                   </div>
-                </div>
-                <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                  {/* Subscribe button */}
-                  <button
-                    /* onClick={() => {
-                      // Handle subscription logic here
-                      handleSubmit
-                      setShowModal(false);
-                    }} */
-                    onClick={handleSubmit} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-500 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
-                    disabled={!changes}        >
-                    Save
-                  </button>
-
-                  {/* Cancel button */}
-                  <button
-                    onClick={() => setShowModal(false)}
-                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-                  >
-                    Cancel
-                  </button>
+                  <div className="flex flex-col mt-4">
+                    <label className="px-2 text-sm text-green-500">Bio</label>
+                    <textarea
+                      className="rounded-md border border-gray-600 bg-black text-green-400 h-24 p-2 outline-none"
+                      name="bio"
+                      placeholder="bio"
+                      defaultValue={profileData.bio}
+                      onChange={handleReplyChange}
+                    ></textarea>
+                  </div>
                 </div>
               </div>
             </div>
-          )}
-
-
-          <p>Username: {profileData.username}</p>
-
-          <div className='flex justify-between w-full align-end '>
-            <p className=' pr-4'>{followerlist.length} Followers </p>
-            <button
-              className={`w-40 h-8 rounded-full bg-white text-black hover:text-black text-sm font-medium leading-5`}
-              onClick={handleFollow}>
-              {isFollowing ? 'Following' : 'Follow'}
-            </button>
+            <div className="bg-gray-900 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+              <button
+                onClick={handleSubmit}
+                className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-400 text-base font-medium text-black hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm"
+                disabled={!changes}
+              >
+                Save
+              </button>
+              <button
+                onClick={() => setShowModal(false)}
+                className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-600 shadow-sm px-4 py-2 bg-black text-base font-medium text-green-400 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
-          <p>Bio:{profileData.bio}</p>
-          <div className='text-xs sm:text-sm border border-slate-600 rounded p-2'>{profileData.account}</div>
         </div>
+      )}
 
-
-          <div className="border-8 border-indigo-600 border-dotted px-2 ">
-            <ul
-              className="flex mb-0 list-none flex-wrap pt-3 pb-4 flex-row"
-              role="tablist"
+      <div className="mt-6">
+        <p className="text-lg font-bold">Username: {profileData.username}</p>
+        <div className="flex justify-between items-center mt-4">
+          <p className="text-sm">{followerlist.length} Followers</p>
+          {id !== address && (
+            <button
+              className={`w-40 h-8 rounded-full bg-green-400 text-black hover:bg-green-600 text-sm font-medium leading-5`}
+              onClick={handleFollow}
             >
+              {isFollowing ? "Following" : "Follow"}
+            </button>
+          )}
+        </div>
+        <p className="text-sm mt-2">Bio: {profileData.bio}</p>
+        <div className="text-xs sm:text-sm border border-gray-600 rounded p-2 mt-4">
+          {profileData.account}
+        </div>
+      </div>
+
+
+          <div className="border border-green-500 border-dotted px-2 mt-6">
+            <ul className="flex mb-0 list-none flex-wrap pt-3 pb-4 flex-row" role="tablist">
+
               <li className="-mb-px mr-1 last:mr-0 flex-auto text-center">
                 <a
-                  className={
-                    "text-xs font-bold uppercase px-5 py-3 shadow-lg rounded block leading-normal " +
-                    (openTab === 1
-                      ? "text-black bg-white"
-                      : "text-white  bg-gray-600")
-                  }
-                  onClick={e => {
+                  className={`text-xs font-bold uppercase px-5 py-3 shadow-lg rounded block leading-normal ${
+                    openTab === 1 ? "text-black bg-green-400" : "text-green-400 bg-gray-800"
+                  }`}
+                  onClick={(e) => {
                     e.preventDefault();
                     setOpenTab(1);
                   }}
@@ -515,13 +505,10 @@ const Profile: React.FC = () => {
               </li>
               <li className="-mb-px mr-1 last:mr-0 flex-auto text-center">
                 <a
-                  className={
-                    "text-xs font-bold uppercase px-5 py-3 shadow-lg rounded block leading-normal " +
-                    (openTab === 2
-                      ? "text-black bg-white"
-                      : "text-white  bg-gray-600")
-                  }
-                  onClick={e => {
+                  className={`text-xs font-bold uppercase px-5 py-3 shadow-lg rounded block leading-normal ${
+                    openTab === 2 ? "text-black bg-green-400" : "text-green-400 bg-gray-800"
+                  }`}
+                  onClick={(e) => {
                     e.preventDefault();
                     setOpenTab(2);
                   }}
@@ -534,13 +521,10 @@ const Profile: React.FC = () => {
               </li>
               <li className="-mb-px mr-1 last:mr-0 flex-auto text-center">
                 <a
-                  className={
-                    "text-xs font-bold uppercase px-5 py-3 shadow-lg rounded block leading-normal " +
-                    (openTab === 3
-                      ? "text-black bg-white"
-                      : "text-white  bg-gray-600")
-                  }
-                  onClick={e => {
+                  className={`text-xs font-bold uppercase px-5 py-3 shadow-lg rounded block leading-normal ${
+                    openTab === 3 ? "text-black bg-green-400" : "text-green-400 bg-gray-800"
+                  }`}
+                  onClick={(e) => {
                     e.preventDefault();
                     setOpenTab(3);
                   }}
@@ -553,13 +537,10 @@ const Profile: React.FC = () => {
               </li>
               <li className="-mb-px mr-1 last:mr-0 flex-auto text-center">
                 <a
-                  className={
-                    "text-xs font-bold uppercase px-5 py-3 shadow-lg rounded block leading-normal " +
-                    (openTab === 4
-                      ? "text-black bg-white"
-                      : "text-white  bg-gray-600")
-                  }
-                  onClick={e => {
+                  className={`text-xs font-bold uppercase px-5 py-3 shadow-lg rounded block leading-normal ${
+                    openTab === 4 ? "text-black bg-green-400" : "text-green-400 bg-gray-800"
+                  }`}
+                  onClick={(e) => {
                     e.preventDefault();
                     setOpenTab(4);
                   }}
@@ -572,28 +553,14 @@ const Profile: React.FC = () => {
               </li>
 
             </ul>
-            <div className=" flex flex-col min-w-0 break-words bg-blak text-white w-full mb-6 shadow-lg rounded">
+            <div className="flex flex-col min-w-0 break-words bg-black text-green-400 w-full mb-6 shadow-lg rounded">
               <div className="px-4 py-5 flex-auto">
                 <div className="tab-content tab-space">
                   <div className={openTab === 1 ? "block" : "hidden"} id="link1">
 
-                    {/* {coinHeldData.map((coinData: CoinsHeld, index: number) => (
-          <Link href={`/token/${currentChain}/${coinData.token_address}`} key={index}>
-            <div className='max-h-[300px] overflow-hidden h-fit p-2 flex border hover:bg-white gap-2 w-full ' >
-              <img className='mr-4 w-12 h-auto flex' src={coinData.image_url || "https://via.placeholder.com/150"} alt="Token Image" />
-              <ul className="text-xs font-normal leading-4 text-gray-500">
-                <li>Token Address: {coinData.token_address}</li>
-                <li>Token Amout: {coinData.balance}</li>
-                <li>Token Name: {coinData.token_name}</li>
-                <li>Token Ticker: {coinData.token_ticker}</li>
-              </ul>
-            </div>
-          </Link>
-        ))} */}
-
                     {currentItems.map((coinData: CoinsHeld, index: number) => (
                       <Link href={`/token/${currentChain}/${coinData.token_address}`} key={index}>
-                        <div className='max-h-[300px] overflow-hidden h-fit p-2 flex border hover:bg-white gap-2 w-full'>
+                        <div className="max-h-[300px] overflow-hidden h-fit p-2 flex border border-green-500 hover:bg-gray-800 gap-2 w-full">
                           {/* <img className='mr-4 w-12 h-auto flex' src={coinData.image_url || "https://via.placeholder.com/150"} alt="Token Image" /> */}
                           <div className="relative mr-4 w-12 h-auto flex">
                             <Image
@@ -603,7 +570,7 @@ const Profile: React.FC = () => {
                               className="object-contain"
                             />
                           </div>
-                          <ul className="text-xs font-normal leading-4 text-gray-500">
+                          <ul className="text-xs font-normal leading-4 text-green-400">
                             <li>Token Address: {coinData.token_address}</li>
                             <li>Token Amount: {coinData.balance}</li>
                             <li>Token Name: {coinData.token_name}</li>
@@ -613,12 +580,18 @@ const Profile: React.FC = () => {
                       </Link>
                     ))}
                     <div className="flex justify-between mt-4">
-                      <button onClick={prevHeldPage} disabled={currentHeldPage === 1}
-                        className="px-4 py-2 border border-gray-300 rounded-md hover:bg-blue-700 disabled:opacity-50 text-green-500 font-semibold" >
-
+                      <button 
+                        onClick={prevHeldPage} 
+                        disabled={currentHeldPage === 1}
+                        className="px-4 py-2 border border-green-500 rounded-md hover:bg-green-600 disabled:opacity-50 text-green-400 font-semibold"
+                      >
                         Prev
                       </button>
-                      <button onClick={nextHeldPage} disabled={currentHeldPage * itemsPerPageHeld >= coinHeldData.length} className="px-4 py-2 border border-gray-300 rounded-md hover:bg-blue-700 disabled:opacity-50 text-green-500 font-semibold"  >
+                      <button 
+                        onClick={nextHeldPage} 
+                        disabled={currentHeldPage * itemsPerPageHeld >= coinHeldData.length} 
+                        className="px-4 py-2 border border-green-500 rounded-md hover:bg-green-600 disabled:opacity-50 text-green-400 font-semibold" 
+                      >
                         Next
                       </button>
                     </div>
@@ -627,27 +600,10 @@ const Profile: React.FC = () => {
                   </div>
                   <div className={openTab === 2 ? "block" : "hidden"} id="link2">
 
-                    {/* {coinCreatedData.map((coinData: CoinsCreated, index: number) => (
-          <Link href={`/token/${coinData.token_address}`} key={index}>
-            <div className='max-h-[300px] overflow-hidden h-fit p-2 flex border hover:bg-white gap-2 w-full'>
-              <img className='mr-4 w-12 h-auto flex' src={coinData.image_url || "https://via.placeholder.com/150"} alt="Token Image" />
-              <ul className="text-xs font-normal leading-4 text-gray-500">
-                <li>Token Address: {coinData.token_address}</li>
-                <li>Creator: {coinData.creator}</li>
-                <li>Token Name: {coinData.token_name}</li>
-                <li>Token Ticker: {coinData.token_ticker}</li>
-                <li>Token Description: {coinData.token_description ? (coinData.token_description.length > 20 ? coinData.token_description.slice(0, 20) + '...' : coinData.token_description) : 'No description'}</li>
-
-              </ul>
-            </div>
-          </Link>
-
-        ))} */}
                     {currentCreatedItems.map((coinData: CoinsCreated, index: number) => (
                       <Link href={`/token/${coinData.token_address}`} key={index}>
-                        <div className='max-h-[300px] overflow-hidden h-fit p-2 flex border hover:bg-white gap-2 w-full'>
+                        <div className="max-h-[300px] overflow-hidden h-fit p-2 flex border border-green-500 hover:bg-gray-800 gap-2 w-full">
                           {/* <img className='mr-4 w-12 h-auto flex' src={coinData.image_url || "https://via.placeholder.com/150"} alt="Token Image" /> */}
-
                           <div className="relative mr-4 w-12 h-auto flex">
                             <Image
                               src={coinData.image_url || "https://via.placeholder.com/150"}
@@ -656,22 +612,37 @@ const Profile: React.FC = () => {
                               className="object-contain"
                             />
                           </div>
-                          <ul className="text-xs font-normal leading-4 text-gray-500">
+                          <ul className="text-xs font-normal leading-4 text-green-400">
                             <li>Token Address: {coinData.token_address}</li>
                             <li>Creator: {coinData.creator}</li>
                             <li>Token Name: {coinData.token_name}</li>
                             <li>Token Ticker: {coinData.token_ticker}</li>
-                            <li>Token Description: {coinData.token_description ? (coinData.token_description.length > 20 ? coinData.token_description.slice(0, 20) + '...' : coinData.token_description) : 'No description'}</li>
-
+                            {/* <li>Token Description: {coinData.token_description ? (coinData.token_description.length > 20 ? coinData.token_description.slice(0, 20) + '...' : coinData.token_description) : 'No description'}</li> */}
+                            <li>
+                              Token Description:{" "}
+                              {coinData.token_description
+                                ? coinData.token_description.length > 20
+                                  ? coinData.token_description.slice(0, 20) + "..."
+                                  : coinData.token_description
+                                : "No description"}
+                            </li>
                           </ul>
                         </div>
                       </Link>
                     ))}
                     <div className="flex justify-between mt-4 ">
-                      <button onClick={prevCreatedPage} disabled={currentCreatedPage === 1} className="px-4 py-2 border border-gray-300 rounded-md hover:bg-blue-700 disabled:opacity-50 text-green-500 font-semibold" >
+                      <button
+                        onClick={prevCreatedPage}
+                        disabled={currentCreatedPage === 1}
+                        className="px-4 py-2 border border-green-500 rounded-md hover:bg-green-600 disabled:opacity-50 text-green-400 font-semibold"
+                      >
                         Prev
                       </button>
-                      <button onClick={nextCreatedPage} disabled={currentCreatedPage * itemsPerPageCreated >= coinCreatedData.length} className="px-4 py-2 border border-gray-300 rounded-md hover:bg-blue-700 disabled:opacity-50 text-green-500 font-semibold" >
+                      <button
+                        onClick={nextCreatedPage}
+                        disabled={currentCreatedPage * itemsPerPageCreated >= coinCreatedData.length}
+                        className="px-4 py-2 border border-green-500 rounded-md hover:bg-green-600 disabled:opacity-50 text-green-400 font-semibold"
+                      >
                         Next
                       </button>
                     </div>
@@ -679,7 +650,7 @@ const Profile: React.FC = () => {
                   <div className={openTab === 3 ? "block" : "hidden"} id="link3">
                     {followerlist.map((follower, index) => (
                       <Link href={`/profile/${follower.follower}`} key={index}>
-                        <div className='max-h-[300px] overflow-hidden h-fit p-2 flex border hover:bg-white gap-2 w-full justify-center'>
+                        <div className="max-h-[300px] overflow-hidden h-fit p-2 flex border border-green-500 hover:bg-gray-800 gap-2 w-full justify-center">
 
                           <li className=' list-none'>
                             {extractFirstSixCharac(follower.follower || 'unknown')}   {follower.follower_count} Followers
@@ -689,7 +660,7 @@ const Profile: React.FC = () => {
                     ))}
 
 
-                    <div className="flex justify-between mt-4">
+                    {/* <div className="flex justify-between mt-4">
                       <button onClick={prevHeldPage} disabled={currentHeldPage === 1}
                         className="px-4 py-2 border border-gray-300 rounded-md hover:bg-blue-700 disabled:opacity-50 text-green-500 font-semibold" >
 
@@ -698,24 +669,24 @@ const Profile: React.FC = () => {
                       <button onClick={nextHeldPage} disabled={currentHeldPage * itemsPerPageHeld >= coinHeldData.length} className="px-4 py-2 border border-gray-300 rounded-md hover:bg-blue-700 disabled:opacity-50 text-green-500 font-semibold"  >
                         Next
                       </button>
-                    </div>
+                    </div> */}
 
 
                   </div>
                   <div className={openTab === 4 ? "block" : "hidden"} id="link4">
                     {followeelist.map((followee, index) => (
                       <Link href={`/profile/${followee.followee}`} key={index}>
-                        <div className='max-h-[300px] overflow-hidden h-fit p-2 flex border hover:bg-white gap-2 w-full justify-center'>
+                        <div className="max-h-[300px] overflow-hidden h-fit p-2 flex border border-green-500 hover:bg-gray-800 gap-2 w-full justify-center">
 
                           <li className=' list-none'>
-                            {extractFirstSixCharac(followee.followee || 'unknown')}   {followee.followee_count} Followers
+                            {extractFirstSixCharac(followee.followee || "unknown")} {followee.followee_count} Followers
                           </li>
                         </div>
                       </Link>
                     ))}
 
 
-                    <div className="flex justify-between mt-4">
+                    {/* <div className="flex justify-between mt-4">
                       <button onClick={prevHeldPage} disabled={currentHeldPage === 1}
                         className="px-4 py-2 border border-gray-300 rounded-md hover:bg-blue-700 disabled:opacity-50 text-green-500 font-semibold" >
 
@@ -724,7 +695,7 @@ const Profile: React.FC = () => {
                       <button onClick={nextHeldPage} disabled={currentHeldPage * itemsPerPageHeld >= coinHeldData.length} className="px-4 py-2 border border-gray-300 rounded-md hover:bg-blue-700 disabled:opacity-50 text-green-500 font-semibold"  >
                         Next
                       </button>
-                    </div>
+                    </div> */}
 
 
                   </div>
@@ -733,7 +704,9 @@ const Profile: React.FC = () => {
             </div>
           </div>
 
-        </>) : ''};
+        ) : (
+          ""
+        )};
 
 
     </>

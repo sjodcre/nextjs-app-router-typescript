@@ -7,7 +7,7 @@ import { query } from "../../db";
 
 export  async function POST(req: Request) {
   const data = await req.json();
-  const { tokenAddress, account, tx_status,token_amount, native_amount, time, price, volume,trade, tx_hash } = data;
+  const { tokenAddress, account, tx_status,token_amount, native_amount, time, price, volume,trade, tx_hash ,nativeTokenPrice} = data;
   console.log("updating database...")
 
   // Validate inputs
@@ -40,8 +40,19 @@ export  async function POST(req: Request) {
         }
 
 
+    // Calculate market cap if tradesData and nativeTokenPrice are available
+ 
+        const marketCap = sum_token* price * nativeTokenPrice / 1E18;
+        const formattedMarketCap = marketCap.toLocaleString('en-US', {
+          style: 'decimal',
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+       
+      console.log(marketCap+':'+formattedMarketCap)
         // transaction_history table
-        let result2 = await query(`UPDATE ${transactionTableName} SET sum_native = $1 ,sum_token = $2, tx_status = $3 , timestamp = $4 , token_amount = $5 , price_per_token = $6 WHERE tx_hash = $7 RETURNING txid` , [sum_native, sum_token, tx_status, time , token_amount, price, tx_hash]);
+        let result2 = await query(`UPDATE ${transactionTableName} SET sum_native = $1 ,sum_token = $2, tx_status = $3 , timestamp = $4 , token_amount = $5 , price_per_token = $6, marketcap = $7 WHERE tx_hash = $8 RETURNING txid` , [sum_native, sum_token, tx_status, time , token_amount, price, marketCap, tx_hash]);
+
         console.log("transaction&ohlc result", result2)
         // const sqlCheck = `SELECT * FROM ${transactionTableName} WHERE tx_hash = $1 `;
         // const existingRow = await query(sqlCheck, [tx_hash]);

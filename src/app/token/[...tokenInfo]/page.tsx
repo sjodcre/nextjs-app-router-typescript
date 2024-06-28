@@ -363,7 +363,6 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     setTrades(tradesData);
     setTokenSum(tradesData[0].sum_token);
     setNativeSum(tradesData[0].sum_native);
-
     // getTopTokenHolders(params.tokenInfo[0], params.tokenInfo[1]);
     fetchHolders();
     // Calculate market cap if tradesData and nativeTokenPrice are available
@@ -405,6 +404,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
       console.log("native token price", nativeTokenPrice)
       setMarketCap(formattedMarketCap);
     }
+
     console.log("data fetch");
   };
 
@@ -809,6 +809,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                 }).catch(error => {
                   console.error('Error handling logs:', error);
                   setIsTrading(false);
+
                 });
           
               }
@@ -950,6 +951,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                 }).catch(error => {
                   console.error('Error handling logs:', error);
                   setIsTrading(false);
+
                 });
           
               }
@@ -1389,8 +1391,8 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                 </div>
                 {replies.length > 0 ? (
                   <div>
-                    {/* {currentThread.map((reply) => (
-                      <div className="grid gap-4 px-1 items-center border-green-950 border-8 border-double " key={reply.id}>
+                    {currentThread.map((reply,index) => (
+                      <div className="grid gap-4 px-1 items-center border-green-950 border-8 border-double "  key={reply.id || index}>
 
                         <div className="flex flex-wrap gap-2 text-slate-400 text-xs items-start w-full">
                           <a href={`/profile/${reply.creator}`}>
@@ -1412,7 +1414,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                           {reply.text}
                         </div>
                       </div>
-                    ))} */}
+                    ))} 
                     <div className="pagination">
                       <button onClick={() => setCurrentThreadPage(prev => Math.max(prev - 1, 1))} disabled={currentThreadPage === 1} 
                       className="mr-2 px-4 py-2 border border-gray-300 rounded-md text-green-500 font-semibold">
