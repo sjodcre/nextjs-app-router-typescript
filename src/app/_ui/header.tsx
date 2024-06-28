@@ -1,6 +1,6 @@
 "use client"
 import Link from 'next/link';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 // import ConnectButton from './connect-button';
 import { useWeb3Modal, useWeb3ModalAccount, useWeb3ModalProvider } from '@web3modal/ethers5/react';
 import { extractFirstSixCharac } from '../_utils/helpers';
@@ -53,9 +53,45 @@ const Header = () => {
     }
   }, [address, chainId, providerReady]);
 
+
+  async function fetchBalance(walletProvider: any) {
+    const signer = await walletProvider.getSigner();
+    const signerAddr = await signer.getAddress();
+    const balance = await walletProvider.getBalance(signerAddr);
+    // console.log(`Balance: ${ethers.utils.formatEther(balance)} SEI`);
+    return ethers.utils.formatEther(balance)
+  }
+  
+  // const fetchBalance = useCallback(async (walletProvider: any) => {
+  //   try {
+
+  //     const signer = await walletProvider.getSigner();
+  //     const signerAddr = await signer.getAddress();
+  //     const balance = await walletProvider.getBalance(signerAddr);
+  //     return ethers.utils.formatEther(balance);
+  //   } catch (error) {
+  //     console.error("Failed to fetch balance:", error);
+  //     return "0"; // return 0 balance on error
+  //   }
+  // }, []);
+
+  // useEffect(() => {
+  //   if (providerReady && walletProvider) {
+  //     console.log("make sure not infinite loop part 2")
+  //     const ethersProvider = new ethers.providers.Web3Provider(walletProvider);
+  //     fetchBalance(ethersProvider).then(balance => {
+  //       console.log("balance i got ", balance);
+  //       setCurrentBalance(Number(balance));
+  //     }).catch(error => {
+  //       console.error("Failed to fetch balance:", error);
+  //     });
+  //   }
+  // }, [address, chainId, providerReady, walletProvider, fetchBalance]);
+
   useEffect( () => {
     const SEI_CHAIN_ID = 713715;
-    const FTM_CHAIN_ID = 64165;
+    // const FTM_CHAIN_ID = 64165;
+    const FTM_CHAIN_ID = 250;
 
     if(chainId){
       if (chainId === SEI_CHAIN_ID){
@@ -67,18 +103,8 @@ const Header = () => {
     }
   }, [chainId]);
 
-  // const balance = await walletProvider.getBalance(address);
-  // console.log(`Balance: ${ethers.utils.formatEther(balance)} SEI`);
-  // const profile = "0x742d35cc6634c0532925a3b844bc454e4438f44e"; 
-  // const otherProfile = "21SY6TNeVgm23crGFMRdLoifTmQxMknNUpZf44YXPLj2";
 
-  async function fetchBalance(walletProvider: any) {
-    const signer = await walletProvider.getSigner();
-    const signerAddr = await signer.getAddress();
-    const balance = await walletProvider.getBalance(signerAddr);
-    // console.log(`Balance: ${ethers.utils.formatEther(balance)} SEI`);
-    return ethers.utils.formatEther(balance)
-  }
+
 
   useEffect(() => {
     if (currentChain) {
@@ -96,6 +122,23 @@ const Header = () => {
       console.error('Error init:', error);
     }
   };
+  // const initProfile = useCallback(async () => {
+  //   try {
+  //     const response = await fetch(`/api/initProfile?id=${address}&chain=${currentChain}`);
+  //     if (!response.ok) {
+  //       throw new Error('Failed to init');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error init:', error);
+  //   }
+  // }, [address, currentChain]);
+
+  // useEffect(() => {
+  //   if (currentChain && isConnected) {
+  //     initProfile();
+  //     console.log("making sure code not infinite loop")
+  //   }
+  // }, [currentChain, isConnected, initProfile]);
 
 
 

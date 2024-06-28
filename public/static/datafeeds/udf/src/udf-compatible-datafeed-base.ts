@@ -78,12 +78,19 @@ export interface ResolveSymbolResponse extends LibrarySymbolInfo {
 
 // it is hack to let's TypeScript make code flow analysis
 export interface UdfSearchSymbolsResponse extends Array<SearchSymbolResultItem> {
-	s?: undefined;
 }
 
 export const enum Constants {
 	SearchItemsLimit = 30,
 }
+
+function isUdfErrorResponseSearchSymbol(response: UdfSearchSymbolsResponse | UdfErrorResponse): response is UdfErrorResponse {
+	return (response as UdfErrorResponse).errmsg !== undefined;
+}
+
+function isUdfErrorResponseResolveSymbol(response: ResolveSymbolResponse | UdfErrorResponse): response is UdfErrorResponse {
+	return (response as UdfErrorResponse).errmsg !== undefined;
+  }
 
 type UdfDatafeedMarkType<T extends TimescaleMark | Mark> = {
 	[K in keyof T]: T[K] | T[K][];
@@ -277,13 +284,19 @@ export class UDFCompatibleDatafeedBase implements IExternalDatafeed, IDatafeedQu
 
 			this._send<UdfSearchSymbolsResponse | UdfErrorResponse>('search', params)
 				.then((response: UdfSearchSymbolsResponse | UdfErrorResponse) => {
-					if (response.s !== undefined) {
+					// if (response.s !== undefined) {
+					// 	logMessage(`UdfCompatibleDatafeed: search symbols error=${response.errmsg}`);
+					// 	onResult([]);
+					// 	return;
+					// }
+
+					// onResult(response);
+					if (isUdfErrorResponseSearchSymbol(response)) {
 						logMessage(`UdfCompatibleDatafeed: search symbols error=${response.errmsg}`);
 						onResult([]);
-						return;
-					}
-
-					onResult(response);
+					  } else {
+						onResult(response); // response is UdfSearchSymbolsResponse
+					  }
 				})
 				.catch((reason?: string | Error) => {
 					logMessage(`UdfCompatibleDatafeed: Search symbols for '${userInput}' failed. Error=${getErrorMessage(reason)}`);
@@ -325,9 +338,13 @@ export class UDFCompatibleDatafeedBase implements IExternalDatafeed, IDatafeedQu
 
 			this._send<ResolveSymbolResponse | UdfErrorResponse>('symbols', params)
 				.then((response: ResolveSymbolResponse | UdfErrorResponse) => {
-					if (response.s !== undefined) {
+					// if (response.s !== undefined) {
+					// 	onError('unknown_symbol');
+					// } 
+					if (isUdfErrorResponseResolveSymbol(response)) {
 						onError('unknown_symbol');
-					} else {
+					}
+					else {
 						const symbol = response.name;
 						const listedExchange = response.listed_exchange ?? response['exchange-listed'];
 						const tradedExchange = response.exchange ?? response['exchange-traded'];

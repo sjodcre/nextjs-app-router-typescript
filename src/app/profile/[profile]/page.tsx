@@ -2,9 +2,9 @@
 import { useState, useEffect } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAppSelector } from '@/app/_redux/store';
 import React from 'react';
-import PopUp from '@/app/_ui/popup';
 import { useWeb3ModalAccount, useWeb3ModalProvider } from '@web3modal/ethers5/react';
 import { toast } from 'react-toastify';
 import { extractFirstSixCharac } from '@/app/_utils/helpers';
@@ -127,7 +127,9 @@ const Profile: React.FC = () => {
   //popup model
   const [showModal, setShowModal] = useState(false);
   const SEI_CHAIN_ID = 713715;
-  const FTM_CHAIN_ID = 64165;
+  // const FTM_CHAIN_ID = 64165;
+  const FTM_CHAIN_ID = 250;
+
 
   useEffect(() => {
 
@@ -592,7 +594,15 @@ const Profile: React.FC = () => {
                     {currentItems.map((coinData: CoinsHeld, index: number) => (
                       <Link href={`/token/${currentChain}/${coinData.token_address}`} key={index}>
                         <div className='max-h-[300px] overflow-hidden h-fit p-2 flex border hover:bg-white gap-2 w-full'>
-                          <img className='mr-4 w-12 h-auto flex' src={coinData.image_url || "https://via.placeholder.com/150"} alt="Token Image" />
+                          {/* <img className='mr-4 w-12 h-auto flex' src={coinData.image_url || "https://via.placeholder.com/150"} alt="Token Image" /> */}
+                          <div className="relative mr-4 w-12 h-auto flex">
+                            <Image
+                              src={coinData.image_url || "https://via.placeholder.com/150"}
+                              alt="Token Image"
+                              fill
+                              className="object-contain"
+                            />
+                          </div>
                           <ul className="text-xs font-normal leading-4 text-gray-500">
                             <li>Token Address: {coinData.token_address}</li>
                             <li>Token Amount: {coinData.balance}</li>
@@ -636,7 +646,16 @@ const Profile: React.FC = () => {
                     {currentCreatedItems.map((coinData: CoinsCreated, index: number) => (
                       <Link href={`/token/${coinData.token_address}`} key={index}>
                         <div className='max-h-[300px] overflow-hidden h-fit p-2 flex border hover:bg-white gap-2 w-full'>
-                          <img className='mr-4 w-12 h-auto flex' src={coinData.image_url || "https://via.placeholder.com/150"} alt="Token Image" />
+                          {/* <img className='mr-4 w-12 h-auto flex' src={coinData.image_url || "https://via.placeholder.com/150"} alt="Token Image" /> */}
+
+                          <div className="relative mr-4 w-12 h-auto flex">
+                            <Image
+                              src={coinData.image_url || "https://via.placeholder.com/150"}
+                              alt="Token Image"
+                              fill
+                              className="object-contain"
+                            />
+                          </div>
                           <ul className="text-xs font-normal leading-4 text-gray-500">
                             <li>Token Address: {coinData.token_address}</li>
                             <li>Creator: {coinData.creator}</li>

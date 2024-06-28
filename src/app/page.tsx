@@ -1,6 +1,8 @@
 "use client"
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
+
 //redux
 import { setChain } from "@/app/_redux/features/chain-slice";
 import { useDispatch } from 'react-redux';
@@ -34,7 +36,7 @@ const Home: React.FC = () => {
     const [selectedChain, setSelectedChain] = useState<string>('sei');  // Default sort by market cap
     const [order, setOrder] = useState<string>('desc'); // Default order is descending
     const [currentPage, setCurrentPage] = useState<number>(1);
-    const [itemsPerPage] = useState<number>(15); // Number of items to display per page
+    const [itemsPerPage] = useState<number>(15); 
     const [isSeiActive, setIsSeiActive] = useState(true);
     const [isFtmActive, setIsFtmActive] = useState(false);
 
@@ -57,11 +59,31 @@ const Home: React.FC = () => {
         }
     };
 
+    // const fetchTokens = useCallback(async () => {
+    //     try {
+    //       const response = await fetch(`/api?sortBy=${sortBy}&order=${order}&chain=${selectedChain}`);
+    //       if (!response.ok) {
+    //         throw new Error('Failed to fetch tokens');
+    //       }
+    //       const data = await response.json();
+    //       console.log("data", data);
+    //       setTokens(data);
+    //     } catch (error) {
+    //       console.error('Error fetching data:', error);
+    //     }
+    //   }, [sortBy, order, selectedChain]);
+
 
     useEffect(() => {
         dispatch(setChain(selectedChain));
         fetchTokens();
     }, [sortBy, order, selectedChain]);
+
+    // useEffect(() => {
+    //     dispatch(setChain(selectedChain));
+    //     console.log("infinite loop check 3")
+    //     fetchTokens();
+    //   }, [dispatch, fetchTokens, sortBy, order, selectedChain]);
 
     // Calculate pagination
     const indexOfLastToken = currentPage * itemsPerPage;
@@ -206,13 +228,19 @@ const Home: React.FC = () => {
                     <Link href={`/token/${selectedChain}/${token.token_address}`} key={index}>
                         {/* Token card */}
                         <div className='max-h-[300px] overflow-hidden h-fit p-2 flex border border-white border-dashed hover:border-green-700 gap-2 w-full'>
-                        <img src={token?.image_url || "https://via.placeholder.com/150"} className="w-32 h-32 object-contain cursor-pointer" />
-                            {/* You can replace this placeholder image with the actual token image */}
+                        {/* <img src={token?.image_url || "https://via.placeholder.com/150"} className="w-32 h-32 object-contain cursor-pointer" /> */}
+                        <Image 
+                        src={token?.image_url || "https://via.placeholder.com/150"} 
+                        width={128} 
+                        height={128} 
+                        className="w-32 h-32 object-contain cursor-pointer" 
+                        alt={token?.token_name || "Placeholder image"} 
+                        />
                             <ul className="text-xs leading-4 text-green-500 font-semibold">
                                 <li>Created By: {token.creator}</li>
                                 <li>Market Cap: {token.marketcap} </li>
                                 <li>Replies: {token.reply_count} </li>
-                                 <li>{token.token_name} '(Ticker : {token.token_ticker}) : {token.token_description}"</li>
+                                 <li>{token.token_name} (Ticker : {token.token_ticker}) : {token.token_description}</li>
                             </ul>
                         </div>
                     </Link>

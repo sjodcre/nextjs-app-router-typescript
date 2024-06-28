@@ -1,4 +1,6 @@
 "use client"
+import Image from 'next/image';
+
 
 export default function TokenLayout ({ params }: { params: { tokenAddress: string } }) {
 
@@ -10,7 +12,15 @@ export default function TokenLayout ({ params }: { params: { tokenAddress: strin
           <h1 className="text-3xl font-bold mb-8">
               Uncharted Territory 404. Please navigate correctly!
           </h1>
-          <img src="/skull-head.jpg" alt="Uncharted Territory" className="w-auto max-w-md" />
+          {/* <img src="/skull-head.jpg" alt="Uncharted Territory" className="w-auto max-w-md" /> */}
+          <div className="relative w-auto max-w-md">
+            <Image
+              src="/skull-head.jpg"
+              alt="Uncharted Territory"
+              fill
+              className="object-contain"
+            />
+          </div>
       </div>
   );
   

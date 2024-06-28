@@ -29,7 +29,7 @@ export  async function POST(req: Request) {
 
         const result = await query(sql, [tokenAddress, tokenAddress]);
 
-        let sum_token = result ? result[0].sum_token : 1E16; 
+        let sum_token = result ? result[0].sum_token : 5E18; 
         if (tx_status ==="successful") {
             sum_token = trade === 'buy' ? sum_token + token_amount : sum_token - token_amount;
         }
@@ -41,7 +41,7 @@ export  async function POST(req: Request) {
 
 
         // transaction_history table
-        let result2 = await query(`UPDATE ${transactionTableName} SET sum_native = $1 ,sum_token = $2, tx_status = $3 , timestamp = $4 , token_amount = $5 WHERE tx_hash = $6 RETURNING txid` , [sum_native, sum_token, tx_status, time , token_amount, tx_hash]);
+        let result2 = await query(`UPDATE ${transactionTableName} SET sum_native = $1 ,sum_token = $2, tx_status = $3 , timestamp = $4 , token_amount = $5 , price_per_token = $6 WHERE tx_hash = $7 RETURNING txid` , [sum_native, sum_token, tx_status, time , token_amount, price, tx_hash]);
         console.log("transaction&ohlc result", result2)
         // const sqlCheck = `SELECT * FROM ${transactionTableName} WHERE tx_hash = $1 `;
         // const existingRow = await query(sqlCheck, [tx_hash]);

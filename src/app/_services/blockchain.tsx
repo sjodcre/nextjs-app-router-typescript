@@ -13,10 +13,8 @@ import ManagerArtifact from '@/../artifacts/contracts/Manager.sol/Manager.json'
 
 
 
-let ethereum: any
 let tx: any
-// const { walletProvider } = useWeb3ModalProvider()
-if (typeof window !== 'undefined') ethereum = (window as any).ethereum
+// // const { walletProvider } = useWeb3ModalProvider()
 // const { setEvent, setTickets } = globalActions
 
 
@@ -26,12 +24,18 @@ async function deployManager(walletProvider: any) {
     return Promise.reject(new Error('Browser provider not installed/not connected'))
   }
 
+  
+
   const provider = new ethers.providers.Web3Provider(walletProvider); // Use MetaMask provider
   const signer = provider.getSigner();
+  const network = await provider.getNetwork();
+  console.log('Connected to network:', network);
+  const gasPrice1 = await provider.getGasPrice();
+  console.log('Current gas price:', gasPrice1.toString());
   const feeReceiver = "0x0287b980Ffb856cfF0cB61B926219ccf977B6fB4"; // Replace with your address
   const feeAmount = ethers.utils.parseUnits("0.1", 18);
-  const contractOwner = "0xf759c09456A4170DCb5603171D726C3ceBaDd3D5" 
-
+  const contractOwner = "0xC439d846b4243189820dFF9CF77D1c8573759710" 
+  const gasPrice = ethers.utils.parseUnits('20', 'gwei');
   const ManagerFactory = new ethers.ContractFactory(
       ManagerArtifact.abi,
       ManagerArtifact.bytecode,
@@ -40,7 +44,8 @@ async function deployManager(walletProvider: any) {
 
   try {
       const ManagerContract = await ManagerFactory.deploy(feeReceiver, feeAmount, contractOwner ,{
-          gasLimit: 10000000 // Adjust based on your needs
+          gasLimit: 5000000, // Adjust based on your needs
+          gasPrice: gasPrice,
       });
 
       console.log("Deploying Manager contract...");
@@ -51,7 +56,7 @@ async function deployManager(walletProvider: any) {
 
       return ManagerContract.address;
   } catch (error) {
-      console.error("Error deploying Manager contract:", error);
+      console.error("Error deploying Manager contract:", JSON.stringify(error,null,4));
       throw error;
   }
 }
@@ -64,47 +69,31 @@ const deployToken = async (selectedChain: string, token: TokenParams, mintAmount
   let managerContractAddress = '';
   if (selectedChain === "sei"){
     // managerContractAddress = "0xF55f799E94F2908bd4482C875223fB827961C1E4"
-    managerContractAddress = "0x4F5b661a97235Bd129416eDbF070b35842EB7691" //test bug
+    managerContractAddress = "0x4f37dbac5910A3463a9EF18B083b579B5Fa57D03" //test bug
 
   } else if (selectedChain === "ftm"){
-    // managerContractAddress = "0x9CE7A39Eaa1B8df86f48828799276d213C1a4761"
-    managerContractAddress = "0xceA6cEC23F5B1a18A97fFae0a8c06B26775Abc64" //test bug
+    managerContractAddress = "0x427Ef3bf806b1BE00919ac894FCbE919ccaEf73D" //mainnet spooky
+    // managerContractAddress = "0xceA6cEC23F5B1a18A97fFae0a8c06B26775Abc64" //testnet
+    // managerContractAddress = "0x08A675f4297Df156Fb32A4f0ec534E6D863e706e" //mainnet
   } else {
     console.error("incorrect chain network!");
       throw new Error("incorrect chain network!");
   }
+
   const provider = new ethers.providers.Web3Provider(walletProvider)
   const signer = await provider.getSigner()
   const signerAddr = await signer.getAddress();
   const ManagerContract = new ethers.Contract(managerContractAddress, ManagerArtifact.abi, signer);
-  
-  // const ERC20_Token = new ContractFactory(
-  //     ERC20TestArtifact.abi,
-  //     ERC20TestArtifact.bytecode,
-  //     signer
-  // );
-  
 
   try {
-
-    // const ERC20Contract = await ERC20_Token.deploy(
-    //     Number(token.reserveRatio),
-    //     token.name,
-    //     token.ticker,
-    //     {
-    //       gasLimit: 5000000  // Adjust this number based on your needs
-    //     }
-    // );
-
-    // const txHash = ERC20Contract.deployTransaction.hash;
-    // await ERC20Contract.deployed();
-    // const contractAddress = ERC20Contract.address;  // Contract address can be retrieved directly
     console.log("minAmount", mintAmount)
     const feeAmount = ethers.utils.parseUnits("0.1", 18) // Payment amount in ETH
     const mintAmountWFees = mintAmount *1.01
     const mintAmountParse = ethers.utils.parseUnits(mintAmountWFees.toString(), 18)
     const totalPayment = feeAmount.add(mintAmountParse);
     const mintValue = Number(mintAmountParse)
+    const gasPrice = ethers.utils.parseUnits('20', 'gwei');
+
     console.log("mintValue", mintValue)
     const tx = await ManagerContract.deployERC20(
       (token.reserveRatio).toString(),
@@ -114,8 +103,10 @@ const deployToken = async (selectedChain: string, token: TokenParams, mintAmount
       mintValue.toString(),
       {
           value: totalPayment,
-          gasLimit: ethers.utils.hexlify(10000000) // Adjust this number based on your needs
-      }
+          gasLimit: 5000000,
+          gasPrice: gasPrice,
+
+        }
     );
      // Wait for the transaction to be mined
      const receipt = await tx.wait();
@@ -203,11 +194,35 @@ const mintToken = async (
 
     // console.log("ethValue used to calculate slippage", ethValue)
     try {
-      // const contract = await getEthereumContracts()
-      const {estToken,estTokenWSlippage} = calculateMinTokensWithSlippage(tokenSum, reserveBalance, reserveRatio, ethValue, slippage);
+      let {estToken,estTokenWSlippage} = calculateMinTokensWithSlippage(tokenSum, reserveBalance, reserveRatio, ethValue, slippage);
       
       console.log("estTokenWSlippage", estTokenWSlippage)
       console.log("estToken", estToken)
+      const tokensRemain = await ERC20TestContract.getTokensRemaining();
+      console.log("tokens remaining", tokensRemain.toString())
+      if(estToken > tokensRemain){
+        console.log("token to buy too much")
+      //   let depositAmount = calculateRequiredDeposit(tokenSum, reserveBalance, reserveRatio, Number(tokensRemain));
+      // // console.log("estimated deposit required", depositAmount);
+      //   const feeDeposit = depositAmount * feePercentage;
+      //   let totalDepositAmount = Math.round(depositAmount + feeDeposit);
+      //   // console.log("plus fees", totalDepositAmount)
+      //   // console.log("format depost units", ethers.utils.formatUnits(totalDepositAmount.toString(), 18))
+      //   options = {
+      //     value: ethers.utils.parseUnits(totalDepositAmount.toString(),0),
+      //     gasLimit: ethers.utils.hexlify(1000000), // Correct use of hexlify
+      //   };
+      //   ethValue = depositAmount;
+      //   ({ estToken, estTokenWSlippage } = calculateMinTokensWithSlippage(tokenSum, reserveBalance, reserveRatio, ethValue, slippage));
+
+      }
+
+      // {estToken,estTokenWSlippage} = calculateMinTokensWithSlippage(tokenSum, reserveBalance, reserveRatio, ethValue, slippage);
+      
+      // console.log("estTokenWSlippage again", estTokenWSlippage)
+      // console.log("estToken again", estToken)
+
+
       let info = {
         status: 'pending',
         selectedChain: chain,
@@ -258,7 +273,6 @@ const mintToken = async (
     const ERC20TestContract = new Contract(tokenAddress, ERC20TestArtifact.abi, provider);
     console.log("signerAddr check", signerAddr)
     try {
-      // const contract = await getEthereumContracts()
       tx = await ERC20TestContract.balanceOf(signerAddr)
   
       console.log(tx)
@@ -315,7 +329,6 @@ const mintToken = async (
         trade: 'sell',
         txHash: ''
       };
-      // const contract = await getEthereumContracts()
       const burnTx = await ERC20TestContract.burn(tokenAmountToTrade.toString(), estAmountWSlippage.toString(), options);
       const txHash = burnTx.hash;
       info.txHash = txHash;

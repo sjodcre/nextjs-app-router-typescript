@@ -13,6 +13,10 @@ module.exports = {
       accounts: ["0499308649cbfa0231701a19ee71d9c4204be4a8a14ac9e1bb8ccc41c9be57bf"],
       chainId: 355113,
     },
+    fantom: {
+      url: 'https://rpc.ankr.com/fantom/',
+      accounts: ['0499308649cbfa0231701a19ee71d9c4204be4a8a14ac9e1bb8ccc41c9be57bf'], // Replace with your private key
+    },
   },
   solidity: {
     version: '0.8.20',

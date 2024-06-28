@@ -15,7 +15,7 @@
 		"outDir": "./lib/",
 		"rootDir": "src",
 		"sourceMap": false,
-		"strict": false,
+		"strict": true,
 		"target": "es2018",
 		"types": []
 	},
