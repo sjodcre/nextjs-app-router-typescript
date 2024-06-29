@@ -119,3 +119,11 @@ export const formatTokenAmount = (tokenAmount: number): string => {
         return `${(amount / 1e9).toFixed(2)}b`;
     }
 };
+
+export const formatMarketCap = (num: number) => {
+    return num.toLocaleString('en-US', {
+      style: 'decimal',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };

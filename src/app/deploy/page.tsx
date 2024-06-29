@@ -72,7 +72,7 @@ export default function Deploy() {
 	useEffect(() => {
         dispatch(setChain(selectedChain));
 
-    }, [dispatch, setChain, selectedChain]);
+    }, [dispatch, selectedChain]);
 
 	// const handleChange = (e: { target: { name: any; value: any; }; }) => {
 	// 	const { name, value } = e.target;
@@ -112,9 +112,16 @@ export default function Deploy() {
 		if (fieldName === 'name' && typeof value === 'string' && value.trim().length > 9) {
 			error = 'Name should be less than 10 characters';
 		}
+		
+		if (fieldName === 'name' && typeof value === 'string' && value === "" ) {
+			error = 'Name should not be empty';
+		}
 
 		if (fieldName === 'ticker' && typeof value === 'string' && value.trim().length > 9) {
 			error = 'Ticker should be less than 10 characters';
+		}
+		if (fieldName === 'ticker' && typeof value === 'string' && value === "") {
+			error = 'Ticker should not be empty';
 		}
 
 		if (fieldName === 'mintAmount') {
@@ -181,9 +188,9 @@ export default function Deploy() {
 		return new Promise((resolve, reject) => {
 			// Assuming chain IDs for 'sei' and 'ftm' as constants for clarity
 			const SEI_CHAIN_ID = 713715;
-			const FTM_CHAIN_ID = 64165;
-	
-			let targetChainId = null;
+			// const FTM_CHAIN_ID = 64165;
+			const FTM_CHAIN_ID = 250;
+			let targetChainId = 250;
 	
 			if (selectedChain === "sei" && chainId !== SEI_CHAIN_ID) {
 				targetChainId = SEI_CHAIN_ID;

@@ -41,10 +41,10 @@ export const initOHLCData = async (selectedChain: string, tokenAddress: string, 
         const transactionData = {
             tokenAddress: tokenAddress, // Replace with actual token address
             account: creator,
-            token_amount:1E16,
+            token_amount:5E18,
             native_amount: 0,
             time: datetime,
-            price :1E-15,
+            price :0.4,
             volume: 0,
             trade: 'init',
             tx_hash: txHash

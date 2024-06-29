@@ -7,6 +7,7 @@
     "dev": "node server.mjs",
     "build": "next build",
     "start": "NODE_ENV=production node server.mjs",
+    "compile": "tsc",
     "lint": "next lint",
     "testscript": "npx ts-node src/app/_services/arweave.ts",
     "dev:bot": "node src/bot.js",
@@ -14,9 +15,9 @@
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.2.3",
-    "@types/socket.io": "^3.0.2",
     "@web3modal/ethers5": "^4.1.11",
     "arweave": "^1.15.0",
+    "axios": "^1.7.2",
     "dotenv": "^16.4.5",
     "ethers": "5.7.2",
     "eventemitter3": "^5.0.1",
@@ -28,7 +29,9 @@
     "react-redux": "^9.1.1",
     "react-toastify": "^10.0.5",
     "socket.io": "^4.7.5",
-    "socket.io-client": "^4.7.5"
+    "socket.io-client": "^4.7.5",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.15.2"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^2.0.2",
@@ -45,6 +48,6 @@
     "hardhat": "^2.22.2",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.3",
-    "typescript": "^5.4.5"
+    "typescript": "5.3.2"
   }
 }

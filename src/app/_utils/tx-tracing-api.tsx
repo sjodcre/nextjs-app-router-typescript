@@ -71,7 +71,8 @@ import { ethers } from "ethers";
   export default async function getTransactionStatus(chainId:string, txHash: string): Promise<{result: ethers.providers.TransactionReceipt, timestamp: number}> {
     let url = ''
     if (chainId === 'ftm'){
-        url = 'https://rpc.sonic.fantom.network/'
+        // url = 'https://rpc.sonic.fantom.network/'
+        url = 'https://rpc.ankr.com/fantom/'
     } else if ( chainId ==='sei') {
         url = 'https://cool-aged-owl.sei-arctic.quiknode.pro/177cc0d1e96c821bc0cdd8bb9dbf72157f1a5e1d/'
     } else {

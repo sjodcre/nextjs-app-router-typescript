@@ -43,7 +43,7 @@ const useSocket = (listeners: EventListener[] = []) => {
 
   useEffect(() => {
     const onConnect = () => {
-        setIsSocketConnected(true);
+      setIsSocketConnected(true);
       setTransport(socket.io.engine.transport.name);
       socket.io.engine.on("upgrade", (transport: { name: string; }) => {
         setTransport(transport.name);
@@ -57,6 +57,10 @@ const useSocket = (listeners: EventListener[] = []) => {
 
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
+    
+    listenersRef.current.forEach(({ event, handler }) => {
+      socket.on(event, handler);
+    });
 
     socket.on('refresh', (data: { chartResolution: number; deposit: string; amount: string; timestamp: string; token_description: string; token_ticker: any; token_name: any; }) => {
       console.log('[socket] Message at refresh:', data);
@@ -95,7 +99,7 @@ const useSocket = (listeners: EventListener[] = []) => {
       // const nextFiveMinsBarTime = getNextFiveMinuteBarTime(lastFiveMinsBar);
       console.log("nextFiveMinsBarTime", nextBarTime)
       console.log("tradeTime", tradeTime)
-      let bar;
+      let bar = {};
       if (tradeTime >= nextBarTime) {
           bar = {
               time: nextBarTime*1000,

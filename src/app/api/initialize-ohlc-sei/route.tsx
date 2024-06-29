@@ -21,7 +21,7 @@ export async function POST(req: Request) {
   const ohlcTableName = 'ohlc_sei';
 
   try {
-    let sum_token = 1E16;
+    let sum_token = 5E18;
     let sum_native = 1E17;
     let tx_status = 'successful'
 

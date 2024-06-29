@@ -25,14 +25,14 @@ export async function POST(req: Request) {
 
       const sql = `
       INSERT INTO ${tokenListTableName} 
-      (token_address, token_ticker, token_name, token_description, image_url, creator, datetime, twitter, telegram, website)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      (token_address, token_ticker, token_name, token_description, image_url, creator, datetime, twitter, telegram, website, dex_url)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       `;
 
     // console.log('Executing query:', query);
     // console.log('With parameters:', [token_address, token_ticker, token_name, token_description, image_url, creator, datetime, twitter || '', telegram || '', website || '']);
 
-    await query(sql, [token_address, token_ticker, token_name, token_description, image_url, creator, datetime, twitter || '', telegram || '', website || '']);
+    await query(sql, [token_address, token_ticker, token_name, token_description, image_url, creator, datetime, twitter || '', telegram || '', website || '', '']);
 
     return new Response(JSON.stringify({ message: 'Token data saved successfully.' }), { status: 201 });
 

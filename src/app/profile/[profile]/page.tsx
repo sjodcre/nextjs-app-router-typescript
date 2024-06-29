@@ -2,9 +2,9 @@
 import { useState, useEffect } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAppSelector } from '@/app/_redux/store';
 import React from 'react';
-import PopUp from '@/app/_ui/popup';
 import { useWeb3ModalAccount, useWeb3ModalProvider } from '@web3modal/ethers5/react';
 import { toast } from 'react-toastify';
 import { extractFirstSixCharac } from '@/app/_utils/helpers';
@@ -127,7 +127,9 @@ const Profile: React.FC = () => {
   //popup model
   const [showModal, setShowModal] = useState(false);
   const SEI_CHAIN_ID = 713715;
-  const FTM_CHAIN_ID = 64165;
+  // const FTM_CHAIN_ID = 64165;
+  const FTM_CHAIN_ID = 250;
+
 
   useEffect(() => {
 
@@ -480,7 +482,6 @@ const Profile: React.FC = () => {
           {profileData.account}
         </div>
       </div>
-
       <div className="border border-green-500 border-dotted px-2 mt-6">
         <ul className="flex mb-0 list-none flex-wrap pt-3 pb-4 flex-row" role="tablist">
           <li className="-mb-px mr-1 last:mr-0 flex-auto text-center">
@@ -555,11 +556,15 @@ const Profile: React.FC = () => {
                 {currentItems.map((coinData: CoinsHeld, index: number) => (
                   <Link href={`/token/${currentChain}/${coinData.token_address}`} key={index}>
                     <div className="max-h-[300px] overflow-hidden h-fit p-2 flex border border-green-500 hover:bg-gray-800 gap-2 w-full">
-                      <img
-                        className="mr-4 w-12 h-auto flex"
-                        src={coinData.image_url || "https://via.placeholder.com/150"}
-                        alt="Token Image"
-                      />
+                      {/* <img className='mr-4 w-12 h-auto flex' src={coinData.image_url || "https://via.placeholder.com/150"} alt="Token Image" /> */}
+                      <div className="relative mr-4 w-12 h-auto flex">
+                        <Image
+                          src={coinData.image_url || "https://via.placeholder.com/150"}
+                          alt="Token Image"
+                          fill
+                          className="object-contain"
+                        />
+                      </div>
                       <ul className="text-xs font-normal leading-4 text-green-400">
                         <li>Token Address: {coinData.token_address}</li>
                         <li>Token Amount: {coinData.balance}</li>
@@ -568,19 +573,19 @@ const Profile: React.FC = () => {
                       </ul>
                     </div>
                   </Link>
-                ))}
+                 ))}
                 <div className="flex justify-between mt-4">
-                  <button
-                    onClick={prevHeldPage}
+                  <button 
+                    onClick={prevHeldPage} 
                     disabled={currentHeldPage === 1}
                     className="px-4 py-2 border border-green-500 rounded-md hover:bg-green-600 disabled:opacity-50 text-green-400 font-semibold"
                   >
                     Prev
                   </button>
-                  <button
-                    onClick={nextHeldPage}
-                    disabled={currentHeldPage * itemsPerPageHeld >= coinHeldData.length}
-                    className="px-4 py-2 border border-green-500 rounded-md hover:bg-green-600 disabled:opacity-50 text-green-400 font-semibold"
+                  <button 
+                    onClick={nextHeldPage} 
+                    disabled={currentHeldPage * itemsPerPageHeld >= coinHeldData.length} 
+                    className="px-4 py-2 border border-green-500 rounded-md hover:bg-green-600 disabled:opacity-50 text-green-400 font-semibold" 
                   >
                     Next
                   </button>
@@ -590,16 +595,21 @@ const Profile: React.FC = () => {
                 {currentCreatedItems.map((coinData: CoinsCreated, index: number) => (
                   <Link href={`/token/${coinData.token_address}`} key={index}>
                     <div className="max-h-[300px] overflow-hidden h-fit p-2 flex border border-green-500 hover:bg-gray-800 gap-2 w-full">
-                      <img
-                        className="mr-4 w-12 h-auto flex"
-                        src={coinData.image_url || "https://via.placeholder.com/150"}
-                        alt="Token Image"
-                      />
+                      {/* <img className='mr-4 w-12 h-auto flex' src={coinData.image_url || "https://via.placeholder.com/150"} alt="Token Image" /> */}
+                      <div className="relative mr-4 w-12 h-auto flex">
+                        <Image
+                          src={coinData.image_url || "https://via.placeholder.com/150"}
+                          alt="Token Image"
+                          fill
+                          className="object-contain"
+                        />
+                      </div>
                       <ul className="text-xs font-normal leading-4 text-green-400">
                         <li>Token Address: {coinData.token_address}</li>
                         <li>Creator: {coinData.creator}</li>
                         <li>Token Name: {coinData.token_name}</li>
                         <li>Token Ticker: {coinData.token_ticker}</li>
+                        {/* <li>Token Description: {coinData.token_description ? (coinData.token_description.length > 20 ? coinData.token_description.slice(0, 20) + '...' : coinData.token_description) : 'No description'}</li> */}
                         <li>
                           Token Description:{" "}
                           {coinData.token_description
@@ -612,7 +622,7 @@ const Profile: React.FC = () => {
                     </div>
                   </Link>
                 ))}
-                <div className="flex justify-between mt-4">
+                <div className="flex justify-between mt-4 ">
                   <button
                     onClick={prevCreatedPage}
                     disabled={currentCreatedPage === 1}
@@ -633,33 +643,63 @@ const Profile: React.FC = () => {
                 {followerlist.map((follower, index) => (
                   <Link href={`/profile/${follower.follower}`} key={index}>
                     <div className="max-h-[300px] overflow-hidden h-fit p-2 flex border border-green-500 hover:bg-gray-800 gap-2 w-full justify-center">
-                      <li className="list-none">
-                        {extractFirstSixCharac(follower.follower || "unknown")} {follower.follower_count} Followers
+
+                      <li className=' list-none'>
+                        {extractFirstSixCharac(follower.follower || 'unknown')}   {follower.follower_count} Followers
                       </li>
                     </div>
                   </Link>
                 ))}
+                {/* <div className="flex justify-between mt-4">
+                  <button onClick={prevHeldPage} disabled={currentHeldPage === 1}
+                    className="px-4 py-2 border border-gray-300 rounded-md hover:bg-blue-700 disabled:opacity-50 text-green-500 font-semibold" >
+
+                    Prev
+                  </button>
+                  <button onClick={nextHeldPage} disabled={currentHeldPage * itemsPerPageHeld >= coinHeldData.length} className="px-4 py-2 border border-gray-300 rounded-md hover:bg-blue-700 disabled:opacity-50 text-green-500 font-semibold"  >
+                    Next
+                  </button>
+                </div> */}
+
+
               </div>
               <div className={openTab === 4 ? "block" : "hidden"} id="link4">
                 {followeelist.map((followee, index) => (
                   <Link href={`/profile/${followee.followee}`} key={index}>
                     <div className="max-h-[300px] overflow-hidden h-fit p-2 flex border border-green-500 hover:bg-gray-800 gap-2 w-full justify-center">
-                      <li className="list-none">
+
+                      <li className=' list-none'>
                         {extractFirstSixCharac(followee.followee || "unknown")} {followee.followee_count} Followers
                       </li>
                     </div>
                   </Link>
                 ))}
+
+
+                {/* <div className="flex justify-between mt-4">
+                  <button onClick={prevHeldPage} disabled={currentHeldPage === 1}
+                    className="px-4 py-2 border border-gray-300 rounded-md hover:bg-blue-700 disabled:opacity-50 text-green-500 font-semibold" >
+
+                    Prev
+                  </button>
+                  <button onClick={nextHeldPage} disabled={currentHeldPage * itemsPerPageHeld >= coinHeldData.length} className="px-4 py-2 border border-gray-300 rounded-md hover:bg-blue-700 disabled:opacity-50 text-green-500 font-semibold"  >
+                    Next
+                  </button>
+                </div> */}
+
+
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  ) : (
-    ""
-  )}
-</>
+        ) : (
+          ""
+        )};
+
+
+    </>
   );
 };
 

@@ -1,6 +1,11 @@
-import { createServer } from "node:http";
-import next from "next";
+// import { createServer } from "node:http";
+import { createServer } from 'http';
+import next from 'next'
+// import _next from 'next';
+// const next = _next as unknown as typeof _next.default;
 import { Server } from "socket.io";
+// import {query} from "./src/app/api/db.tsx"
+// import {query} from "./dist/src/app/api/db.js";
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";
@@ -25,24 +30,40 @@ app.prepare().then(() => {
       io.emit('refresh', data)
     })
 
-//   socket.on("SubAdd", (data) => {
-  //     // console.log('SubAdd event received')
-  //     if (data.subs && data.subs.length > 0) {
-  //         const channelString = data.subs[0]; // Assuming subs array contains channel strings
-  //         // console.log('Channel String:', channelString);
-
-  //         io.emit('channelChange',data.subs[0])
-    
-  //     }
-  // });
     socket.on('replyPost', () => {
       console.log("recieved reply post")
       //console.log(data)
       io.emit('replyGet')
     })
 
+    // socket.on('subscribeToToken', async (tokenAddress) => {
+    //   console.log(`Subscribed to updates for token: ${tokenAddress}`);
+      
+    //   // Function to check and emit URL updates
+    //   const checkAndUpdateURL = async () => {
+    //     try {
+    //       const result = await query('SELECT dex_url FROM token_list_ftm WHERE token_address = $1', [tokenAddress]);
+    //       if (result.length > 0 && result[0].url !== '') {
+    //         io.emit(`urlUpdated-${tokenAddress}`, { url: result[0].url });
+    //       }
+    //     } catch (error) {
+    //       console.error('Error checking URL updates:', error);
+    //     }
+    //   };
+
+    //   // Check for URL updates every 5 seconds
+    //   const interval = setInterval(checkAndUpdateURL, 5000);
+
+    //   socket.on('disconnect', () => {
+    //     clearInterval(interval);
+    //   });
+    // });
 
   });
+
+
+   
+
 
   httpServer
     .once("error", (err) => {
