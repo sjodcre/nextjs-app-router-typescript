@@ -406,199 +406,180 @@ export default function Deploy() {
   
 
 	return (
+<div className="bg-black shadow-md px-8 py-8 rounded sm:w-full md:w-1/2 mx-auto border-4 border-green-500">
+    <div className="inline-flex shadow-md rounded-full overflow-hidden h-8 leading-5 mb-4">
+        <button
+            className={`transition duration-300 ease-in-out font-bold py-2 px-4
+                        ${selectedChain === "sei" ? 'bg-gradient-to-r from-green-400 to-blue-500 text-black shadow-lg' : 'bg-gray-700 text-green-400 hover:bg-gray-600'}
+                        focus:outline-none focus:ring-2 focus:ring-green-500`}
+            onClick={handleSeiChainButton}
+            disabled={selectedChain === "sei"}>
+            SEI
+        </button>
+        <button
+            className={`transition duration-300 ease-in-out font-bold py-2 px-4
+                        ${selectedChain === "ftm" ? 'bg-gradient-to-r from-green-400 to-blue-500 text-black shadow-lg' : 'bg-gray-700 text-green-400 hover:bg-gray-600'}
+                        focus:outline-none focus:ring-2 focus:ring-green-500`}
+            onClick={handleFtmChainButton}
+            disabled={selectedChain === "ftm"}>
+            FTM
+        </button>
+    </div>
 
-		
-		<div className=" bg-[#1A2B37] shadow-md px-8 py-8 rounded sm:w-full md:w-1/2 mx-auto">
-			{/* <ConnectButton/> */}
-			 <div className="inline-flex shadow-md rounded-full overflow-hidden h-8 leading-5">
- 				<button 
- 					className={`hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 
- 								${selectedChain === "sei" ? 'bg-blue-500 text-white' : 'bg-gray-300'}
- 								focus:outline-none focus:ring-2 focus:ring-blue-500`}
- 					onClick={handleSeiChainButton}
- 					disabled={selectedChain === "sei"}>
- 					SEI
- 				</button>
- 				<button 
- 					className={`hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 
- 								${selectedChain === "ftm" ? 'bg-blue-500 text-white' : 'bg-gray-300'}
- 								focus:outline-none focus:ring-2 focus:ring-blue-500`}
- 					onClick={handleFtmChainButton}
- 					disabled={selectedChain === "ftm"}>
- 					FTM
- 				</button>
- 			</div> 
-			{/* Form  */}
-			<div className="mb-4">
-				<label className="block text-[#EED12E] text-sm font-bold mb-2" htmlFor="name">
-					Name
-				</label>
-				<input
-					className={`shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${errors.name ? 'border-[#EED12E]' : ''
-						}`}
-					id="name"
-					type="text"
-					placeholder="token name"
-					name="name"
-					value={formData.name}
-					onChange={handleChange}
-					// onBlur={handleBlur}
-				/>
-				{errors.name && <p className="text-red-500 text-xs italic">{errors.name}</p>}
+    {/* Form */}
+    <div className="mb-4">
+        <label className="block text-green-500 text-sm font-bold mb-2" htmlFor="name">
+            Name
+        </label>
+        <input
+            className={`shadow appearance-none border rounded w-full py-2 px-3 text-green-400 bg-black leading-tight focus:outline-none focus:shadow-outline ${errors.name ? 'border-green-500' : ''
+                }`}
+            id="name"
+            type="text"
+            placeholder="Token name"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+        />
+        {errors.name && <p className="text-red-500 text-xs italic">{errors.name}</p>}
+    </div>
 
-			</div>
-			
-			<div className="mb-4">
-				<label className="block text-[#EED12E] text-sm font-bold mb-2" htmlFor="ticker">
-					Ticker
-				</label>
-				<input
-					className={`shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${errors.ticker ? 'border-[#EED12E]' : ''
-						}`}
-					id="ticker"
-					type="text"
-					placeholder="token symbol"
-					name="ticker"
-					value={formData.ticker}
-					onChange={handleChange}
-					// onBlur={handleBlur}
-				/>
-				{errors.ticker && <p className="text-red-500 text-xs italic">{errors.ticker}</p>}
+    <div className="mb-4">
+        <label className="block text-green-500 text-sm font-bold mb-2" htmlFor="ticker">
+            Ticker
+        </label>
+        <input
+            className={`shadow appearance-none border rounded w-full py-2 px-3 text-green-400 bg-black leading-tight focus:outline-none focus:shadow-outline ${errors.ticker ? 'border-green-500' : ''
+                }`}
+            id="ticker"
+            type="text"
+            placeholder="Token symbol"
+            name="ticker"
+            value={formData.ticker}
+            onChange={handleChange}
+        />
+        {errors.ticker && <p className="text-red-500 text-xs italic">{errors.ticker}</p>}
+    </div>
 
-				{/* Add similar input fields for other items */}
-			</div>
-			<div className="mb-4">
-				<label className="block text-[#EED12E] text-sm font-bold mb-2" htmlFor="description">
-					Description
-				</label>
-				<input
-					className={`shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${errors.description ? 'border-[#EED12E]' : ''
-						}`}
-					id="description"
-					type="text"
-					placeholder="token description"
-					name="description"
-					value={formData.description}
-					onChange={handleChange}
-					// onBlur={handleBlur}
-				/>
-				{errors.description && <p className="text-red-500 text-xs italic">{errors.description}</p>}
+    <div className="mb-4">
+        <label className="block text-green-500 text-sm font-bold mb-2" htmlFor="description">
+            Description
+        </label>
+        <input
+            className={`shadow appearance-none border rounded w-full py-2 px-3 text-green-400 bg-black leading-tight focus:outline-none focus:shadow-outline ${errors.description ? 'border-green-500' : ''
+                }`}
+            id="description"
+            type="text"
+            placeholder="Token description"
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+        />
+        {errors.description && <p className="text-red-500 text-xs italic">{errors.description}</p>}
+    </div>
 
-				{/* Add similar input fields for other items */}
-			</div>
-			
-			<div className="mb-4">
-				<label className="block text-[#EED12E] text-sm font-bold mb-2" htmlFor="image">
-					Image
-				</label>
-				<input
-				className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-				id="image"
-				type="file"
-				name="image"
-				onChange={(e) => {setFile(e.target.files?.[0])}}
-				/>
-				<p className="text-gray-500 text-xs italic">{file ? file.name : 'No file chosen'}</p>
-			</div>
-			
-			<div className="mb-4">
-				<label className="block text-[#EED12E] text-sm font-bold mb-2" htmlFor="mintAmount">
-					Creator Initial Mint Amount
-				</label>
-				<input
-					className={`shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${errors.mintAmount ? 'border-[#EED12E]' : ''
-						}`}
-					id="mintAmount"
-					type="number"
-					placeholder="0 optional"
-					name="mintAmount"
-					value={formData.mintAmount}
-					onChange={handleChange}
-					// onBlur={handleBlur}
-				/>
-				{errors.mintAmount && <p className="text-red-500 text-xs italic">{errors.mintAmount}</p>}
+    <div className="mb-4">
+        <label className="block text-green-500 text-sm font-bold mb-2" htmlFor="image">
+            Image
+        </label>
+        <input
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-green-400 bg-black leading-tight focus:outline-none focus:shadow-outline"
+            id="image"
+            type="file"
+            name="image"
+            onChange={(e) => { setFile(e.target.files?.[0]) }}
+        />
+        <p className="text-gray-500 text-xs italic">{file ? file.name : 'No file chosen'}</p>
+    </div>
 
-				{/* Add similar input fields for other items */}
-			</div>
+    <div className="mb-4">
+        <label className="block text-green-500 text-sm font-bold mb-2" htmlFor="mintAmount">
+            Creator Initial Mint Amount
+        </label>
+        <input
+            className={`shadow appearance-none border rounded w-full py-2 px-3 text-green-400 bg-black leading-tight focus:outline-none focus:shadow-outline ${errors.mintAmount ? 'border-green-500' : ''
+                }`}
+            id="mintAmount"
+            type="number"
+            placeholder="0 optional"
+            name="mintAmount"
+            value={formData.mintAmount}
+            onChange={handleChange}
+        />
+        {errors.mintAmount && <p className="text-red-500 text-xs italic">{errors.mintAmount}</p>}
+    </div>
 
-			<button onClick={toggleOptions} className="mb-4 bg-[#EED12E] text-black px-4 py-2 rounded">
-				{showOptions ? 'Show less options' : 'Show more options'}
-			</button>
+    <button onClick={toggleOptions} className="mb-4 bg-green-500 text-black px-4 py-2 rounded hover:bg-green-600">
+        {showOptions ? 'Show less options' : 'Show more options'}
+    </button>
 
-			{showOptions && (
-				<>
-					<div className="mb-4">
-						<label className="block text-[#EED12E] text-sm font-bold mb-2" htmlFor="twitter">
-							Twitter Link
-						</label>
-						<input
-							className={`shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${errors.twitter ? 'border-[#EED12E]' : ''
-								}`}
-							id="twitter"
-							type="text"
-							placeholder="(optional)"
-							name="twitter"
-							value={formData.twitter}
-							onChange={handleChange}
-							// onBlur={handleBlur}
-						/>
-						{errors.twitter && <p className="text-red-500 text-xs italic">{errors.twitter}</p>}
-					</div>
-					<div className="mb-4">
-						<label className="block text-[#EED12E] text-sm font-bold mb-2" htmlFor="telegram">
-							Telegram Link
-						</label>
-						<input
-							className={`shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${errors.minter ? 'border-[#EED12E]' : ''
-								}`}
-							id="telegram"
-							type="text"
-							placeholder="(optional)"
-							name="telegram"
-							value={formData.telegram}
-							onChange={handleChange}
-							// onBlur={handleBlur}
-						/>
-						{errors.telegram && <p className="text-red-500 text-xs italic">{errors.telegram}</p>}
+    {showOptions && (
+        <>
+            <div className="mb-4">
+                <label className="block text-green-500 text-sm font-bold mb-2" htmlFor="twitter">
+                    Twitter Link
+                </label>
+                <input
+                    className={`shadow appearance-none border rounded w-full py-2 px-3 text-green-400 bg-black leading-tight focus:outline-none focus:shadow-outline ${errors.twitter ? 'border-green-500' : ''
+                        }`}
+                    id="twitter"
+                    type="text"
+                    placeholder="(optional)"
+                    name="twitter"
+                    value={formData.twitter}
+                    onChange={handleChange}
+                />
+                {errors.twitter && <p className="text-red-500 text-xs italic">{errors.twitter}</p>}
+            </div>
+            <div className="mb-4">
+                <label className="block text-green-500 text-sm font-bold mb-2" htmlFor="telegram">
+                    Telegram Link
+                </label>
+                <input
+                    className={`shadow appearance-none border rounded w-full py-2 px-3 text-green-400 bg-black leading-tight focus:outline-none focus:shadow-outline ${errors.minter ? 'border-green-500' : ''
+                        }`}
+                    id="telegram"
+                    type="text"
+                    placeholder="(optional)"
+                    name="telegram"
+                    value={formData.telegram}
+                    onChange={handleChange}
+                />
+                {errors.telegram && <p className="text-red-500 text-xs italic">{errors.telegram}</p>}
+            </div>
+            <div className="mb-4">
+                <label className="block text-green-500 text-sm font-bold mb-2" htmlFor="website">
+                    Website Link
+                </label>
+                <input
+                    className={`shadow appearance-none border rounded w-full py-2 px-3 text-green-400 bg-black leading-tight focus:outline-none focus:shadow-outline ${errors.minter ? 'border-green-500' : ''
+                        }`}
+                    id="website"
+                    type="text"
+                    placeholder="(optional)"
+                    name="website"
+                    value={formData.website}
+                    onChange={handleChange}
+                />
+                {errors.website && <p className="text-red-500 text-xs italic">{errors.website}</p>}
+            </div>
+        </>
+    )}
 
-						{/* Add similar input fields for other items */}
-					</div>
-					<div className="mb-4">
-						<label className="block text-[#EED12E] text-sm font-bold mb-2" htmlFor="website">
-							Website Link
-						</label>
-						<input
-							className={`shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${errors.minter ? 'border-[#EED12E]' : ''
-								}`}
-							id="website"
-							type="text"
-							placeholder="(optional)"
-							name="website"
-							value={formData.website}
-							onChange={handleChange}
-							// onBlur={handleBlur}
-						/>
-						{errors.website && <p className="text-red-500 text-xs italic">{errors.website}</p>}
-					</div>
-				</>
-			)}
-
-			
-			{/* Deploy Button */}
-			<div className="relative flex h-16 items-center justify-between">
-				<div />
-				<div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
-					<span className="absolute -inset-1.5" />
-					<div className='relative ml-3'>
-						<button className='relative  flex bg-[#EED12E] text-black  px-6 hover:text-white rounded-lg py-2 text-sm font-medium leading-5'
-							type="button" onClick={handleDeploy} disabled={isDeploying}>
-							Deploy
-						</button>
-					</div>
-				</div>
-			</div>
-		</div>
-
+    {/* Deploy Button */}
+    <div className="relative flex h-16 items-center justify-between">
+        <div />
+        <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
+            <span className="absolute -inset-1.5" />
+            <div className='relative ml-3'>
+                <button className='relative flex bg-green-500 text-black px-6 hover:text-white rounded-lg py-2 text-sm font-medium leading-5'
+                    type="button" onClick={handleDeploy} disabled={isDeploying}>
+                    Deploy
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 	);
 }
