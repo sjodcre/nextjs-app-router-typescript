@@ -72,7 +72,7 @@ import { ethers } from "ethers";
     let url = ''
     if (chainId === 'ftm'){
         // url = 'https://rpc.sonic.fantom.network/'
-        url = 'https://rpc.ankr.com/fantom/'
+        url = 'https://fantom-rpc.publicnode.com/'
     } else if ( chainId ==='sei') {
         url = 'https://cool-aged-owl.sei-arctic.quiknode.pro/177cc0d1e96c821bc0cdd8bb9dbf72157f1a5e1d/'
     } else {

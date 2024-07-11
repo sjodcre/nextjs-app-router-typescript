@@ -1,19 +1,19 @@
 "use client";
 // import { useWeb3React } from '@web3-react/core';
-import { useState, MouseEvent, useEffect } from 'react';
-import { Contract, ContractFactory, Signer, ethers } from 'ethers';
+import { useState, useEffect } from 'react';
+import { ethers } from 'ethers';
 
 import { useWeb3ModalProvider, useWeb3ModalAccount, useSwitchNetwork } from '@web3modal/ethers5/react'
 import { toast } from 'react-toastify'
 // import ConnectButton from "../_ui/connect-button";
 import { TokenParams } from '@/app/_utils/types';
 import {  deployToken, deployManager } from '../_services/blockchain';
-import { initOHLCData, postTokenData, postTransactionAndOHLC, postTransactionData } from '../_services/db-write';
+import { initOHLCData, postTokenData, postTransactionAndOHLC } from '../_services/db-write';
 import { setChain, resetChain } from "@/app/_redux/features/chain-slice";
 import { useRouter } from 'next/navigation'
 import { useDispatch } from 'react-redux';
 import { AppDispatch, useAppSelector } from '@/app/_redux/store';
-import { calculateExpectedReturn, calculateMinTokensWithSlippage } from '../_utils/helpers';
+import { calculateExpectedReturn } from '../_utils/helpers';
 
 
 
@@ -220,7 +220,7 @@ export default function Deploy() {
 		return handleChainChange()  // This promise's resolution starts the next steps
 			.then(async () => {
 				// Assuming chain change is successful, proceed with deployment
-				const data = await deployToken(selectedChain, tokenParams, mintAmount, walletProvider);
+				const { tokenListData, logData } = await deployToken(selectedChain, tokenParams, mintAmount, walletProvider);
 				let url = '';
 				try {
 					url = await handleUploadImage(file);
@@ -229,10 +229,10 @@ export default function Deploy() {
 					console.error('Failed to upload image:', error);
 					// Consider whether you want to continue or throw an error here
 				}
-				toast.success(`Contract deployed to: ${data.token_address}`);
+				toast.success(`Contract deployed to: ${tokenListData.token_address}`);
 	
-				const tokenListData = {
-					...data,
+				const tokenData = {
+					...tokenListData,
 					chainid: selectedChain,
 					image_url: url,
 					token_description: formData.description,
@@ -241,29 +241,36 @@ export default function Deploy() {
 					website: formData.website,
 				};
 	
-				await postTokenData(tokenListData);
-				await initOHLCData(selectedChain, data.token_address, data.creator, data.datetime, data.tx_hash)
+				await postTokenData(tokenData);
+				await initOHLCData(selectedChain, tokenListData.token_address, tokenListData.creator, tokenListData.datetime, tokenListData.tx_hash)
 				.then(async response => {
 					console.log('Backend response:', response);
 					if (mintAmount > 0) {
-						const depositAmount = Number(ethers.utils.parseUnits(mintAmount.toString(), 18));
+						// const depositAmount = Number(ethers.utils.parseUnits(mintAmount.toString(), 18));
+						const depositAmount = ethers.utils.parseUnits(mintAmount.toString(), 18);
 	
-						const tokensWithoutSlippage = calculateExpectedReturn(10**16, 10**17, 50000, depositAmount);
+						// const supply = ethers.BigNumber.from(10).pow(16);
+						const supply = ethers.BigNumber.from("5000000000000000000"); // 5 tokens
+						// const reserveBalance = ethers.BigNumber.from(10).pow(17);
+						const reserveBalance = ethers.BigNumber.from("100000000000000000"); // 0.1 FTM
+						// const tokensWithoutSlippage = calculateExpectedReturn(10**16, 10**17, 50000, depositAmount);
+						// const tokensWithoutSlippage = Math.round(calculateExpectedReturn(Number(supply), Number(reserveBalance), 50000, Number(depositAmount)));
+						const tokensWithoutSlippage = logData
 						console.log("tokensWithoutSlippage", tokensWithoutSlippage)
 						const info = {
 							selectedChain: selectedChain,
-							contractAddress: data.token_address,
-							account: data.creator,
+							contractAddress: tokenListData.token_address,
+							account: tokenListData.creator,
 							status: "successful",
-							amount: tokensWithoutSlippage, // Ensure conversion to string before to Number if BigNumber
-							deposit: depositAmount, // Same conversion as above
+							amount: tokensWithoutSlippage,
+							deposit: depositAmount.toString(), // Same conversion as above
 							timestamp: Math.floor(Date.now() / 1000),
 							trade: 'buy',
-							txHash: data.tx_hash
+							txHash: tokenListData.tx_hash
 						  };
 	
 						await postTransactionAndOHLC(info, true).then(response => {
-						console.log('Backend response:', response);
+						console.log('Backend response:', response.message);
 						// txid = response.primaryKey;
 						}).catch((error: any) => {
 						console.error('Error posting data to backend tx ohlc:', error);
@@ -273,12 +280,10 @@ export default function Deploy() {
 					console.error('Error posting data to backend init:', error);
 					});
 				;
-				// return tokenListData;  // Successful deployment, resolve with this data
-				// console.log("mintAMount", mintAmount)
 				
 				return {
 					chainid: selectedChain,
-					token_address: data.token_address
+					token_address: tokenListData.token_address
 				};
 			})
 			.catch((error) => {
@@ -377,8 +382,8 @@ export default function Deploy() {
 						success: 'Token deployment successful! 👌',
 						error: 'Deployment failed! 🤯'
 					}
-				).then(tokenListData => {
-					router.push('/token/' + tokenListData.chainid + '/' + tokenListData.token_address);
+				).then(deployedData => {
+					router.push('/token/' + deployedData.chainid + '/' + deployedData.token_address);
 					setIsDeploying(false);  // Reset the deployment flag after success
 				}).catch(error => {
 					console.error("Failed to deploy token:", error);

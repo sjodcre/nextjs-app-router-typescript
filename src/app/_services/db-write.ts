@@ -1,5 +1,6 @@
 // import { error } from "console";
 
+import { ethers } from "ethers";
 import { TokenHolder } from "../_utils/types";
 
 const normalizeValue = (value: number): number => {
@@ -41,10 +42,12 @@ export const initOHLCData = async (selectedChain: string, tokenAddress: string, 
         const transactionData = {
             tokenAddress: tokenAddress, // Replace with actual token address
             account: creator,
-            token_amount:5E18,
-            native_amount: 0,
+            // token_amount:5E18,
+            token_amount:(5e18).toString(),
+            // native_amount: 0,
+            native_amount: (0).toString(),
             time: datetime,
-            price :0.4,
+            price :0.001,
             volume: 0,
             trade: 'init',
             tx_hash: txHash
@@ -78,16 +81,17 @@ export const initOHLCData = async (selectedChain: string, tokenAddress: string, 
 
 }
 
-export const postTransactionData = async (transactionData: any) => {
+export const postPendingData = async (transactionData: any) => {
     const { status, selectedChain, contractAddress, account, amount, deposit, timestamp, trade, txHash ,nativeTokenPrice} = transactionData;
-
+    // console.log("parsing amount", parseFloat(amount))
+    // console.log("parsing deposit", parseFloat(deposit))
     const price = parseFloat(deposit) / parseFloat(amount); // This assumes both values are normalized to the same scale
     const volume = parseFloat(amount);
     let url = '';
     if (selectedChain ==='ftm'){
-        url = '/api/transaction-update-ftm'
+        url = '/api/pending-transaction-ftm'
     } else if (selectedChain === 'sei') {
-        url = '/api/transaction-update-sei'
+        url = '/api/pending-transaction-sei'
     } else {
         throw new Error("incorrect chain id!")
     }
@@ -125,17 +129,17 @@ export const postTransactionData = async (transactionData: any) => {
 }
 
 export const postTransactionAndOHLC = async (transactionData: any, initialMint: boolean) => {
-    const { selectedChain, contractAddress, account, status, amount, deposit, timestamp, trade, txHash, nativeTokenPrice} = transactionData;
+    const { selectedChain, contractAddress, account, status, amount, deposit, timestamp, trade, txHash} = transactionData;
 
-    // const normalizedAmount = normalizeValue(parseFloat(amount.toString())); // Ensuring number type if needed
-    // const normalizedDeposit = normalizeValue(parseFloat(deposit.toString()));
-    
-    // Calculate price and volume using normalized values
-    // const price = normalizedDeposit / normalizedAmount; // Price per token in ether
-    // const volume = normalizedAmount; // Volume in ether
-    // Calculate price and volume (assumes amount and deposit are already in the smallest unit)
-    const price = parseFloat(deposit) / parseFloat(amount); // This assumes both values are normalized to the same scale
-    const volume = parseFloat(amount);
+    // const price = parseFloat(deposit) / parseFloat(amount); // This assumes both values are normalized to the same scale
+    // const volume = parseFloat(amount);
+    const depositBN = ethers.BigNumber.from(deposit);
+    const amountBN = ethers.BigNumber.from(amount);
+    const scalingFactor = ethers.BigNumber.from("1000000000000000000");
+    const priceBN = depositBN.mul(scalingFactor).div(amountBN);
+    const price = parseFloat(ethers.utils.formatUnits(priceBN, 18)); // Convert to number with 18 decimals precision
+    const volume = parseFloat(ethers.utils.formatUnits(amountBN, 18));
+
     let url = '';
     if (selectedChain ==='ftm' && initialMint === false){
         url = '/api/ftm/transaction-and-ohlc'
@@ -166,7 +170,6 @@ export const postTransactionAndOHLC = async (transactionData: any, initialMint: 
                 volume,
                 trade: trade,
                 tx_hash: txHash,
-                nativeTokenPrice
             })
         });
 
@@ -174,7 +177,7 @@ export const postTransactionAndOHLC = async (transactionData: any, initialMint: 
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        console.log("response from POST transact", response)
+        // console.log("response from POST transact", response)
         return await response.json();
     } catch (error) {
         console.error("Failed to post transaction and OHLC data:", error);

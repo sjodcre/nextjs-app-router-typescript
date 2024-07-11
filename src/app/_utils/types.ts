@@ -6,13 +6,18 @@ export interface TokenParams {
   ticker: string;
 }
 
+export interface DeployTokenResult {
+  tokenListData: TokenListData;
+  logData: string | null; // Assuming logData is a string or can be null if no matching log is found
+}
+
 export interface ExtendedWidgetOptions extends ChartingLibraryWidgetOptions {
   chainId: string; // Adding chainId to the properties
 }
 
 export interface TokenHolder {
   account: string;
-  balance: number;
+  balance: string;
 }
 
 export interface SmartContractError {

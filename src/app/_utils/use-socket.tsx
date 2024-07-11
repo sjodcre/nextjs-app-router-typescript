@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { getSocket } from '../../socket';  // Adjust the path as necessary
 import { LibrarySymbolInfo, ResolutionString, SubscribeBarsCallback } from 'public/static/charting_library/charting_library';
-import { parseFullSymbol } from './helpers';
+import { calculatePrice, parseFullSymbol } from './helpers';
 // import { parseFullSymbol } from './helpers';
 const socket = getSocket();
 interface EventListener {
@@ -17,8 +17,11 @@ interface EventListener {
 // }
 
 function getNextFiveMinuteBarTime(barTime: any) {
+  console.log("bartime into function", barTime)
   const date = new Date(barTime.time);
+  console.log("date wth is this thing?",date )
   date.setMinutes(date.getMinutes() + 5); // Increment by 5 minutes
+  console.log("after doing the setminutes what is the date?", date)
   return date.getTime() / 1000;
 }
 
@@ -62,12 +65,15 @@ const useSocket = (listeners: EventListener[] = []) => {
       socket.on(event, handler);
     });
 
-    socket.on('refresh', (data: { chartResolution: number; deposit: string; amount: string; timestamp: string; token_description: string; token_ticker: any; token_name: any; }) => {
+    socket.on('refresh', (data: { bondingPrice: number, deposit: string; amount: string; timestamp: string; token_description: string; token_ticker: any; token_name: any; }) => {
       console.log('[socket] Message at refresh:', data);
-
+      console.log('did i get the bonding price?', data.bondingPrice)
       // const tradePrice = parseFloat(tradePriceStr);
       // const tradeTime = parseInt(tradeTimeStr);
-      const tradePrice = parseFloat(data.deposit) / parseFloat(data.amount);
+      // const tradePrice = parseFloat(data.deposit) / parseFloat(data.amount);
+      const tradePrice = data.bondingPrice;
+
+      // const tradePrice = calculatePrice()
       const tradeTime = parseInt(data.timestamp);
 
       // const channelString = `0~${exchange}~${fromSymbol}~${toSymbol}`;
@@ -127,7 +133,7 @@ const useSocket = (listeners: EventListener[] = []) => {
       // console.log('[socket] Update the latest bar by price', tradePrice);
 
 
-      subscriptionItem.lastDailyBar = bar;
+      subscriptionItem.lastBar = bar;
   
       // Send data to every subscriber of that symbol
       subscriptionItem.handlers.forEach((handler: { callback: (arg0: any) => any; }) => handler.callback(bar));

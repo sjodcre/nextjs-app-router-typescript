@@ -5,11 +5,11 @@ import { TokenHolder, TokenPageDetails, TradeData, Reply, TokenParams } from "@/
 import CandleChart from "@/app/_ui/candle-chart";
 import SlippageDialog from "@/app/_ui/slippage-dialog";
 import IndeterminateProgressBar from "@/app/_ui/indeterminate-progress-bar";
-import { Contract, ethers } from "ethers";
+import { BigNumber, ethers } from "ethers";
 import Image from 'next/image';
 // import ERC20TestArtifact from '../../../../artifacts/contracts/ERC20Test.sol/ERC20Test.json'
 import ERC20TestArtifact from '@/../artifacts/contracts/ERC20Lock.sol/ERC20Lock.json'
-import { fetchTokenInfo, getTokenTrades, getTopTokenHolders, postTransactionAndOHLC, postTransactionFailed } from "@/app/_services/db-write";
+import { fetchTokenInfo, getTokenTrades, getTopTokenHolders, postTransactionFailed } from "@/app/_services/db-write";
 import { useSwitchNetwork, useWeb3ModalAccount, useWeb3ModalProvider } from "@web3modal/ethers5/react";
 import { toast } from "react-toastify";
 import TradeItem from "@/app/_ui/trade-list";
@@ -41,10 +41,14 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [progress, setProgress] = useState(0);
   const [holders, setHolders] = useState<TokenHolder[]>([]);
-  const [tokenSum, setTokenSum] = useState(0);
-  const [nativeSum, setNativeSum] = useState(0);
+  // const [tokenSum, setTokenSum] = useState(0);
+  const [tokenSum, setTokenSum] = useState<string>('0');
+  const [bnTokenSum, setBnTokenSum] = useState<BigNumber | null>(null);
+  // const [nativeSum, setNativeSum] = useState(0);
+  const [nativeSum, setNativeSum] = useState<string>('0');
+  const [bnNativeSum, setBnNativeSum] = useState<BigNumber | null>(null);
   const [marketCap, setMarketCap] = useState<string>('0');
-  const [tokenPrice, setTokenPrice] = useState<number | null>(null);
+  const [tokenPrice, setTokenPrice] = useState<number | null>(null);//ignore for now not used
   const [isTokenPriceFetched, setIsTokenPriceFetched] = useState(false);
   const [providerReady, setProviderReady] = useState(false);
   const [trades, setTrades] = useState<TradeData[]>([]);
@@ -53,15 +57,17 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   const [initialCheckDone, setInitialCheckDone] = useState(false);
   const [user, setUser] = useState('');
   const [isTrading, setIsTrading] = useState(false);
-  const [lockedTokens, setLockedTokens] = useState<number>(0);
+  // const [lockedTokens, setLockedTokens] = useState<number>(0);
+  const [lockedTokens, setLockedTokens] = useState<BigNumber | null>(null);
   const [isPaused, setIsPaused] = useState<boolean>(false);
   const [dexUrl, setDexUrl] = useState('');
-  const [finalSupply, setFinalSupply] = useState<number | null>(null);
+  // const [finalSupply, setFinalSupply] = useState<number | null>(null);
+  const [finalSupply, setFinalSupply] = useState<BigNumber | null>(null);
   const [userBalance, setUserBalance] = useState({
-    token: 0,
-    native: 0,
+    token: '0',
+    native: '0',
   });
-  const [nativeTokenPrice, setnativeTokenPrice] = useState<number | null>(null);
+  const [nativeTokenPrice, setNativeTokenPrice] = useState<number | null>(null);
   const [nativeTokenInfo, setNativeTokenInfo] = useState({
     chain: '',
     chainId: 0,
@@ -81,32 +87,56 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   const [currentChart, setCurrentChart] = useState<'current' | 'pump'>('current'); // Default to "Current chart"
 
   const { isConnected, chainId, address } = useWeb3ModalAccount()
-  const initialTokenSum = 5E18;
+  // const initialTokenSum = 5E18;
+  const initialTokenSum = BigNumber.from('5000000000000000000'); // 5E18 in BigNumber
   const { walletProvider } = useWeb3ModalProvider()
   const { isSocketConnected, emitEvent, onEvent, offEvent, disconnectSoc } = useSocket();
   const [currentThreadPage, setCurrentThreadPage] = useState(1);
   const itemsPerThreadPage = 15;
   const [currentTradesPage, setCurrentTradesPage] = useState(1);
   const itemsPerTradesPage = 15;
+  const tokensAvailable = finalSupply && bnTokenSum
+  ? (ethers.utils.formatUnits(finalSupply.sub(bnTokenSum), 18))
+  : ethers.BigNumber.from('0');
+
+  const nativeInCurve = bnNativeSum
+  ? (ethers.utils.formatUnits(bnNativeSum.sub(ethers.utils.parseUnits('0.1', 18)), 18))
+  : ethers.BigNumber.from('0');
+
   // const marketCapLimit = 10*(nativeTokenPrice);
   const marketCapLimit = nativeTokenPrice ? 10 * nativeTokenPrice : 0;
   // const tokenAddress = params.tokenInfo[1]
 
+
+  //fetch final supply
   // useEffect(() => {
-  //   if (isSocketConnected) {
-  //     emitEvent("someEvent", { key: 'value' });
-  //   }
-  // }, [isConnected, emitEvent]);
+  //   const fetchFinalSupply = async () => {
+  //     try {
+  //       const response = await fetch('/api/simulate-bonding-curve', {
+  //         method: 'POST',
+  //       });
+  //       const data = await response.json();
+  //       setFinalSupply(data.finalSupply);
+  //     } catch (error) {
+  //       console.error('Error fetching final supply:', error);
+  //     }
+  //   };
+
+  //   fetchFinalSupply();
+  // }, []);
 
   //set bonding curve %
   useEffect(() => {
-    // Convert marketCap string to number, removing commas and parsing as integer
     const marketCapValue = parseFloat(marketCap.replace(/,/g, ''));
-    // Calculate the new progress as a fraction of marketCap to 50,000
     // const newProgress = (marketCapValue / marketCapLimit) * 100;
-    const newProgress = tokenSum? ((tokenSum - initialTokenSum)/1E18/(finalSupply - initialTokenSum/1E18))*100 : 0;
-    console.log("tokensum v1", tokenSum)
-    console.log("finalsupply v1", finalSupply)
+    const newProgress = tokenSum && finalSupply
+  ? Number((BigNumber.from(tokenSum)).sub((BigNumber.from('5000000000000000000'))))/Number(finalSupply)*100 
+  : 0;
+  //   const bnTokenSum = ethers.BigNumber.from(tokenSum)
+  //   // const newProgress = tokenSum? ((tokenSum - initialTokenSum)/1E18/(finalSupply - initialTokenSum/1E18))*100 : 0;
+  //   const newProgress = bnTokenSum && finalSupply 
+  // ? bnTokenSum.sub(initialTokenSum).div(ethers.BigNumber.from('1000000000000000000')).mul(100).div(finalSupply.sub(initialTokenSum.div(ethers.BigNumber.from('1000000000000000000')))).toNumber() 
+  // : 0;
     // const newProgress = nativeTokenPrice ? (marketCapValue / marketCapLimit) * 100 : 0;
 
 
@@ -122,7 +152,8 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   useEffect(() => {
     const updatePrice = async () => {
       const fetchedPrice = await fetchNativeTokenPrice(params.tokenInfo[0]);
-      setnativeTokenPrice(fetchedPrice);
+      console.log("native token price", fetchedPrice)
+      setNativeTokenPrice(fetchedPrice);
       setIsTokenPriceFetched(true);
     };
 
@@ -158,16 +189,14 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
     if (providerReady) {
       if (walletProvider) {
-        console.log("here?")
         const ethersProvider = new ethers.providers.Web3Provider(walletProvider);
 
         checkPauseStatus(ethersProvider, params.tokenInfo[1])
         fetchERC20Balance(ethersProvider, params.tokenInfo[1])
           .then(balance => {
-            console.log("if convert straight using number", Number(balance.toString()))
             setUserBalance(prevState => ({
               ...prevState,
-              token: Number(balance)  // Replace `newValue` with the actual new value for the token balance
+              token: balance.toString()  // Replace `newValue` with the actual new value for the token balance
             }));
             setTransactionDone(false);
 
@@ -179,12 +208,21 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
           });
         fetchLockedTokens(ethersProvider, params.tokenInfo[1])
         .then(lockedTokens => {
-          setLockedTokens(Number(lockedTokens))
-          console.log("locked tokens", lockedTokens)
+          setLockedTokens(lockedTokens)
+          // console.log("locked tokens", lockedTokens)
         }) .catch(error => {
           // Error handling
           console.log("fail to fetch locked tokens:", error)
         });
+
+        fetchMaxSupply(ethersProvider, params.tokenInfo[1])
+        .then(maxTokenSupply => {
+          setFinalSupply(maxTokenSupply)
+        }) .catch(error => {
+          // Error handling
+          console.log("fail to fetch  token max supply:", error)
+        });
+
       } else {
         console.log("provider is not ready to read user")
       }
@@ -211,7 +249,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     // ReplyList(params.tokenInfo[1]);
     if (isTokenPriceFetched) {
       fetchData();
-      listenForTransferEvents();
+      // listenForTransferEvents();
       ReplyList(params.tokenInfo[1]);
     }
 
@@ -262,22 +300,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
   }, []);
 
-  //fetch final supply
-  useEffect(() => {
-    const fetchFinalSupply = async () => {
-      try {
-        const response = await fetch('/api/simulate-bonding-curve', {
-          method: 'POST',
-        });
-        const data = await response.json();
-        setFinalSupply(data.finalSupply);
-      } catch (error) {
-        console.error('Error fetching final supply:', error);
-      }
-    };
-
-    fetchFinalSupply();
-  }, []);
+  
 
 
   const totalTradesPages = useMemo(() => {
@@ -353,24 +376,27 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     const tradesDataPromise = getTokenTrades(params.tokenInfo[0], params.tokenInfo[1]);
     // Wait for both promises to resolve
     const [tokenInfo, tradesData] = await Promise.all([tokenInfoPromise, tradesDataPromise]);
-    console.log("tradesData", tradesData)
-    console.log("phase two boolean", tokenInfo[0].phase_two)
-    console.log("tokeninfo", tokenInfo)
+    // console.log("tradesData", tradesData)
+    // console.log("phase two boolean", tokenInfo[0].phase_two)
+    // console.log("tokeninfo", tokenInfo)
     setDexUrl(tokenInfo[0].dex_url)
     setIsPhaseTwo(tokenInfo[0].phase_two)
     // Update state with fetched data
     setTokenDetails(tokenInfo[0]);
+    // console.log("trades data", tradesData)
     setTrades(tradesData);
     setTokenSum(tradesData[0].sum_token);
+    setBnTokenSum(ethers.BigNumber.from(tradesData[0].sum_token));
     setNativeSum(tradesData[0].sum_native);
+    setBnNativeSum(ethers.BigNumber.from(tradesData[0].sum_native));
     // getTopTokenHolders(params.tokenInfo[0], params.tokenInfo[1]);
     fetchHolders();
-    // Calculate market cap if tradesData and nativeTokenPrice are available
-    console.log("tradesData length", tradesData.length)
+    // console.log("tradesData length", tradesData.length)
     if (tradesData && tradesData.length > 0 && nativeTokenPrice) {
       let marketCap = 0;
       if (!tokenInfo[0].phase_two) {
           marketCap = tradesData[0].sum_token * tradesData[0].price_per_token * nativeTokenPrice / 1E18;
+          console.log("market cap", marketCap)
       } else {
         console.log("phase 2 market cap")
         try {
@@ -399,9 +425,9 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
       //   maximumFractionDigits: 2
       // });
       const formattedMarketCap = formatMarketCap(marketCap)
-      console.log("market cap wftm", tradesData[0].sum_token * tradesData[0].price_per_token )
+      // console.log("formattted market cap", formattedMarketCap)
+      // console.log("market cap wftm", tradesData[0].sum_token * tradesData[0].price_per_token )
       // console.log("sum_token", tradesData[0].sum_token)
-      console.log("native token price", nativeTokenPrice)
       setMarketCap(formattedMarketCap);
     }
 
@@ -422,17 +448,6 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
   //slippage dialog
   const toggleDialog = () => setDialogOpen(!dialogOpen);
-
-  //get holders from token contract
-  const updateHolders = async () => {
-    const tokenAddress = params.tokenInfo[1]
-    try {
-      const response = await axios.post('/api/ftm/update-holders', { tokenAddress });
-      console.log('Holders Balances:', response.data);
-    } catch (error) {
-      console.error('Error updating holders:', error);
-    }
-  }
 
   //tokena mount to buy/sell
   const handleSetAmount = (amount: string) => {
@@ -531,11 +546,15 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
       .then(async () => {
         
         // This code executes after successful network change
+        const percentageBigNumber = BigNumber.from(percentage);
         const fullAmount = userBalance.token;
-        console.log("user balance hmmm", fullAmount)
-        console.log("locked tokens", lockedTokens)
-        const sellableAmount = fullAmount - lockedTokens;
-        const amountToSet = (sellableAmount * percentage / 100).toFixed(0); // Calculating the percentage and rounding it to the nearest whole number
+        // console.log("user balance hmmm", fullAmount)
+        // console.log("locked tokens", lockedTokens)
+        const sellableAmount = ethers.BigNumber.from(fullAmount).sub(lockedTokens);
+        // const amountToSet = (sellableAmount * percentage / 100).toFixed(0); // Calculating the percentage and rounding it to the nearest whole number
+        const amountToSet = sellableAmount
+        .mul(percentageBigNumber)
+        .div(100);
 
         setTokenAmountToTrade(amountToSet.toString()); // Convert to string to match your state expectation
       })
@@ -551,21 +570,39 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
       const signer = await walletProvider.getSigner()
       const signerAddr = await signer.getAddress();
       const ERC20LockContract = new ethers.Contract(tokenAddress, ERC20TestArtifact.abi, signer);
-      // const options = {
-      //   gasLimit: ethers.utils.hexlify(1000000), // Correct use of hexlify
-      // };
       try {
         // console.log("token address for locked tokens", tokenAddress)
         // console.log("signer addr to get locked tokens", signerAddr.toString())
         const lockedTokens = await ERC20LockContract.getLockedTokens(signerAddr.toString());
-        const contractMarketCap = await ERC20LockContract.getMarketCap();
-        // const maxMarketCap = await ERC20LockContract.getMaxMarketCap();
+        // const contractMarketCap = await ERC20LockContract.getMarketCap();
+        // const maxTokenSupply = await ERC20LockContract.getMaxTokenSupply();
         // console.log("lockedTokens", lockedTokens)
-        console.log("lockedTokens to string", lockedTokens.toString());
-        console.log("contract market cap", contractMarketCap.toString())
-        // console.log("contract max market cap", maxMarketCap)
-        
+        const gasPrice1 = await walletProvider.getGasPrice();
+        console.log('Current gas price:', gasPrice1.toString());
+        // console.log("lockedTokens to string", lockedTokens.toString());
+        // console.log("contract market cap", contractMarketCap.toString());
+        // console.log("maxToken supply", maxTokenSupply.toString())
+
         return lockedTokens
+      } catch (error){
+        console.error("Error getting locked amount:", error);
+      throw error;
+      }
+
+    }
+
+  }
+
+  async function fetchMaxSupply (walletProvider: any, tokenAddress:string )  {
+    if (walletProvider) {
+      // const provider = new ethers.providers.Web3Provider(walletProvider)
+      const signer = await walletProvider.getSigner()
+      const ERC20LockContract = new ethers.Contract(tokenAddress, ERC20TestArtifact.abi, signer);
+      try {
+        const maxTokenSupply = await ERC20LockContract.getMaxTokenSupply();
+        console.log("maxToken supply", maxTokenSupply.toString())
+
+        return maxTokenSupply
       } catch (error){
         console.error("Error getting locked amount:", error);
       throw error;
@@ -627,7 +664,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   }
 
   // async function listenForTransferEvents() {
-  //   const provider = new ethers.providers.JsonRpcProvider('https://rpc.ftm.tools/');
+  //   const provider = new ethers.providers.JsonRpcProvider('https://fantom-rpc.publicnode.com/');
   //   const tokenAddress = params.tokenInfo[1];
   //   const tokenABI = [
   //     'event Transfer(address indexed from, address indexed to, uint256 value)',
@@ -640,33 +677,33 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   //   });
   // }
 
-  async function listenForTransferEvents() {
-    if (isPhaseTwo) {
-      const provider = new ethers.providers.JsonRpcProvider('https://rpc.ankr.com/fantom/');
-      const tokenAddress = params.tokenInfo[1];
-      const tokenABI = [
-        'event Transfer(address indexed from, address indexed to, uint256 value)',
-      ];
-      const tokenContract = new ethers.Contract(tokenAddress, tokenABI, provider);
+  // async function listenForTransferEvents() {
+  //   if (isPhaseTwo) {
+  //     const provider = new ethers.providers.JsonRpcProvider('https://fantom-rpc.publicnode.com/');
+  //     const tokenAddress = params.tokenInfo[1];
+  //     const tokenABI = [
+  //       'event Transfer(address indexed from, address indexed to, uint256 value)',
+  //     ];
+  //     const tokenContract = new ethers.Contract(tokenAddress, tokenABI, provider);
     
-      tokenContract.on('Transfer', async (from, to, value, event) => {
-        console.log(`Transfer detected from ${from} to ${to} of ${value.toString()} tokens`);
-        console.log("value used", parseFloat(ethers.utils.formatUnits(value, 0)))
-        // Send the transfer data to the server to update balances
-        try {
-          await axios.post('/api/ftm/update-holders', {
-            tokenAddress,
-            from,
-            to,
-            value: parseFloat(ethers.utils.formatUnits(value, 0)) // Ensure value is a number
-          });
-        } catch (error) {
-          console.error('Error updating balances:', error);
-        }
-      });
-    }
+  //     tokenContract.on('Transfer', async (from, to, value, event) => {
+  //       console.log(`Transfer detected from ${from} to ${to} of ${value.toString()} tokens`);
+  //       console.log("value used", parseFloat(ethers.utils.formatUnits(value, 0)))
+  //       // Send the transfer data to the server to update balances
+  //       try {
+  //         await axios.post('/api/ftm/update-holders', {
+  //           tokenAddress,
+  //           from,
+  //           to,
+  //           value: parseFloat(ethers.utils.formatUnits(value, 0)) // Ensure value is a number
+  //         });
+  //       } catch (error) {
+  //         console.error('Error updating balances:', error);
+  //       }
+  //     });
+  //   }
     
-  }
+  // }
 
   async function checkPauseStatus(walletProvider: any, tokenAddress: string) {
     const signer = await walletProvider.getSigner();
@@ -693,7 +730,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
         // console.log("balance from balanceOf function", balance)
         const bigNumberValue = ethers.BigNumber.from(balance);
 
-        console.log('BigNumber Value:', bigNumberValue.toString());
+        // console.log('BigNumber Value:', bigNumberValue.toString());
         return bigNumberValue;
       } else {
         return 0;
@@ -735,12 +772,12 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   }
 
 
-  const formattedLockedTokens = useMemo(() => formatTokenAmount(lockedTokens), [lockedTokens]);
+  const formattedLockedTokens = useMemo(() => formatTokenAmount(Number(lockedTokens)), [lockedTokens]);//no need precision so Number cast
 
    // Calculate the percentage using useMemo
    const lockedPercentage = useMemo(() => {
-    if (userBalance.token === 0) return 0;
-    return ((lockedTokens / userBalance.token) * 100).toFixed(2);
+    if (userBalance.token === '0') return 0;
+    return ((Number(lockedTokens) / Number(userBalance.token)) * 100).toFixed(2);//will lose precision either way
   }, [lockedTokens, userBalance.token]);
 
   // place trade handler
@@ -1087,7 +1124,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     fetch(`/api/thread/replies?token_address=${token_address}&chain=${params.tokenInfo[0]}`)
       .then((res) => res.json())
       .then((data) => {
-      console.log("data for replies", data)
+      // console.log("data for replies", data)
       setReplies(data)});
 
     // console.log("ref")
@@ -1770,14 +1807,15 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
               </div>
               <div>
                 <div className="text-sm text-gray-400 mb-1">bonding curve progress: {progress.toFixed(3)} %</div>
-                {/* <div aria-valuemax="100" aria-valuemin="0" role="progressbar" data-state="indeterminate" data-max="100" className="relative h-4 overflow-hidden rounded-full dark:bg-slate-800 w-full bg-gray-700">
-                    <div data-state="indeterminate" data-max="100" className="h-full w-full flex-1 bg-green-300 transition-all dark:bg-slate-50" style="transform: translateX(-12%);"></div>
-                  </div> */}
                 <IndeterminateProgressBar progress={progress} />
 
               </div>
-              <div className="text-xs text-gray-400">
+              {/* <div className="text-xs text-gray-400">
                 when the market cap reaches ${formatMarketCap(marketCapLimit)} all the liquidity from the bonding curve will be deposited into Spooky Swap and burned. progression increases as the price goes up.<br /><br />there are {(finalSupply - tokenSum/1E18).toFixed(3)} tokens still available for sale in the bonding curve and there is {(nativeSum/1e18 - 0.1).toFixed(3)} {nativeTokenInfo.chain} in the bonding curve.
+              </div> */}
+              <div className="text-xs text-gray-400">
+                when the market cap reaches ${formatMarketCap(marketCapLimit)} all the liquidity from the bonding curve will be deposited into Spooky Swap and burned. progression increases as the price goes up.<br /><br />
+                there are {parseFloat(tokensAvailable.toString()).toFixed(3)} tokens still available for sale in the bonding curve and there is {parseFloat(nativeInCurve.toString()).toFixed(3)} {nativeTokenInfo.chain} in the bonding curve.
               </div>
               {/* {finalSupply !== null && <p className="text-xs text-gray-400">The final supply when the market cap hits 10 is: {finalSupply}</p> } */}
               {/* <div className="text-yellow-500 font-bold">
@@ -1822,23 +1860,50 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                             </a>
                           </div>
                         ) : (
-                          holders.map((holder, index) => (
-                            <div key={holder.account} className="flex justify-between">
-                              <a
-                                className="hover:underline"
-                                href={getAccountUrl(params.tokenInfo[0], holder.account)}
-                                target={getAccountUrl(params.tokenInfo[0], holder.account) ? "_blank" : undefined}
-                                rel={getAccountUrl(params.tokenInfo[0], holder.account) ? "noopener noreferrer" : undefined}
-                              >
-                                {index + 1}. {holder.account.substring(2, 8)}
-                                {holder.account === tokenDetails?.creator ? ' 🤵‍♂️ (dev)' : ''}
-                                {holder.account === tokenDetails?.token_address ? ' 🏦 (bonding curve)' : ''}
-                              </a>
-                              <div>
-                                {((holder.balance / tokenSum) * 100).toFixed(2)}%
-                              </div>
-                            </div>
-                          ))
+                          // holders.map((holder, index) => (
+                          //   <div key={holder.account} className="flex justify-between">
+                          //     <a
+                          //       className="hover:underline"
+                          //       href={getAccountUrl(params.tokenInfo[0], holder.account)}
+                          //       target={getAccountUrl(params.tokenInfo[0], holder.account) ? "_blank" : undefined}
+                          //       rel={getAccountUrl(params.tokenInfo[0], holder.account) ? "noopener noreferrer" : undefined}
+                          //     >
+                          //       {index + 1}. {holder.account.substring(2, 8)}
+                          //       {holder.account === tokenDetails?.creator ? ' 🤵‍♂️ (dev)' : ''}
+                          //       {holder.account === tokenDetails?.token_address ? ' 🏦 (bonding curve)' : ''}
+                          //     </a>
+                          //     <div>
+                          //       {((holder.balance / tokenSum) * 100).toFixed(2)}%
+                          //     </div>
+                          //   </div>
+                          // ))
+                          <div>
+                             {holders.filter(holder => Number(holder.balance) > 0).map((holder, index) => {
+                                // const holderBalanceBig = BigNumber.from(holder.balance);
+                                // const percentage = holderBalanceBig.mul(100).div(bnTokenSum).toString();
+
+                                const holderBalance = Number(holder.balance)
+                                const percentage = ((holderBalance/Number(tokenSum)) * 100).toFixed(2)
+
+                                return (
+                                  <div key={holder.account} className="flex justify-between">
+                                    <a
+                                      className="hover:underline"
+                                      href={getAccountUrl(params.tokenInfo[0], holder.account)}
+                                      target={getAccountUrl(params.tokenInfo[0], holder.account) ? "_blank" : undefined}
+                                      rel={getAccountUrl(params.tokenInfo[0], holder.account) ? "noopener noreferrer" : undefined}
+                                    >
+                                      {index + 1}. {holder.account.substring(2, 8)}
+                                      {holder.account === tokenDetails?.creator ? ' 🤵‍♂️ (dev)' : ''}
+                                      {holder.account === tokenDetails?.token_address ? ' 🏦 (bonding curve)' : ''}
+                                    </a>
+                                    <div>
+                                      {percentage}%
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                          </div>
                         )}
                     </div>
                   )}

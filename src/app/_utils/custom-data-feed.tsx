@@ -114,6 +114,8 @@ class CustomDatafeed {
                         if (data.length < countBack) {
                         console.log(`Requested ${countBack} bars, but only ${data.length} are available.`);
                         // onHistoryCallback(correctedData, { noData: length === 0 });
+                        // console.log("what is this boolean pt 1", firstDataRequest)
+                        // console.log("value being saved as last bar pt 1", correctedData[correctedData.length - 1])
                         if (firstDataRequest) {
                             this.lastBarsCache.set(`${symbolInfo.name}~${symbolInfo.ticker}~${symbolInfo.description}`, { ...correctedData[correctedData.length - 1] });
                         }
@@ -122,6 +124,10 @@ class CustomDatafeed {
                         } else {
                             // Return the last 'countBack' number of bars
                             const resultBars = correctedData.slice(-countBack);
+                            // console.log("what is this boolean pt 2", firstDataRequest)
+                            // console.log("value being saved as last bar pt 2", correctedData[correctedData.length - 1])
+
+
                             if (firstDataRequest) {
                                 this.lastBarsCache.set(`${symbolInfo.name}~${symbolInfo.ticker}~${symbolInfo.description}`, { ...resultBars[resultBars.length - 1] });
                             }
@@ -130,26 +136,26 @@ class CustomDatafeed {
                     } else {
                         // onHistoryCallback([], { noData: true });
                         if (firstDataRequest){
-                       
-                        if (this.chainId === 'sei'){
-                            url = `/api/sei/data/latest-time?token_address=${this.tokenAddress}`
-                            // url = `http://localhost:3001/sei/data/latest-time?token_address=${this.tokenAddress}`
-                        } else if (this.chainId ==='ftm') {
-                            url = `/api/ftm/data/latest-time?token_address=${this.tokenAddress}`
-                            // url = `http://localhost:3001/ftm/data/latest-time?token_address=${this.tokenAddress}`
-                        } else {
-                            throw new Error('invalid chain id!')
-                        }
-                        fetch(url)
-                        .then(response => {
-                            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                            return response.json();
-                        })
-                        .then(lastData => {
-                            const nextT = lastData.latestTime; // Convert to milliseconds
-                            console.log(`Next available time: ${nextT}`);
-                            onHistoryCallback([], { noData: true, nextTime: nextT });
-                        }).catch(onErrorCallback);
+                        
+                            if (this.chainId === 'sei'){
+                                url = `/api/sei/data/latest-time?token_address=${this.tokenAddress}`
+                                // url = `http://localhost:3001/sei/data/latest-time?token_address=${this.tokenAddress}`
+                            } else if (this.chainId ==='ftm') {
+                                url = `/api/ftm/data/latest-time?token_address=${this.tokenAddress}`
+                                // url = `http://localhost:3001/ftm/data/latest-time?token_address=${this.tokenAddress}`
+                            } else {
+                                throw new Error('invalid chain id!')
+                            }
+                            fetch(url)
+                            .then(response => {
+                                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                                return response.json();
+                            })
+                            .then(lastData => {
+                                const nextT = lastData.latestTime; // Convert to milliseconds
+                                console.log(`Next available time: ${nextT}`);
+                                onHistoryCallback([], { noData: true, nextTime: nextT });
+                            }).catch(onErrorCallback);
                         } else {
                         onHistoryCallback([], { noData: true });
 
@@ -236,7 +242,7 @@ class CustomDatafeed {
                     exchange: 'Example Exchange',
                     minmov: 1,
                     // pricescale: 1000000000000000,
-                    pricescale: 1000,
+                    pricescale: 1000000,
                     has_intraday: true,
                     visible_plots_set: 'ohlcv',
                     has_weekly_and_monthly: false,
