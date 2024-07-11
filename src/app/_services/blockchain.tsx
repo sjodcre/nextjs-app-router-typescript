@@ -1,11 +1,11 @@
-import { Contract, ContractFactory, ethers } from 'ethers'
+import { BigNumber, Contract, ContractFactory, ethers } from 'ethers'
 // import ERC20TestArtifact from '@/../artifacts/contracts/ERC20Test.sol/ERC20Test.json'
 import ERC20TestArtifact from '@/../artifacts/contracts/ERC20Lock.sol/ERC20Lock.json'
 
-import { TokenListData, TokenParams } from '../_utils/types'
+import { DeployTokenResult, TokenListData, TokenParams } from '../_utils/types'
 // import { useWeb3ModalProvider } from '@web3modal/ethers/react'
-import { calculateMinReturnWithSlippage, calculateMinTokensWithSlippage, calculateRequiredDeposit } from '../_utils/helpers'
-import { postTransactionData } from './db-write'
+import { calculateMinReturnWithSlippage, calculateMinTokensWithSlippage, calculateRequiredDeposit, extractLogData } from '../_utils/helpers'
+import { postPendingData } from './db-write'
 import ManagerArtifact from '@/../artifacts/contracts/Manager.sol/Manager.json'
 // import { EventParams, EventStruct, TicketStruct } from '@/utils/type.dt'
 // import { globalActions } from '@/store/globalSlices'
@@ -30,12 +30,12 @@ async function deployManager(walletProvider: any) {
   const signer = provider.getSigner();
   const network = await provider.getNetwork();
   console.log('Connected to network:', network);
-  const gasPrice1 = await provider.getGasPrice();
-  console.log('Current gas price:', gasPrice1.toString());
+  const gasPrice = await provider.getGasPrice();
+  console.log('Current gas price:', gasPrice.toString());
   const feeReceiver = "0x0287b980Ffb856cfF0cB61B926219ccf977B6fB4"; // Replace with your address
   const feeAmount = ethers.utils.parseUnits("0.1", 18);
-  const contractOwner = "0xC439d846b4243189820dFF9CF77D1c8573759710" 
-  const gasPrice = ethers.utils.parseUnits('20', 'gwei');
+  const contractOwner = "0xf759c09456A4170DCb5603171D726C3ceBaDd3D5" 
+  // const gasPrice = ethers.utils.parseUnits('40', 'gwei');
   const ManagerFactory = new ethers.ContractFactory(
       ManagerArtifact.abi,
       ManagerArtifact.bytecode,
@@ -61,7 +61,7 @@ async function deployManager(walletProvider: any) {
   }
 }
 
-const deployToken = async (selectedChain: string, token: TokenParams, mintAmount: number, walletProvider: any): Promise<TokenListData> => {
+const deployToken = async (selectedChain: string, token: TokenParams, mintAmount: number, walletProvider: any): Promise<DeployTokenResult> => {
   if (!walletProvider) {
     reportError('Please install a browser provider')
     return Promise.reject(new Error('Browser provider not installed'))
@@ -72,7 +72,7 @@ const deployToken = async (selectedChain: string, token: TokenParams, mintAmount
     managerContractAddress = "0x4f37dbac5910A3463a9EF18B083b579B5Fa57D03" //test bug
 
   } else if (selectedChain === "ftm"){
-    managerContractAddress = "0x427Ef3bf806b1BE00919ac894FCbE919ccaEf73D" //mainnet spooky
+    managerContractAddress = "0x06837ccb107165d8aDd7Dc15FefAe0b24dAD5673" //mainnet spooky
     // managerContractAddress = "0xceA6cEC23F5B1a18A97fFae0a8c06B26775Abc64" //testnet
     // managerContractAddress = "0x08A675f4297Df156Fb32A4f0ec534E6D863e706e" //mainnet
   } else {
@@ -83,6 +83,8 @@ const deployToken = async (selectedChain: string, token: TokenParams, mintAmount
   const provider = new ethers.providers.Web3Provider(walletProvider)
   const signer = await provider.getSigner()
   const signerAddr = await signer.getAddress();
+  const gasPrice = await provider.getGasPrice();
+  console.log('Current gas price:', gasPrice.toString());
   const ManagerContract = new ethers.Contract(managerContractAddress, ManagerArtifact.abi, signer);
 
   try {
@@ -92,7 +94,7 @@ const deployToken = async (selectedChain: string, token: TokenParams, mintAmount
     const mintAmountParse = ethers.utils.parseUnits(mintAmountWFees.toString(), 18)
     const totalPayment = feeAmount.add(mintAmountParse);
     const mintValue = Number(mintAmountParse)
-    const gasPrice = ethers.utils.parseUnits('20', 'gwei');
+    // const gasPrice = ethers.utils.parseUnits('40', 'gwei');
 
     console.log("mintValue", mintValue)
     const tx = await ManagerContract.deployERC20(
@@ -111,6 +113,13 @@ const deployToken = async (selectedChain: string, token: TokenParams, mintAmount
      // Wait for the transaction to be mined
      const receipt = await tx.wait();
      console.log("Transaction receipt:", receipt);
+
+     const logData = extractLogData(receipt, signerAddr);
+     console.log("Log Data: ", logData);
+    //  console.log("Log Data Converted to String: ", logData.toString());
+
+    //  console.log("transaction receipt events", receipt.events);
+     console.log("stringify the events", JSON.stringify(receipt.events, null, 2));
 
      // Extract the deployed contract address from the event
      const deployedEvent = receipt.events.find((event: any) => event.event === "ERC20Deployed");
@@ -133,10 +142,12 @@ const deployToken = async (selectedChain: string, token: TokenParams, mintAmount
       tx_hash: txHash?.toString() || '' // Current timestamp
       };
 
-    return tokenListData
+
+    return {tokenListData, logData}
 
 } catch (error) {
-    reportError(error)
+    // reportError(error)
+    console.log("error while deploying", error)
     return Promise.reject(error)
   }
 }
@@ -145,18 +156,20 @@ const mintToken = async (
   chain: string,
   tokenAddress: string,  
   walletProvider: any, 
-  nativeSum: number,
-  tokenSum: number,
+  nativeSum: string,
+  tokenSum: string,
   nativeTokenBool: boolean,
   tokenAmountToTrade: { toString: () => string; },
   slippage : number
   ) => {
 
   const reserveRatio = 50000;
-  const reserveBalance = nativeSum;
+  // const reserveBalance = nativeSum;
+  const reserveBalance = ethers.BigNumber.from(nativeSum);
   let options: { value?: any; gasLimit?: string } = {};
-  let ethValue = 0;
-  const feePercentage = 0.01;
+  // let ethValue = 0;
+  let ethValue = ethers.BigNumber.from(0); // Initialize ethValue as a BigNumber
+  const feePercentage = 1;//1% fee
   const fee = Number(tokenAmountToTrade) * feePercentage;
   const totalAmount = Number(tokenAmountToTrade) + fee;
 
@@ -172,10 +185,19 @@ const mintToken = async (
     const ERC20TestContract = new Contract(tokenAddress, ERC20TestArtifact.abi, signer);
     
     if (!nativeTokenBool) {
-      let depositAmount = calculateRequiredDeposit(tokenSum, reserveBalance, reserveRatio, Number(tokenAmountToTrade));
-      // console.log("estimated deposit required", depositAmount);
-      const feeDeposit = depositAmount * feePercentage;
-      let totalDepositAmount = Math.round(depositAmount + feeDeposit);
+      const bnTokenAmountToTrade = ethers.BigNumber.from(tokenAmountToTrade); 
+      const bnTokenSum = ethers.BigNumber.from(tokenSum)
+      // let depositAmount = calculateRequiredDeposit(tokenSum, reserveBalance, reserveRatio, Number(tokenAmountToTrade));
+      let depositAmount = calculateRequiredDeposit(bnTokenSum, reserveBalance, reserveRatio, bnTokenAmountToTrade);
+      console.log("estimated deposit required", depositAmount.toString());
+      // const feeDeposit = depositAmount * feePercentage;
+      // const feeDeposit = depositAmount.mul(feePercentage);
+      const feeBasisPoints = BigNumber.from((feePercentage * 100).toString()); // Convert to basis points (1% => 100 basis points)
+      const feeDeposit = depositAmount.mul(feeBasisPoints).div(BigNumber.from(10000)); // Calculate fee as a fraction of 10000
+
+      // let totalDepositAmount = Math.round(depositAmount.add(feeDeposit));
+      let totalDepositAmount = depositAmount.add(feeDeposit);
+      console.log("total deposit amount plus fees", totalDepositAmount.toString())
       // console.log("plus fees", totalDepositAmount)
       // console.log("format depost units", ethers.utils.formatUnits(totalDepositAmount.toString(), 18))
       options = {
@@ -189,15 +211,17 @@ const mintToken = async (
         value: ethers.utils.parseUnits(totalAmount.toString(), 18),
         gasLimit: ethers.utils.hexlify(1000000), // Correct use of hexlify
       };
-      ethValue = Number(ethers.utils.parseUnits(tokenAmountToTrade.toString(), 18));
+      // ethValue = Number(ethers.utils.parseUnits(tokenAmountToTrade.toString(), 18));
+      ethValue = (ethers.utils.parseUnits(tokenAmountToTrade.toString(), 18));
     }
 
     // console.log("ethValue used to calculate slippage", ethValue)
     try {
-      let {estToken,estTokenWSlippage} = calculateMinTokensWithSlippage(tokenSum, reserveBalance, reserveRatio, ethValue, slippage);
+      console.log("VALUES", tokenSum, reserveBalance.toString(), reserveRatio.toString(), ethValue.toString(), slippage)
+      let {estToken,estTokenWSlippage} = calculateMinTokensWithSlippage(Number(tokenSum), Number(reserveBalance), reserveRatio, Number(ethValue), slippage);
       
-      console.log("estTokenWSlippage", estTokenWSlippage)
-      console.log("estToken", estToken)
+      console.log("estTokenWSlippage", estTokenWSlippage.toString())
+      console.log("estToken", estToken.toString())
       const tokensRemain = await ERC20TestContract.getTokensRemaining();
       console.log("tokens remaining", tokensRemain.toString())
       if(estToken > tokensRemain){
@@ -228,13 +252,15 @@ const mintToken = async (
         selectedChain: chain,
         contractAddress: tokenAddress,
         account: signerAddr,
-        amount: Number(estToken.toString()),// Ensure conversion to string before to Number if BigNumber
-        deposit: ethValue, // Same conversion as above
+        amount: estToken.toString(),// Ensure conversion to string before to Number if BigNumber
+        deposit: ethValue.toString(), // Same conversion as above
         timestamp: Math.floor(Date.now() / 1000),
         trade: 'buy',
         txHash: ''
       };
 
+      console.log("amount pending", estToken.toString())
+      console.log("deposit pending", ethValue.toString())
       // Calculate gas estimate
       // const mintTx = await ERC20TestContract.mint(minTokens.toString(), options);
       const mintTx = await ERC20TestContract.mint(estTokenWSlippage.toString(), options);
@@ -242,7 +268,7 @@ const mintToken = async (
       console.log("txHash", txHash);
       info.txHash = txHash;
 
-      await postTransactionData(info).then(response => {
+      await postPendingData(info).then(response => {
         console.log('Backend response:', response);
         // txid = response.primaryKey;
       }).catch((error: any) => {
@@ -284,13 +310,12 @@ const mintToken = async (
       return Promise.reject(error)
     }
   }
-  
-  
+    
   const burnToken = async (
     chain:string,
     tokenAddress: string,  
-    nativeSum : number,
-    tokenSum: number,
+    nativeSum : string,
+    tokenSum: string,
     tokenAmountToTrade: { toString: () => any | ethers.Overrides; },
     slippage : number,
     walletProvider: any
@@ -314,7 +339,11 @@ const mintToken = async (
       console.log("tokenSum",tokenSum)
       console.log("nativeSum", nativeSum)
       console.log("slippage",slippage)
-      const {estAmount,estAmountWSlippage} = calculateMinReturnWithSlippage(tokenSum, nativeSum, reserveRatio, Number(tokenAmountToTrade.toString()), slippage);
+      const bnTokenSum = ethers.BigNumber.from(tokenSum)
+      const bnNativeSum= ethers.BigNumber.from(nativeSum)
+      const bnTokenAmountToTrade = ethers.BigNumber.from(tokenAmountToTrade); 
+      // const {estAmount,estAmountWSlippage} = calculateMinReturnWithSlippage(tokenSum, nativeSum, reserveRatio, Number(tokenAmountToTrade.toString()), slippage);
+      const {estAmount,estAmountWSlippage} = calculateMinReturnWithSlippage(Number(bnTokenSum), Number(bnNativeSum), reserveRatio, Number(bnTokenAmountToTrade), slippage);
       console.log("estAmount", estAmount)
       console.log("tokenAmountToTrade", tokenAmountToTrade)
 
@@ -323,8 +352,8 @@ const mintToken = async (
         selectedChain: chain,
         contractAddress: tokenAddress,
         account: signerAddr,
-        amount: Number(tokenAmountToTrade.toString()),// Ensure conversion to string before to Number if BigNumber
-        deposit: Number(estAmount.toString()), // Same conversion as above
+        amount: tokenAmountToTrade.toString(),// Ensure conversion to string before to Number if BigNumber
+        deposit: estAmount.toString(), // Same conversion as above
         timestamp: Math.floor(Date.now() / 1000),
         trade: 'sell',
         txHash: ''
@@ -333,7 +362,7 @@ const mintToken = async (
       const txHash = burnTx.hash;
       info.txHash = txHash;
 
-      await postTransactionData(info).then(response => {
+      await postPendingData(info).then(response => {
         // console.log('Backend response: to update', response);
         // txid = response.primaryKey;
       }).catch((error: any) => {

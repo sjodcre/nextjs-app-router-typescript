@@ -33,33 +33,40 @@ export async function checkPendingTx( chain: string, tokenAddr: string){
                         contractAddress: tokenAddr,
                         account: parsedLog.args[0],
                         status: "successful",
-                        amount: Number(parsedLog.args[1].toString()), // Ensure conversion to string before to Number if BigNumber
-                        deposit: Number(parsedLog.args[2].toString()), // Same conversion as above
+                        // amount: Number(parsedLog.args[1].toString()), // Ensure conversion to string before to Number if BigNumber
+                        amount: parsedLog.args[1].toString(), // Ensure conversion to string before to Number if BigNumber
+                        // deposit: Number(parsedLog.args[2].toString()), // Same conversion as above
+                        deposit: parsedLog.args[2].toString(), // Same conversion as above
                         timestamp: timestamp,
                         trade: 'buy',
                         txHash: txHash
                       };
                     postTransactionAndOHLC(info, false).then(response => {
-                    console.log('Backend response:', response);
+                    console.log('Backend response:', response.message);
                     // socket.emit("updated", "updated to db");                    
                     }).catch(error => {
                     console.error('Error posting data to backend:', error);
                     });
                 } else if (parsedLog?.name === 'ContinuousBurn') {
                     console.log("Continuous Burn")
+                    console.log("burn amount",parsedLog.args[1].toString())
+                    console.log("burn deposit",parsedLog.args[2].toString())
+
                     const info = {
                         selectedChain: chain,
                         contractAddress: tokenAddr,
                         account: parsedLog.args[0],
                         status: "successful",
-                        amount: Number(parsedLog.args[1].toString()), // Ensure conversion to string before to Number if BigNumber
-                        deposit: Number(parsedLog.args[2].toString()), // Same conversion as above
+                        // amount: Number(parsedLog.args[1].toString()), // Ensure conversion to string before to Number if BigNumber
+                        amount: parsedLog.args[1].toString(), // Ensure conversion to string before to Number if BigNumber
+                        // deposit: Number(parsedLog.args[2].toString()), // Same conversion as above
+                        deposit: parsedLog.args[2].toString(), // Same conversion as above
                         timestamp:timestamp,
                         trade: 'sell',
                         txHash: txHash
                       };
                     postTransactionAndOHLC(info, false).then(response => {
-                    console.log('Backend response:', response);
+                    console.log('Backend response:', response.message);
                     // socket.emit("updated", "updated to db");                    
                     }).catch(error => {
                     console.error('Error posting data to backend:', error);

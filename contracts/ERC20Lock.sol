@@ -192,4 +192,8 @@ contract ERC20Lock is BancorBondingCurve, ERC20Pausable, CappedGasPrice, Ownable
         // require(marketCap <= maxMarketCap, "Market cap exceeds the maximum limit");
         return MAX_TOKEN_SUPPLY - totalSupply();
     }
+
+    function getMaxTokenSupply() external view returns (uint256) {
+    return MAX_TOKEN_SUPPLY;
+    }
 }

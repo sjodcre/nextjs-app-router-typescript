@@ -73,8 +73,10 @@ const handleLogs = async (
               contractAddress: ERC20TestContractAddress,
               account: parsedLog.args[0],
               status: "successful",
-              amount: Number(parsedLog.args[1].toString()), // Ensure conversion to string before to Number if BigNumber
-              deposit: Number(parsedLog.args[2].toString()), // Same conversion as above
+              // amount: Number(parsedLog.args[1].toString()), // Ensure conversion to string before to Number if BigNumber
+              amount: parsedLog.args[1].toString(), // Ensure conversion to string before to Number if BigNumber
+              // deposit: Number(parsedLog.args[2].toString()), // Same conversion as above
+              deposit: parsedLog.args[2].toString(), // Same conversion as above
               timestamp: Math.floor(Date.now() / 1000),
               trade: buySell.toString(),
               txHash: txHash
@@ -85,6 +87,7 @@ const handleLogs = async (
               const updatedInfo = {
                 ...info,
                 txid: response.txid,
+                bondingPrice: response.bondingPrice, // Include the bondingPrice here
                 token_ticker: tokenDetails?.token_ticker,
                 token_name: tokenDetails?.token_name,
                 token_description: tokenDetails?.token_description
@@ -93,6 +96,35 @@ const handleLogs = async (
 
             }).catch(error => {
               console.error('Error posting data to backend:', error);
+            });
+          } else if (parsedLog?.name === 'ContinuousBurn') {
+            console.log("Continuous Burn")
+            const info = {
+                selectedChain: chain,
+                contractAddress: ERC20TestContractAddress,
+                account: parsedLog.args[0],
+                status: "successful",
+                // amount: Number(parsedLog.args[1].toString()), // Ensure conversion to string before to Number if BigNumber
+                amount: parsedLog.args[1].toString(), // Ensure conversion to string before to Number if BigNumber
+                // deposit: Number(parsedLog.args[2].toString()), // Same conversion as above
+                deposit: parsedLog.args[2].toString(), // Same conversion as above
+                timestamp:Math.floor(Date.now() / 1000),
+                trade: buySell.toString(),
+                txHash: txHash
+              };
+            postTransactionAndOHLC(info, false).then(response => {
+            console.log('Backend response:', response.message);
+            const updatedInfo = {
+              ...info,
+              txid: response.txid,
+              bondingPrice: response.bondingPrice, // Include the bondingPrice here
+              token_ticker: tokenDetails?.token_ticker,
+              token_name: tokenDetails?.token_name,
+              token_description: tokenDetails?.token_description
+            };
+            emitEvent("updated", updatedInfo);
+          }).catch(error => {
+            console.error('Error posting data to backend:', error);
             });
           }
         } catch (error) {

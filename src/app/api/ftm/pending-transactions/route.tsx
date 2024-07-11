@@ -9,7 +9,8 @@ export async function GET(req: Request) {
   const token_address = url.searchParams.get("token_address");
 
   try {
-    const pendingTransactions = await query("SELECT * FROM transaction_history_ftm WHERE tx_status = 'pending' AND token_address = $1", [token_address]);
+    // const pendingTransactions = await query("SELECT * FROM transaction_history_ftm WHERE tx_status = 'pending' AND token_address = $1", [token_address]);
+    const pendingTransactions = await query("SELECT * FROM ftm_transaction_history WHERE tx_status = 'pending' AND token_address = $1", [token_address]);
     // console.log("pending results from db", pendingTransactions)
     // If a token is found, return it as a JSON response with a 200 status code
     return new Response(JSON.stringify(pendingTransactions), { status: 200 });

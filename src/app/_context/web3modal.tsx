@@ -36,7 +36,7 @@ const FtmMainnet = {
   name: 'Fantom Opera',
   currency: 'FTM',
   explorerUrl: 'https://ftmscan.com/',
-  rpcUrl: 'https://rpc.ankr.com/fantom/'
+  rpcUrl: 'https://fantom-rpc.publicnode.com/'
 }
 // 3. Create a metadata object
 const metadata = {
@@ -52,7 +52,7 @@ const ethersConfig = defaultConfig({
 
   /*Optional*/
   enableEIP6963: true, // true by default
-  enableInjected: false, // true by default
+  enableInjected: true, // true by default
   enableCoinbase: false, // true by default
   rpcUrl: '...', // used for the Coinbase SDK
   defaultChainId: 1, // used for the Coinbase SDK

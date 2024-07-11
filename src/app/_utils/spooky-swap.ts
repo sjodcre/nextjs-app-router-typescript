@@ -108,7 +108,7 @@ const sellTokensForFTM = async (
   };
 
 async function getReserves(pairAddress: string) {
-  const walletProvider = new ethers.providers.JsonRpcProvider('https://rpc.ankr.com/fantom/');
+  const walletProvider = new ethers.providers.JsonRpcProvider('https://fantom-rpc.publicnode.com/');
 
   // const provider = new ethers.providers.Web3Provider(walletProvider);
   const pairContract = new ethers.Contract(pairAddress, PairABI, walletProvider);

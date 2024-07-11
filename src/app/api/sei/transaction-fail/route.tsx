@@ -18,7 +18,8 @@ export  async function POST(req: Request) {
 }
  // Define table names based on chain id
   // Define table names based on chain id
-  const transactionTableName = 'transaction_history_sei';
+  // const transactionTableName = 'transaction_history_sei';
+  const transactionTableName = 'sei_transaction_history';
 
 
 

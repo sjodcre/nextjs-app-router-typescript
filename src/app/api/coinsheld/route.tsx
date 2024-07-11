@@ -13,10 +13,12 @@ export async function GET(req: Request, route: { params: { id: string } }) {
     let tableName ='';
     let detailsTable = '';
     if (chain ==="sei"){
-      tableName = 'token_balances_sei'
+      // tableName = 'token_balances_sei'
+      tableName = 'sei_users_balance'
       detailsTable = 'token_list_sei'
     } else if (chain ==="ftm") {
-      tableName = 'token_balances_ftm'
+      // tableName = 'token_balances_ftm'
+      tableName = 'ftm_users_balance'
       detailsTable = 'token_list_ftm'
     }
    // const id = route.params.id;

@@ -19,7 +19,8 @@ export async function GET(req: Request) {
   console.log(tokenAddress)
   try {
   
-    const transactions = await query(`SELECT * FROM transaction_history_ftm WHERE token_address = $1 AND tx_status = 'successful' ORDER BY timestamp DESC`, [tokenAddress]);
+    // const transactions = await query(`SELECT * FROM transaction_history_ftm WHERE token_address = $1 AND tx_status = 'successful' ORDER BY timestamp DESC`, [tokenAddress]);
+    const transactions = await query(`SELECT * FROM ftm_transaction_history WHERE token_address = $1 AND tx_status = 'successful' ORDER BY timestamp DESC`, [tokenAddress]);
 
     return new Response(JSON.stringify(transactions), { status: 200 });
     

@@ -1,5 +1,7 @@
 import { access } from "fs";
 import { query } from "../db";
+import { ethers } from "ethers";
+import { calculatePrice } from "@/app/_utils/helpers";
 
 
 
@@ -12,24 +14,37 @@ export async function POST(req: Request) {
 
 
   // Validate inputs
-  if (!tx_hash || !tokenAddress || !account || typeof token_amount !== 'number' || typeof native_amount !== 'number' || typeof time !== 'number' || typeof price !== 'number' || typeof volume !== 'number') {
+  if (!tx_hash || !tokenAddress || !account || !token_amount || !native_amount || typeof time !== 'number' || typeof price !== 'number' || typeof volume !== 'number') {
     return new Response(JSON.stringify({ error: 'Invalid input data' }), { status: 400 });
   }
 
   // Define table names based on chain id
-  const transactionTableName = 'transaction_history_sei';
+  // const transactionTableName = 'transaction_history_sei';
+  const transactionTableName = 'sei_transaction_history';
   const ohlcTableName = 'ohlc_sei';
 
   try {
-    let sum_token = 5E18;
-    let sum_native = 1E17;
+    // let sum_token = 5E18;
+    // let sum_native = 1E17;
+    let sum_token = "5000000000000000000";
+    let sum_native = "100000000000000000";
     let tx_status = 'successful'
 
+    //calculate price
+    const sumTokenBN = ethers.BigNumber.from(sum_token);
 
-    const sql = `INSERT INTO ${transactionTableName} (token_address, account, token_amount, native_amount, price_per_token, timestamp, trade, sum_token, sum_native, tx_hash, tx_status)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)` ;
+    const bondingPrice = calculatePrice(ethers.BigNumber.from(sum_native),sumTokenBN,ethers.BigNumber.from('50000'));
+    const priceBN = ethers.utils.parseUnits(bondingPrice.toString(), 18); 
+
+    const marketCapBN = sumTokenBN.mul(priceBN).div(ethers.BigNumber.from("1000000000000000000"));
+    const marketCap = ethers.utils.formatUnits(marketCapBN, 18);
+    const marketCapString = marketCap.toString();
+
+
+    const sql = `INSERT INTO ${transactionTableName} (token_address, account, token_amount, native_amount, price_per_token, timestamp, trade, sum_token, sum_native, tx_hash, tx_status, marketcap)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)` ;
     // Insert transaction data into the transaction history table
-    await query(sql, [tokenAddress, account, token_amount, native_amount, price, time, trade, sum_token, sum_native, tx_hash, tx_status]);
+    await query(sql, [tokenAddress, account, token_amount, native_amount, bondingPrice, time, trade, sum_token, sum_native, tx_hash, tx_status, marketCapString]);
 
     // Handle OHLC data
     const timeSlice = Math.floor(time / 300) * 300;
@@ -40,14 +55,14 @@ export async function POST(req: Request) {
 
       const sql3 = `INSERT INTO ${ohlcTableName} (token_address, time, open, high, low, close, volume)
       VALUES ($1, $2, $3, $4, $5, $6 ,$7)`;
-  await query(sql3, [tokenAddress, timeSlice, price, price, price, price, volume]);
+  await query(sql3, [tokenAddress, timeSlice, bondingPrice, bondingPrice, bondingPrice, bondingPrice, volume]);
   console.log("'No data available for the specified token address and time' ")
     } else {
           const updatedOHLC = {
         open: existing[0].open,
-        high: Math.max(existing[0].high, price),
-        low: Math.min(existing[0].low, price),
-        close: price,
+        high: Math.max(existing[0].high, bondingPrice),
+        low: Math.min(existing[0].low, bondingPrice),
+        close: bondingPrice,
         volume: existing[0].volume + volume
       };
       const sql3 = `UPDATE ${ohlcTableName} SET high = $1, low = $2, close = $3, volume = $4 WHERE chartid = $5`;
@@ -55,7 +70,8 @@ export async function POST(req: Request) {
     }
 
     //initialize balance table
-    const sql4 = 'INSERT INTO token_balances_sei (account, token_address, balance) VALUES ($1, $2, $3)';
+    // const sql4 = 'INSERT INTO token_balances_sei (account, token_address, balance) VALUES ($1, $2, $3)';
+    const sql4 = 'INSERT INTO sei_users_balance (account, token_address, balance) VALUES ($1, $2, $3)';
     await query(sql4, [tokenAddress, tokenAddress, token_amount]);
 
 

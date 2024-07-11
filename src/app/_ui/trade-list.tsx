@@ -38,7 +38,7 @@ const TradeItem = ({ trade, networkType }: { trade: TradeData, networkType: stri
     }, [trade.tx_hash]);
 
     const formattedNativeAmount = useMemo(() => {
-        return parseFloat((trade.native_amount/1E18).toString()).toFixed(4);
+        return parseFloat((Number(trade.native_amount)/1E18).toString()).toFixed(4);
     }, [trade.native_amount]);
 
     // const formattedTokenAmount = useMemo(() => {
@@ -52,7 +52,7 @@ const TradeItem = ({ trade, networkType }: { trade: TradeData, networkType: stri
     //         return `${(amount / 1e9).toFixed(2)}b`
     //     }
     // }, [trade.token_amount]);
-    const formattedTokenAmount = useMemo(() => formatTokenAmount(trade.token_amount), [trade.token_amount]);
+    const formattedTokenAmount = useMemo(() => formatTokenAmount(Number(trade.token_amount)), [Number(trade.token_amount)]);
 
 
     const transactionUrl = useMemo(() => {
