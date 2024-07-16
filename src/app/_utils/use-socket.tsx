@@ -109,7 +109,7 @@ const useSocket = (listeners: EventListener[] = []) => {
       if (tradeTime >= nextBarTime) {
           bar = {
               time: nextBarTime*1000,
-              open: tradePrice,
+              open: lastBar.close,
               high: tradePrice,
               low: tradePrice,
               close: tradePrice,

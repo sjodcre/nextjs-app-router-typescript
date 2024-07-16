@@ -294,8 +294,8 @@ export const formatTokenAmount = (tokenAmount: number): string => {
 export const formatMarketCap = (num: number) => {
     return num.toLocaleString('en-US', {
       style: 'decimal',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+      minimumFractionDigits: 3,
+      maximumFractionDigits: 3,
     });
   };
 

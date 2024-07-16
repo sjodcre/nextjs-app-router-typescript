@@ -13,7 +13,7 @@ import { fetchTokenInfo, getTokenTrades, getTopTokenHolders, postTransactionFail
 import { useSwitchNetwork, useWeb3ModalAccount, useWeb3ModalProvider } from "@web3modal/ethers5/react";
 import { toast } from "react-toastify";
 import TradeItem from "@/app/_ui/trade-list";
-import { extractFirstSixCharac, formatMarketCap, formatTokenAmount, getAccountUrl } from "@/app/_utils/helpers";
+import { calculatePrice, extractFirstSixCharac, formatMarketCap, formatTokenAmount, getAccountUrl } from "@/app/_utils/helpers";
 import { fetchNativeTokenPrice } from "@/app/_utils/native-token-pricing";
 import { useAppSelector } from "@/app/_redux/store";
 //import { socket } from "src/socket";
@@ -59,7 +59,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   const [isTrading, setIsTrading] = useState(false);
   // const [lockedTokens, setLockedTokens] = useState<number>(0);
   const [lockedTokens, setLockedTokens] = useState<BigNumber | null>(null);
-  const [isPaused, setIsPaused] = useState<boolean>(false);
+  const [isLiquidityPoolSetup, setIsLiquidityPoolSetup] = useState<boolean>(false);
   const [dexUrl, setDexUrl] = useState('');
   // const [finalSupply, setFinalSupply] = useState<number | null>(null);
   const [finalSupply, setFinalSupply] = useState<BigNumber | null>(null);
@@ -104,7 +104,10 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   : ethers.BigNumber.from('0');
 
   // const marketCapLimit = 10*(nativeTokenPrice);
-  const marketCapLimit = nativeTokenPrice ? 10 * nativeTokenPrice : 0;
+  const priceLimit = finalSupply? calculatePrice(ethers.BigNumber.from('500000000000000000'),finalSupply,ethers.BigNumber.from('50000')): 0;
+  // console.log("price at which market cap limit is reached", priceLimit)
+  const marketCapLimit = nativeTokenPrice && finalSupply? priceLimit *Number(ethers.utils.formatUnits(finalSupply, 18))* nativeTokenPrice : 0;
+  // console.log("market cap limit", marketCapLimit)
   // const tokenAddress = params.tokenInfo[1]
 
 
@@ -127,10 +130,10 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
   //set bonding curve %
   useEffect(() => {
-    const marketCapValue = parseFloat(marketCap.replace(/,/g, ''));
+    // const marketCapValue = parseFloat(marketCap.replace(/,/g, ''));
     // const newProgress = (marketCapValue / marketCapLimit) * 100;
     const newProgress = tokenSum && finalSupply
-  ? Number((BigNumber.from(tokenSum)).sub((BigNumber.from('5000000000000000000'))))/Number(finalSupply)*100 
+  ? Number((BigNumber.from(tokenSum).sub((BigNumber.from('5000000000000000000')))))/Number(finalSupply.sub((BigNumber.from('5000000000000000000'))))*100 
   : 0;
   //   const bnTokenSum = ethers.BigNumber.from(tokenSum)
   //   // const newProgress = tokenSum? ((tokenSum - initialTokenSum)/1E18/(finalSupply - initialTokenSum/1E18))*100 : 0;
@@ -146,7 +149,22 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     } else {
       setProgress(newProgress);
     }
-  }, [marketCap]);
+  }, [marketCap, tokenSum]);
+
+  // const updateProgress = () => {
+  //   const initialTokenSum = BigNumber.from('5000000000000000000'); // Initial token sum in BigNumber format
+
+  //   const newProgress = tokenSum && finalSupply
+  //     ? Number(BigNumber.from(tokenSum).sub(initialTokenSum)) / Number(finalSupply.sub(initialTokenSum)) * 100 
+  //     : 0;
+  //   console.log("newProgress", newProgress)
+  //   // Ensure the progress doesn't exceed 100%
+  //   if (newProgress > 100) {
+  //     setProgress(100);
+  //   } else {
+  //     setProgress(newProgress);
+  //   }
+  // };
 
   //fetch native token price
   useEffect(() => {
@@ -172,17 +190,6 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
       setProviderReady(false);
     }
   }, [walletProvider]);
-
-  //check market cap
-  // useEffect(() => {
-  //   const threshold = 50000; // Replace with your threshold value for marketCap
-  //   if (marketCap > threshold) {
-  //     setIsPaused(true);
-  //   } else {
-  //     setIsPaused(false);
-  //   }
-  // }, [marketCap]);
-
 
   //provider ready, get data
   useEffect(() => {
@@ -217,6 +224,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
         fetchMaxSupply(ethersProvider, params.tokenInfo[1])
         .then(maxTokenSupply => {
+          console.log("finalSupply", maxTokenSupply.toString())
           setFinalSupply(maxTokenSupply)
         }) .catch(error => {
           // Error handling
@@ -240,6 +248,13 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     });
   }, [params.tokenInfo, nativeTokenPrice])
 
+
+  const fetchDataAndUpdateProgress = () => {
+    fetchData();
+    ReplyList(params.tokenInfo[1]);
+    // updateProgress();
+  };
+
   //Fetch Data useeffect
   useEffect(() => {
 
@@ -248,35 +263,27 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     // listenForTransferEvents();
     // ReplyList(params.tokenInfo[1]);
     if (isTokenPriceFetched) {
-      fetchData();
-      // listenForTransferEvents();
-      ReplyList(params.tokenInfo[1]);
+      // fetchData();
+      // // listenForTransferEvents();
+      // ReplyList(params.tokenInfo[1]);
+      fetchDataAndUpdateProgress();
     }
 
-    onEvent("refresh", (value: any) => {
-      // updateData(value);
-      fetchData();
-      ReplyList(params.tokenInfo[1]);
+    onEvent("refresh", fetchDataAndUpdateProgress);
 
-        //   onEvent('channelChange', (channelString: string) => {
-        //     // console.log("channel string update", channelString.subs[0])
-        //     const resolution= Number(channelString.toString().split('~')[0])
-        //     // const resoNum = Number(resolution)
-        //     if (!isNaN(resolution)) {
-        //       console.log(resolution);
-        //       setChartResolution(resolution);
-        //   } else {
-        //       console.error("Resolution error");  // Handle conversion failure
-        //   }
-        // })
-    });
+
+    // onEvent("refresh", (value: any) => {
+    //   // updateData(value);
+    //   fetchData();
+    //   ReplyList(params.tokenInfo[1]);
+    // });
 
     return () => {
-      offEvent("refresh", fetchData);
+      offEvent("refresh", fetchDataAndUpdateProgress);
     };
 
 
-  }, [isTokenPriceFetched]);
+  }, [isTokenPriceFetched,marketCap]);
 
   //Fetch Reply useeffect
   useEffect(() => {
@@ -386,7 +393,9 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     // console.log("trades data", tradesData)
     setTrades(tradesData);
     setTokenSum(tradesData[0].sum_token);
+    console.log("tokenSum",tradesData[0].sum_token )
     setBnTokenSum(ethers.BigNumber.from(tradesData[0].sum_token));
+    console.log("bnTokenSum",ethers.BigNumber.from(tradesData[0].sum_token).toString() )
     setNativeSum(tradesData[0].sum_native);
     setBnNativeSum(ethers.BigNumber.from(tradesData[0].sum_native));
     // getTopTokenHolders(params.tokenInfo[0], params.tokenInfo[1]);
@@ -440,7 +449,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
     const data = await getTopTokenHolders(params.tokenInfo[0], params.tokenInfo[1]); // Assume this fetches the data as shown in your example
     setHolders(data);
-    // console.log("holders", holders)
+    console.log("holders data", data)
     // console.log("tokenSum", tokenSum)
     // const sum = data.reduce((acc: any, holder: { balance: any; }) => acc + holder.balance, 0);
     setIsLoading(false); // End loading
@@ -511,11 +520,13 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
   // const handleWithdrawToken = async () => {
   //   if (walletProvider && address) {
-  //     const withdrawAmount = ethers.utils.parseUnits("2", 18);
+  //     const withdrawAmount = ethers.utils.parseUnits("5", 18);
   //     const provider = new ethers.providers.Web3Provider(walletProvider)
   //     const signer = await provider.getSigner()
   //     const signerAddr = await signer.getAddress();
-  //     const gasPrice = ethers.utils.parseUnits('20', 'gwei');
+  //     // const gasPrice = ethers.utils.parseUnits('20', 'gwei');
+  //     const gasPrice = await provider.getGasPrice();
+  //     console.log('Current gas price:', gasPrice.toString());
   //     const ERC20LockContract = new ethers.Contract(params.tokenInfo[1], ERC20TestArtifact.abi, signer);
   //     const options = {
   //       gasLimit: 5000000,
@@ -574,9 +585,8 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
         // console.log("token address for locked tokens", tokenAddress)
         // console.log("signer addr to get locked tokens", signerAddr.toString())
         const lockedTokens = await ERC20LockContract.getLockedTokens(signerAddr.toString());
-        // const contractMarketCap = await ERC20LockContract.getMarketCap();
         // const maxTokenSupply = await ERC20LockContract.getMaxTokenSupply();
-        // console.log("lockedTokens", lockedTokens)
+        console.log("lockedTokens", lockedTokens)
         const gasPrice1 = await walletProvider.getGasPrice();
         console.log('Current gas price:', gasPrice1.toString());
         // console.log("lockedTokens to string", lockedTokens.toString());
@@ -705,16 +715,31 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     
   // }
 
+  // async function checkPauseStatus(walletProvider: any, tokenAddress: string) {
+  //   const signer = await walletProvider.getSigner();
+  //   const signerAddr = await signer.getAddress();
+  //   const ERC20LockContract = new ethers.Contract(tokenAddress, ERC20TestArtifact.abi, signer);
+  //   try {
+  //     const pauseStatue = await ERC20LockContract.paused();
+  //     console.log("pauseResp", pauseStatue)
+  //     setIsPaused(pauseStatue)
+  //   } catch (error) {
+  //     console.log("error checking pause status")
+  //   }
+  // }
+
   async function checkPauseStatus(walletProvider: any, tokenAddress: string) {
     const signer = await walletProvider.getSigner();
     const signerAddr = await signer.getAddress();
     const ERC20LockContract = new ethers.Contract(tokenAddress, ERC20TestArtifact.abi, signer);
     try {
-      const pauseStatue = await ERC20LockContract.paused();
-      console.log("pauseResp", pauseStatue)
-      setIsPaused(pauseStatue)
+      const liquidityPoolStatus = await ERC20LockContract.isLiquidityPoolSetup();
+      console.log("liquidityPoolStatus", liquidityPoolStatus);
+      // setIsLiquidityPoolSetup(liquidityPoolStatus); // Ensure setIsLiquidityPoolSetup is defined in your component
+      setIsLiquidityPoolSetup(liquidityPoolStatus)
+
     } catch (error) {
-      console.log("error checking pause status")
+      console.log("error checking liquidity pool status", error);
     }
   }
 
@@ -727,7 +752,9 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
       if (chainId === nativeTokenInfo.chainId) {
         const balance = await contract.balanceOf(signerAddr.toString());
-        // console.log("balance from balanceOf function", balance)
+        const balance2 = await contract.balanceOf(params.tokenInfo[1]);
+
+        console.log("balance of token address from balanceOf function", balance2.toString())
         const bigNumberValue = ethers.BigNumber.from(balance);
 
         // console.log('BigNumber Value:', bigNumberValue.toString());
@@ -1254,7 +1281,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
             holders balances
           </button> */}
         </div>
-        {isPaused && <div className="flex flex-col md:flex-row justify-center items-center space-x-8 mt-4">
+        {isLiquidityPoolSetup && !isPhaseTwo && <div className="flex flex-col md:flex-row justify-center items-center space-x-8 mt-4">
           <div className="justify-center p-4 w-fit bg-green-300 rounded mt-4 mb-4">
             bonding curve complete! a spooky swap pool will be seeded in the next 5-20 minutes with $14,177
                     of liquidity. A link to the pool will be provided here once complete. Only trust the the link that is posted here.
@@ -1598,7 +1625,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
           <div className="w-1/3 grid gap-4 h-fit w-fit">
             <div className="w-[350px] grid gap-4">
               {isPhaseTwo && <div className="bg-blue-500 p-2 rounded text-white">Trade on spooky swap via us</div>}
-              {!isPaused && <div className="bg-[#2e303a] p-4 rounded-lg border border-none text-gray-400 grid gap-4">
+              {(!isLiquidityPoolSetup ||isPhaseTwo) &&<div className="bg-[#2e303a] p-4 rounded-lg border border-none text-gray-400 grid gap-4">
                 <div className="grid grid-cols-2 gap-2 mb-4">
                   <button
                     className={`p-2 text-center rounded ${buySell === 'buy' ? 'bg-green-400 text-black' : 'bg-gray-800 text-grey-600'}`}
@@ -1754,7 +1781,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                   focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 dark:ring-offset-slate-950 
                   dark:focus-visible:ring-slate-300 dark:bg-slate-50 dark:text-slate-900 dark:hover:bg-slate-50/90 h-10 px-4 bg-green-400 text-black w-full py-3 rounded-md hover:bg-green-200"
                   onClick={handlePlaceTrade}
-                  disabled={isTrading || isPaused}>
+                  disabled={isTrading}>
                   place trade
                 </button>
               </div>}
@@ -1883,7 +1910,17 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                                 // const percentage = holderBalanceBig.mul(100).div(bnTokenSum).toString();
 
                                 const holderBalance = Number(holder.balance)
-                                const percentage = ((holderBalance/Number(tokenSum)) * 100).toFixed(2)
+                                // const percentage = ((holderBalance/Number(tokenSum)) * 100).toFixed(2)
+                                let percentage;
+                                if (holder.account === tokenDetails?.token_address) {
+                                  const totalMinted = Number(bnTokenSum.sub(initialTokenSum));
+                                  const totalMintable = Number(finalSupply.sub(initialTokenSum));
+                                  const contractIntermediate = (totalMinted / totalMintable)*100;
+                                  percentage = (100 - contractIntermediate).toFixed(2);
+                                } else {
+                                  const totalMintable = Number(finalSupply.sub(initialTokenSum));
+                                  percentage = ((holderBalance / totalMintable) * 100).toFixed(2);
+                                }
 
                                 return (
                                   <div key={holder.account} className="flex justify-between">

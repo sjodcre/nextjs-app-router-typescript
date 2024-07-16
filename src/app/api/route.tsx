@@ -19,7 +19,7 @@ export async function GET(req: Request) {
         } else if (sortBy === 'replies') {
             orderByClause = `ORDER BY reply_count ${order} NULLS LAST`;
         } else if (sortBy === 'marketcap') {
-            orderByClause = `ORDER BY lt.marketcap ${order} NULLS LAST`;
+            orderByClause = `ORDER BY lt.marketcap::NUMERIC ${order} NULLS LAST`;
         } else if (sortBy === 'creationTime') {
             orderByClause = `ORDER BY tl.datetime ${order} NULLS LAST`;
         }

@@ -81,11 +81,31 @@ export  async function POST(req: Request) {
         const txid = result2[0].txid;
                           
         // ohlc table
+        // const timeSlice = Math.floor(time / 300) * 300;
+        // const existing = await query(`SELECT * FROM ${ohlcTableName} WHERE token_address = $1 AND time = $2`, [tokenAddress, timeSlice]);
+        // // console.log("existing", existing)
+        // if (existing.length > 0) {
+        //     console.log("empty but entering?")
+        //     const updatedOHLC = {
+        //         open: existing[0].open,
+        //         high: Math.max(existing[0].high, bondingPrice),
+        //         low: Math.min(existing[0].low, bondingPrice),
+        //         close: bondingPrice,
+        //         volume: existing[0].volume + volume
+        //     };
+        //     await query(`UPDATE ${ohlcTableName} SET high = $1, low = $2, close = $3, volume = $4 WHERE chartid = $5`, 
+        //         [updatedOHLC.high, updatedOHLC.low, updatedOHLC.close, updatedOHLC.volume, existing[0].chartid]);
+        // } else {
+        //     await query(`INSERT INTO ${ohlcTableName} (token_address, time, open, high, low, close, volume)
+        //                   VALUES ($1, $2, $3, $4, $5, $6, $7)`, [tokenAddress, timeSlice, bondingPrice, bondingPrice, bondingPrice, bondingPrice, volume]);
+        // }
+
         const timeSlice = Math.floor(time / 300) * 300;
         const existing = await query(`SELECT * FROM ${ohlcTableName} WHERE token_address = $1 AND time = $2`, [tokenAddress, timeSlice]);
-        // console.log("existing", existing)
+
+        console.log("existing", existing);
+
         if (existing.length > 0) {
-            console.log("empty but entering?")
             const updatedOHLC = {
                 open: existing[0].open,
                 high: Math.max(existing[0].high, bondingPrice),
@@ -96,9 +116,25 @@ export  async function POST(req: Request) {
             await query(`UPDATE ${ohlcTableName} SET high = $1, low = $2, close = $3, volume = $4 WHERE chartid = $5`, 
                 [updatedOHLC.high, updatedOHLC.low, updatedOHLC.close, updatedOHLC.volume, existing[0].chartid]);
         } else {
+            // Fetch the most recent close price within a reasonable range
+            const recentClose = await query(`
+                SELECT close FROM ${ohlcTableName} 
+                WHERE token_address = $1 AND time < $2 
+                ORDER BY time DESC 
+                LIMIT 1`, 
+                [tokenAddress, timeSlice]
+            );
+            
+            let openPrice = bondingPrice; // Default to current bonding price if no recent close price
+            if (recentClose.length > 0) {
+                openPrice = recentClose[0].close;
+            }
+
             await query(`INSERT INTO ${ohlcTableName} (token_address, time, open, high, low, close, volume)
-                          VALUES ($1, $2, $3, $4, $5, $6, $7)`, [tokenAddress, timeSlice, bondingPrice, bondingPrice, bondingPrice, bondingPrice, volume]);
+                        VALUES ($1, $2, $3, $4, $5, $6, $7)`, [tokenAddress, timeSlice, openPrice, bondingPrice, bondingPrice, bondingPrice, volume]);
         }
+
+
 
         //token_balance table
         // const queryBalance = (await query(`SELECT balance FROM token_balances_ftm WHERE account = $1 AND token_address =$2`, [account, tokenAddress]));

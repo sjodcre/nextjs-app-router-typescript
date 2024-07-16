@@ -13,9 +13,11 @@ contract ERC20Lock is BancorBondingCurve, ERC20Pausable, CappedGasPrice, Ownable
     uint256 public reserveBalance = 10 * scale;
     uint256 public reserveRatio;
     address private feeReceiver = 0x372173ca23790098F17f376F59858a086Cae9Fb0; // Address to receive fees
-    uint256 public marketCap;
+    bool public liquidityPoolSetup = false;
+    // uint256 public marketCap;
     // uint256 public maxMarketCap = 10**18;
     uint256 public MAX_TOKEN_SUPPLY = 541899193367184 * 10**4;
+    uint256 public constant MAX_RESERVE_BALANCE = 50 * 10**16; // Set manually as per requirement
     address[] private lockedTokenAddresses; 
     mapping(address => uint256) public lockedTokens;
     mapping(address => bool) private hasLockedTokens;
@@ -51,16 +53,18 @@ contract ERC20Lock is BancorBondingCurve, ERC20Pausable, CappedGasPrice, Ownable
     }
 
     function mint(uint256 minTokens) external payable validGasPrice whenNotPaused {
+        require(!liquidityPoolSetup, "Liquidity pool setup, minting is disabled");
         uint256 fee = (msg.value * 1) / 101; // Calculate 1% fee
         uint256 netValue = msg.value - fee; // Net value after fee
         uint256 tokensToMint = calculateContinuousMintReturn(netValue);
         require(tokensToMint >= minTokens, "ErrorSlippageLimitExceeded");
 
-        _continuousMint(netValue, tokensToMint, fee);
-        _applyRandomLock(tokensToMint);
+        _continuousMint(netValue, tokensToMint, fee, msg.value);
     }
 
+
     function burn(uint256 _amount, uint256 minReturn) external validGasPrice whenNotPaused {
+        require(!liquidityPoolSetup, "Liquidity pool setup, minting is disabled");
         require(balanceOf(msg.sender) - lockedTokens[msg.sender] >= _amount, "ErrorInsufficientTokensToBurn");
         uint256 returnAmount = calculateContinuousBurnReturn(_amount);
         if (returnAmount < minReturn) {
@@ -78,37 +82,61 @@ contract ERC20Lock is BancorBondingCurve, ERC20Pausable, CappedGasPrice, Ownable
         return calculateSaleReturn(totalSupply(), reserveBalance, uint32(reserveRatio), _amount);
     }
 
-    function _continuousMint(uint256 _deposit, uint256 amount, uint256 fee) private {
+    function _continuousMint(uint256 _deposit, uint256 amount, uint256 initialFee, uint256 initialDeposit) private {
 
         // require(totalSupply() + amount <= maxTokenSupply, "ErrorMaxTokenSupplyExceeded");
         uint256 totalSupplyAfterMint = totalSupply() + amount;
         uint256 excessAmount = totalSupplyAfterMint > MAX_TOKEN_SUPPLY ? totalSupplyAfterMint - MAX_TOKEN_SUPPLY : 0;
-        uint256 marginOfError = MAX_TOKEN_SUPPLY / 10000; // 0.01% of max token supply
+        uint256 refundAmount = 0;
 
+        // uint256 marginOfError = MAX_TOKEN_SUPPLY / 10000; // 0.01% of max token supply
+        if (excessAmount > 0) {
+            uint256 remainingTokens = MAX_TOKEN_SUPPLY - totalSupply();
+            amount = remainingTokens;//remaining available to mint
 
-          if (excessAmount > 0) {
-            if (excessAmount <= marginOfError) {
-                // Mint only the remaining tokens to reach max supply
-                uint256 remainingTokens = MAX_TOKEN_SUPPLY - totalSupply();
-                amount = remainingTokens;
+            uint256 reserveBalanceAfterMint = reserveBalance + _deposit;
+            if(reserveBalanceAfterMint > MAX_RESERVE_BALANCE){
+                uint256 excessReserveBalance = reserveBalanceAfterMint - MAX_RESERVE_BALANCE;
+                uint256 actualDeposit = _deposit - excessReserveBalance;
+
+                refundAmount = excessReserveBalance;
+
+                // fee = actualDeposit * 1/100;
+                // Recalculate fee based on the actual deposit
+                uint256 newFee = (actualDeposit * 1) / 101;
+                refundAmount += initialFee - newFee;
+                // payable(msg.sender).transfer(excessReserveBalance); // Refund the excess amount
+                _deposit = actualDeposit; // Update _deposit to actualDeposit
+                initialFee = newFee; // Update the fee
+
             } else {
-                revert("Minting would exceed max token supply by more than the allowed margin of error");
+                refundAmount = initialDeposit - _deposit - initialFee;
             }
-        }   
+        }
 
         _mint(msg.sender, amount);
         reserveBalance += _deposit;
-        payable(feeReceiver).transfer(fee); // Transfer fee to the fee receiver
+        payable(feeReceiver).transfer(initialFee); // Transfer fee to the fee receiver
 
         // uint256 totalSupplyAfterMint = totalSupply();
-        marketCap = (_deposit * totalSupplyAfterMint) / amount;
+        // marketCap = (_deposit * totalSupplyAfterMint) / amount;
 
         emit ContinuousMint(msg.sender, amount, _deposit);
 
         // Pause the contract and unlock all tokens if total supply reaches maxTokenSupply
-        if (totalSupplyAfterMint == MAX_TOKEN_SUPPLY) {
-            _pause();
+        if (totalSupply() >= MAX_TOKEN_SUPPLY) {
+                       
+            _withdrawERC20Tokens(address(this), balanceOf(address(this)));
+            // _pause();
+            liquidityPoolSetup = true;
             _unlockAllTokens();
+
+        } else {
+            _applyRandomLock(amount);
+        }
+
+        if (refundAmount > 0) {
+            payable(msg.sender).transfer(refundAmount); // Refund any excess amount
         }
     }
 
@@ -120,8 +148,8 @@ contract ERC20Lock is BancorBondingCurve, ERC20Pausable, CappedGasPrice, Ownable
         payable(msg.sender).transfer(netReturn);
         payable(feeReceiver).transfer(fee); // Transfer fee to the fee receiver
 
-        uint256 totalSupplyAfterBurn = totalSupply();
-        marketCap = (reimburseAmount * totalSupplyAfterBurn) / _amount;
+        // uint256 totalSupplyAfterBurn = totalSupply();
+        // marketCap = (reimburseAmount * totalSupplyAfterBurn) / _amount;
 
         emit ContinuousBurn(msg.sender, _amount, reimburseAmount);
     }
@@ -161,12 +189,20 @@ contract ERC20Lock is BancorBondingCurve, ERC20Pausable, CappedGasPrice, Ownable
         return lockedTokens[account];
     }
 
-    function pause() external onlyOwner {
-        _pause();
+    function isLiquidityPoolSetup() external view returns (bool) {
+        return liquidityPoolSetup;
     }
 
-    function unpause() external onlyOwner {
-        _unpause();
+    // function pause() external onlyOwner {
+    //     _pause();
+    // }
+
+    // function unpause() external onlyOwner {
+    //     _unpause();
+    // }
+
+    function setLiquidityPoolSetup(bool _setup) external onlyOwner {
+        liquidityPoolSetup = _setup;
     }
 
     function withdrawNativeTokens(uint256 amount) external onlyOwner {
@@ -174,18 +210,16 @@ contract ERC20Lock is BancorBondingCurve, ERC20Pausable, CappedGasPrice, Ownable
         payable(owner()).transfer(amount);
     }
 
-    function withdrawERC20Tokens(address tokenAddress, uint256 amount) external onlyOwner {
+    function _withdrawERC20Tokens(address tokenAddress, uint256 amount) private {
         IERC20 token = IERC20(tokenAddress);
         require(amount <= token.balanceOf(address(this)), "Insufficient token balance");
         token.transfer(owner(), amount);
     }
 
-    function getMarketCap() external view returns (uint256) {
-        return marketCap;
-    }
-
-    // function getMaxMarketCap() external view returns (uint256) {
-    //     return maxMarketCap;
+    // function withdrawERC20Tokens(address tokenAddress, uint256 amount) external onlyOwner {
+    //     IERC20 token = IERC20(tokenAddress);
+    //     require(amount <= token.balanceOf(address(this)), "Insufficient token balance");
+    //     token.transfer(owner(), amount);
     // }
 
     function getTokensRemaining() external view returns (uint256) {
