@@ -37,7 +37,7 @@ const buyTokensWithFTM = async (
   try {
     const tx = await router.swapExactETHForTokens(
       amountOutMin.toString(),
-      [WFTM_ADDRESS, "0x33fA2D14a34568d6Efc0cB75A437D980177Fb3bD"],
+      [WFTM_ADDRESS, tokenAddress],
       signerAddr.toString(),
       deadline,
       {

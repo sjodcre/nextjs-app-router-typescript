@@ -72,7 +72,7 @@ const deployToken = async (selectedChain: string, token: TokenParams, mintAmount
     managerContractAddress = "0x4f37dbac5910A3463a9EF18B083b579B5Fa57D03" //test bug
 
   } else if (selectedChain === "ftm"){
-    managerContractAddress = "0x06837ccb107165d8aDd7Dc15FefAe0b24dAD5673" //mainnet spooky
+    managerContractAddress = "0xdb9c41485C8C08B5ad216CB7d5A5Aa3cAD186aFC" //mainnet spooky
     // managerContractAddress = "0xceA6cEC23F5B1a18A97fFae0a8c06B26775Abc64" //testnet
     // managerContractAddress = "0x08A675f4297Df156Fb32A4f0ec534E6D863e706e" //mainnet
   } else {
@@ -170,7 +170,7 @@ const mintToken = async (
   // let ethValue = 0;
   let ethValue = ethers.BigNumber.from(0); // Initialize ethValue as a BigNumber
   const feePercentage = 1;//1% fee
-  const fee = Number(tokenAmountToTrade) * feePercentage;
+  const fee = Number(tokenAmountToTrade) * feePercentage / 100;
   const totalAmount = Number(tokenAmountToTrade) + fee;
 
 
