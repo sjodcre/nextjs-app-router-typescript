@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "node server.mjs",
-    "build": "next build",
+    "build": "npx hardhat compile && next build",
     "start": "NODE_ENV=production node server.mjs",
     "compile": "tsc",
     "lint": "next lint",
