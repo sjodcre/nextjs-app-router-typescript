@@ -223,7 +223,7 @@ const Home: React.FC = () => {
                                 <li>Created By: {token.creator}</li>
                                 <li>Market Cap:{token.marketcap !== null ? token.marketcap.toLocaleString("en-US", { style: "decimal", minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ""}</li>
                                 <li>Replies: {token.reply_count} </li>
-                                 <li>{token.token_name} '(Ticker : {token.token_ticker}) : {token.token_description}"</li>
+                                <li>{token.token_name} (Ticker : {token.token_ticker}) : {token.token_description}</li>
                             </ul>
                         </div>
                     </Link>

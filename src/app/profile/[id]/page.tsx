@@ -1,9 +1,9 @@
 "use client"
 import { useState, useEffect } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+// import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useAppSelector } from '@/app/_redux/store';
+// import { useAppSelector } from '@/app/_redux/store';
 import React from 'react';
 import { useWeb3ModalAccount, useWeb3ModalProvider } from '@web3modal/ethers5/react';
 import { toast } from 'react-toastify';
@@ -30,6 +30,7 @@ interface FolloweeData {
   followee_count: string;
 
 }
+
 interface FollowerData {
 
   follower: string;
@@ -62,17 +63,15 @@ interface CoinsCreated {
 
 }
 
-// "use client"
-// import { useState, useEffect } from 'react';
-// import { usePathname, useRouter } from 'next/navigation';
-// import Link from 'next/link';
 
+// function Profile: React.FC = () => {
 
-const Profile: React.FC = () => {
+export default function Profile({ params }: { params: { id: string } }) {
 
-  const url = usePathname();
-  const id = url.substring("/profile/".length);
-  const { address, chainId, isConnected } = useWeb3ModalAccount()
+  // const url = usePathname();
+  // const id = url.substring("/profile/".length);
+  const id = params.id;
+  const { address, chainId } = useWeb3ModalAccount()
   const { walletProvider } = useWeb3ModalProvider();
   const [currentChain, setCurrentChain] = useState('');
   const [providerReady, setProviderReady] = useState(false);
@@ -109,7 +108,7 @@ const Profile: React.FC = () => {
   const prevHeldPage = () => {
     if (currentHeldPage > 1) {
       setCurrentHeldPage(prev => prev - 1);
-    }
+    } 
   };
   const nextCreatedPage = () => {
     setCurrentCreatedPage(prev => prev + 1);
@@ -169,10 +168,8 @@ const Profile: React.FC = () => {
       fetchCoinHeld(currentChain);
       fetchCoinCreated(currentChain);
       fetchProfile();
-    fetchFollowed();
-    fetchFollowData();
-
-
+      fetchFollowed();
+      fetchFollowData();
     }
 
   }, [currentChain,changes,isFollowing]);
@@ -706,4 +703,5 @@ const Profile: React.FC = () => {
 
 
 
-export default Profile;
+// export default Profile;
+
