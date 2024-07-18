@@ -74,7 +74,7 @@ import { ethers } from "ethers";
         // url = 'https://rpc.sonic.fantom.network/'
         url = 'https://fantom-rpc.publicnode.com/'
     } else if ( chainId ==='sei') {
-        url = 'https://cool-aged-owl.sei-arctic.quiknode.pro/177cc0d1e96c821bc0cdd8bb9dbf72157f1a5e1d/'
+        url = 'https://evm-rpc-arctic-1.sei-apis.com/'
     } else {
         throw new Error('incorrect chain id!')
     }

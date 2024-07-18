@@ -56,7 +56,7 @@ export async function POST(req: Request) {
       const sql3 = `INSERT INTO ${ohlcTableName} (token_address, time, open, high, low, close, volume)
       VALUES ($1, $2, $3, $4, $5, $6 ,$7)`;
   await query(sql3, [tokenAddress, timeSlice, bondingPrice, bondingPrice, bondingPrice, bondingPrice, volume]);
-  console.log("'No data available for the specified token address and time' ")
+  // console.log("'No data available for the specified token address and time' ")
     } else {
           const updatedOHLC = {
         open: existing[0].open,

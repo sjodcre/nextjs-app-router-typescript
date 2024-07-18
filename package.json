@@ -31,7 +31,9 @@
     "socket.io": "^4.7.5",
     "socket.io-client": "^4.7.5",
     "ts-node": "^10.9.2",
-    "tsx": "^4.15.2"
+    "tsx": "^4.15.2",
+    "winston": "^3.13.1",
+    "winston-daily-rotate-file": "^5.0.0"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^2.0.2",

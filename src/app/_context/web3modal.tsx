@@ -20,7 +20,7 @@ const SeiEVM = {
   name: 'SEI',
   currency: 'SEI',
   explorerUrl: 'https://seistream.app/',
-  rpcUrl: 'https://cool-aged-owl.sei-arctic.quiknode.pro/177cc0d1e96c821bc0cdd8bb9dbf72157f1a5e1d/'
+  rpcUrl: 'https://evm-rpc-arctic-1.sei-apis.com/'
 }
 
 // const FtmEVM = {

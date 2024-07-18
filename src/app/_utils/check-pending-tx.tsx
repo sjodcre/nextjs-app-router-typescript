@@ -11,12 +11,12 @@ export async function checkPendingTx( chain: string, tokenAddr: string){
     const pendingTransactions = await getPendingTransactions(chain, tokenAddr);
     const pendingTxs = pendingTransactions.filter(tx => tx.tx_status === 'pending');
 
-    console.log("pendingTxs", pendingTxs);
+    // console.log("pendingTxs", pendingTxs);
 
     for (const tx of pendingTxs) {
       const txHash = tx.tx_hash;
       const { result, timestamp } = await getTransactionStatus(chain, txHash);
-      console.log("txhash:", txHash);
+      // console.log("txhash:", txHash);
     //   console.log("Details from tracing", result);
       if (result && result.status === 1) {
             // console.log(txReceipt.hash)
@@ -25,9 +25,8 @@ export async function checkPendingTx( chain: string, tokenAddr: string){
             const iface = new Interface(ERC20TestArtifact.abi);
             result.logs.forEach((log: any) => {
                 const parsedLog = iface.parseLog(log);
-                console.log(["parsed log", parsedLog])
+                // console.log(["parsed log", parsedLog])
                 if (parsedLog?.name === 'ContinuousMint') {
-                    console.log("Continuous Mint")
                     const info = {
                         selectedChain: chain,
                         contractAddress: tokenAddr,
@@ -42,16 +41,12 @@ export async function checkPendingTx( chain: string, tokenAddr: string){
                         txHash: txHash
                       };
                     postTransactionAndOHLC(info, false).then(response => {
-                    console.log('Backend response:', response.message);
+                    // console.log('Backend response:', response.message);
                     // socket.emit("updated", "updated to db");                    
                     }).catch(error => {
                     console.error('Error posting data to backend:', error);
                     });
                 } else if (parsedLog?.name === 'ContinuousBurn') {
-                    console.log("Continuous Burn")
-                    console.log("burn amount",parsedLog.args[1].toString())
-                    console.log("burn deposit",parsedLog.args[2].toString())
-
                     const info = {
                         selectedChain: chain,
                         contractAddress: tokenAddr,
@@ -66,7 +61,7 @@ export async function checkPendingTx( chain: string, tokenAddr: string){
                         txHash: txHash
                       };
                     postTransactionAndOHLC(info, false).then(response => {
-                    console.log('Backend response:', response.message);
+                    // console.log('Backend response:', response.message);
                     // socket.emit("updated", "updated to db");                    
                     }).catch(error => {
                     console.error('Error posting data to backend:', error);
@@ -83,7 +78,7 @@ export async function checkPendingTx( chain: string, tokenAddr: string){
                 txHash: txHash
               };
               postTransactionFailed(info).then(response => {
-                console.log('Backend response:', response);
+                // console.log('Backend response:', response);
               }).catch(error => {
                 console.error('Error posting data to backend:', error);
               });

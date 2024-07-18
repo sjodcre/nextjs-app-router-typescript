@@ -169,10 +169,15 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   //fetch native token price
   useEffect(() => {
     const updatePrice = async () => {
-      const fetchedPrice = await fetchNativeTokenPrice(params.tokenInfo[0]);
-      console.log("native token price", fetchedPrice)
-      setNativeTokenPrice(fetchedPrice);
-      setIsTokenPriceFetched(true);
+      try {
+        const fetchedPrice = await fetchNativeTokenPrice(params.tokenInfo[0]);
+        // console.log("native token price", fetchedPrice)
+        setNativeTokenPrice(fetchedPrice);
+        setIsTokenPriceFetched(true);
+      } catch (error) {
+        console.error('Error getting native token price:', error)
+      }
+
     };
 
     updatePrice(); // Initial fetch
@@ -210,30 +215,26 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
           })
           .catch(error => {
             // Error handling
-            console.log("fail to fetch user balance:", error)
+            // console.log("fail to fetch user balance:", error)
 
           });
         fetchLockedTokens(ethersProvider, params.tokenInfo[1])
         .then(lockedTokens => {
           setLockedTokens(lockedTokens)
-          // console.log("locked tokens", lockedTokens)
         }) .catch(error => {
           // Error handling
-          console.log("fail to fetch locked tokens:", error)
+          // console.log("fail to fetch locked tokens:", error)
         });
 
         fetchMaxSupply(ethersProvider, params.tokenInfo[1])
         .then(maxTokenSupply => {
-          console.log("finalSupply", maxTokenSupply.toString())
           setFinalSupply(maxTokenSupply)
         }) .catch(error => {
           // Error handling
-          console.log("fail to fetch  token max supply:", error)
+          // console.log("fail to fetch  token max supply:", error)
         });
 
-      } else {
-        console.log("provider is not ready to read user")
-      }
+      } 
     }
   }, [providerReady, transactionDone]);
 
@@ -383,19 +384,14 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     const tradesDataPromise = getTokenTrades(params.tokenInfo[0], params.tokenInfo[1]);
     // Wait for both promises to resolve
     const [tokenInfo, tradesData] = await Promise.all([tokenInfoPromise, tradesDataPromise]);
-    // console.log("tradesData", tradesData)
-    // console.log("phase two boolean", tokenInfo[0].phase_two)
-    // console.log("tokeninfo", tokenInfo)
     setDexUrl(tokenInfo[0].dex_url)
     setIsPhaseTwo(tokenInfo[0].phase_two)
     // Update state with fetched data
     setTokenDetails(tokenInfo[0]);
-    // console.log("trades data", tradesData)
     setTrades(tradesData);
     setTokenSum(tradesData[0].sum_token);
-    console.log("tokenSum",tradesData[0].sum_token )
+    // console.log("tokenSum",tradesData[0].sum_token )
     setBnTokenSum(ethers.BigNumber.from(tradesData[0].sum_token));
-    console.log("bnTokenSum",ethers.BigNumber.from(tradesData[0].sum_token).toString() )
     setNativeSum(tradesData[0].sum_native);
     setBnNativeSum(ethers.BigNumber.from(tradesData[0].sum_native));
     // getTopTokenHolders(params.tokenInfo[0], params.tokenInfo[1]);
@@ -405,26 +401,24 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
       let marketCap = 0;
       if (!tokenInfo[0].phase_two) {
           marketCap = tradesData[0].sum_token * tradesData[0].price_per_token * nativeTokenPrice / 1E18;
-          console.log("market cap", marketCap)
       } else {
-        console.log("phase 2 market cap")
         try {
           const reservesData = await getReserves(tokenInfo[0].dex_url);
   
           // setReserves(reservesData);
           // setWFTMPrice(wftmPriceData);
-          console.log("reservesData", reservesData)
+          // console.log("reservesData", reservesData)
           const tokenPriceInUSD = calculateTokenPrice(reservesData, nativeTokenPrice);
           setTokenPrice(tokenPriceInUSD);
-          console.log("tokenPriceInUSD", tokenPriceInUSD)
+          // console.log("tokenPriceInUSD", tokenPriceInUSD)
 
           marketCap =
             reservesData.reserve1 * tokenPriceInUSD +
             reservesData.reserve0 * nativeTokenPrice;
           
-          console.log("marketCap", marketCap)
+          // console.log("marketCap", marketCap)
         } catch (error) {
-          console.log("error setting phase 2 market cap", error)
+          // console.log("error setting phase 2 market cap", error)
         } 
       }
 
@@ -440,7 +434,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
       setMarketCap(formattedMarketCap);
     }
 
-    console.log("data fetch");
+    // console.log("data fetch");
   };
 
   //fetch token holders
@@ -449,8 +443,6 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
     const data = await getTopTokenHolders(params.tokenInfo[0], params.tokenInfo[1]); // Assume this fetches the data as shown in your example
     setHolders(data);
-    console.log("holders data", data)
-    // console.log("tokenSum", tokenSum)
     // const sum = data.reduce((acc: any, holder: { balance: any; }) => acc + holder.balance, 0);
     setIsLoading(false); // End loading
   };
@@ -463,90 +455,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     setTokenAmountToTrade(amount);  // Assuming tokenAmount is a string, if not, convert appropriately
   };
 
-  // const handlePause = async () => {
-  //   if (walletProvider && address) {
-  //     const provider = new ethers.providers.Web3Provider(walletProvider)
-  //     const signer = await provider.getSigner()
-  //     const signerAddr = await signer.getAddress();
-  //     const ERC20LockContract = new ethers.Contract(params.tokenInfo[1], ERC20TestArtifact.abi, signer);
-  //     const options = {
-  //       gasLimit: ethers.utils.hexlify(5000000), // Correct use of hexlify
-  //     };
-  //     try {
-  //       const pauseStatue = await ERC20LockContract.paused();
-  //       console.log("pauseResp", pauseStatue)
-  //       if (pauseStatue === false) {
-  //         toast.info("Currently not paused. pausing...")
-  //         const pauseResp = await ERC20LockContract.pause(options);
-  //         console.log("pauseResp", pauseResp)
-  //         // setIsPaused(true)
-  //       } else {
-  //         toast.info("Currently paused. unpausing...")
-  //         const pauseResp = await ERC20LockContract.unpause(options);
-  //         console.log("pauseResp", pauseResp)
-  //         // setIsPaused(false)
-  //       }
-  //       // const pauseResp = await ERC20LockContract.unpause(options);
-  //     } catch (error){
-  //       console.error("Error getting locked amount:", error);
-  //     throw error;
-  //     }
-  //   }
-  // }
-
-  // const handleSecondPhase = () => {
-  //   setIsPhaseTwo(!isPhaseTwo)
-  // }
-
-  // const handleWithdrawNative = async () => {
-  //   if (walletProvider && address) {
-  //     const withdrawAmount = ethers.utils.parseUnits("0.3", 18);
-  //     const provider = new ethers.providers.Web3Provider(walletProvider)
-  //     const signer = await provider.getSigner()
-  //     const signerAddr = await signer.getAddress();
-  //     const ERC20LockContract = new ethers.Contract(params.tokenInfo[1], ERC20TestArtifact.abi, signer);
-  //     const options = {
-  //       gasLimit: ethers.utils.hexlify(5000000), // Correct use of hexlify
-  //     };
-  //     try {
-  //       const withdrawResp = await ERC20LockContract.withdrawNativeTokens(withdrawAmount, options);
-  //       console.log("withdrwa resp", withdrawResp)
-  //     } catch (error){
-  //       console.error("Error getting locked amount:", error);
-  //     throw error;
-  //     }
-  //   }
-  // }
-
-  // const handleWithdrawToken = async () => {
-  //   if (walletProvider && address) {
-  //     const withdrawAmount = ethers.utils.parseUnits("5", 18);
-  //     const provider = new ethers.providers.Web3Provider(walletProvider)
-  //     const signer = await provider.getSigner()
-  //     const signerAddr = await signer.getAddress();
-  //     // const gasPrice = ethers.utils.parseUnits('20', 'gwei');
-  //     const gasPrice = await provider.getGasPrice();
-  //     console.log('Current gas price:', gasPrice.toString());
-  //     const ERC20LockContract = new ethers.Contract(params.tokenInfo[1], ERC20TestArtifact.abi, signer);
-  //     const options = {
-  //       gasLimit: 5000000,
-  //       gasPrice: gasPrice
-        
-  //     };
-  //     try {
-  //       console.log("withdrawAmt", withdrawAmount)
-  //       // const balance = await ERC20LockContract.balanceOf("0x759bD762C2630C489F71898eC3eEAAcb1f0c24e0");
-  //       const withdrawResp = await ERC20LockContract.withdrawERC20Tokens(params.tokenInfo[1],withdrawAmount, options);
-  //       // const withdrawResp = await ERC20LockContract.getLockedTokens("0xf759c09456A4170DCb5603171D726C3ceBaDd3D5");
-  //       console.log("withdraw Resp", withdrawResp)
-  //       // const res = await withdrawResp.wait()
-  //       // console.log("actual res", res)
-  //     } catch (error){
-  //       console.error("Error getting locked amount:", error);
-  //     throw error;
-  //     }
-  //   }
-  // }
+  
 
   const handleSetPercentage = (percentage: number) => {
     // handleChainChange()
@@ -559,8 +468,6 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
         // This code executes after successful network change
         const percentageBigNumber = BigNumber.from(percentage);
         const fullAmount = userBalance.token;
-        // console.log("user balance hmmm", fullAmount)
-        // console.log("locked tokens", lockedTokens)
         const sellableAmount = ethers.BigNumber.from(fullAmount).sub(lockedTokens);
         // const amountToSet = (sellableAmount * percentage / 100).toFixed(0); // Calculating the percentage and rounding it to the nearest whole number
         const amountToSet = sellableAmount
@@ -576,22 +483,17 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   };
 
   async function fetchLockedTokens (walletProvider: any, tokenAddress:string )  {
-    if (walletProvider && address) {
+    if (walletProvider && address && nativeTokenInfo.chainId == chainId) {
       // const provider = new ethers.providers.Web3Provider(walletProvider)
       const signer = await walletProvider.getSigner()
       const signerAddr = await signer.getAddress();
       const ERC20LockContract = new ethers.Contract(tokenAddress, ERC20TestArtifact.abi, signer);
       try {
-        // console.log("token address for locked tokens", tokenAddress)
-        // console.log("signer addr to get locked tokens", signerAddr.toString())
         const lockedTokens = await ERC20LockContract.getLockedTokens(signerAddr.toString());
         // const maxTokenSupply = await ERC20LockContract.getMaxTokenSupply();
-        console.log("lockedTokens", lockedTokens)
+        // console.log("lockedTokens", lockedTokens)
         const gasPrice1 = await walletProvider.getGasPrice();
-        console.log('Current gas price:', gasPrice1.toString());
-        // console.log("lockedTokens to string", lockedTokens.toString());
-        // console.log("contract market cap", contractMarketCap.toString());
-        // console.log("maxToken supply", maxTokenSupply.toString())
+        // console.log('Current gas price:', gasPrice1.toString());
 
         return lockedTokens
       } catch (error){
@@ -604,17 +506,17 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   }
 
   async function fetchMaxSupply (walletProvider: any, tokenAddress:string )  {
-    if (walletProvider) {
+    if (walletProvider && (chainId == nativeTokenInfo.chainId)) {
       // const provider = new ethers.providers.Web3Provider(walletProvider)
       const signer = await walletProvider.getSigner()
       const ERC20LockContract = new ethers.Contract(tokenAddress, ERC20TestArtifact.abi, signer);
       try {
         const maxTokenSupply = await ERC20LockContract.getMaxTokenSupply();
-        console.log("maxToken supply", maxTokenSupply.toString())
+        // console.log("maxToken supply", maxTokenSupply.toString())
 
         return maxTokenSupply
       } catch (error){
-        console.error("Error getting locked amount:", error);
+        console.error("Error getting max supply:", error);
       throw error;
       }
 
@@ -734,12 +636,12 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     const ERC20LockContract = new ethers.Contract(tokenAddress, ERC20TestArtifact.abi, signer);
     try {
       const liquidityPoolStatus = await ERC20LockContract.isLiquidityPoolSetup();
-      console.log("liquidityPoolStatus", liquidityPoolStatus);
+      // console.log("liquidityPoolStatus", liquidityPoolStatus);
       // setIsLiquidityPoolSetup(liquidityPoolStatus); // Ensure setIsLiquidityPoolSetup is defined in your component
       setIsLiquidityPoolSetup(liquidityPoolStatus)
 
     } catch (error) {
-      console.log("error checking liquidity pool status", error);
+      // console.log("error checking liquidity pool status", error);
     }
   }
 
@@ -752,9 +654,6 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
       if (chainId === nativeTokenInfo.chainId) {
         const balance = await contract.balanceOf(signerAddr.toString());
-        const balance2 = await contract.balanceOf(params.tokenInfo[1]);
-
-        console.log("balance of token address from balanceOf function", balance2.toString())
         const bigNumberValue = ethers.BigNumber.from(balance);
 
         // console.log('BigNumber Value:', bigNumberValue.toString());
@@ -810,7 +709,6 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   // place trade handler
   const handlePlaceTrade = async () => {
     if (isTrading) return; // Prevent further actions if already trading
-    console.log("token balance",userBalance.token)
     setIsTrading(true); // Set trading state to true to block further trades
     try {
       if (!isConnected){
@@ -862,7 +760,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                 error: 'Transaction Failed'
               }
             ).then(({ result, txHash }) => {
-              console.log("result status", result.status)
+              // console.log("result status", result.status)
               if (result.status === 1) {
                 // console.log("Transaction succeeded:", result);
           
@@ -922,7 +820,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
               //   });
               // } 
               else if (result.status === 0) {
-                console.log("Transaction failed with receipt:", result);
+                // console.log("Transaction failed with receipt:", result);
                 // Handle failure case
 
                 const info = {
@@ -932,13 +830,13 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                   txHash: txHash
                 };
                 postTransactionFailed(info).then(response => {
-                  console.log('Backend response:', response);
+                  // console.log('Backend response:', response);
                 }).catch(error => {
                   console.error('Error posting data to backend:', error);
                 });
 
               } else {
-                console.log("transaction result not found")
+                // console.log("transaction result not found")
                 // return 'Transaction not found or pending';
               }
               setTokenAmountToTrade('');
@@ -946,9 +844,6 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
               setIsTrading(false); // Reset trading state after success
             }).catch(error => {
               // console.error("Buy transaction error:", error);
-              // console.log(error.transaction)
-              // console.log(error.transaction.hash)
-              // console.log("error when rejected tx", error)
               // const info = {
               //   selectedChain: chain,
               //   status: "failed",
@@ -976,7 +871,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                   txHash: error.transaction ? error.transaction.hash : 'Unknown'
                 };
                 postTransactionFailed(info).then(response => {
-                  console.log('Backend response:', response);
+                  // console.log('Backend response:', response);
                   setIsTrading(false);
                 }).catch(error => {
                   console.error('Error posting data to backend:', error);
@@ -1064,7 +959,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
               //     }
               //   });
                else if (result.status === 0) {
-                console.log("Transaction failed with receipt:", result);
+                // console.log("Transaction failed with receipt:", result);
                 // Handle failure case
                 const info = {
                   selectedChain: chain,
@@ -1073,12 +968,12 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                   txHash: txHash
                 };
                 postTransactionFailed(info).then(response => {
-                  console.log('Backend response:', response);
+                  // console.log('Backend response:', response);
                 }).catch(error => {
                   console.error('Error posting data to backend:', error);
                 });
               }  else {
-                console.log("transaction result not found")
+                // console.log("transaction result not found")
                 // return 'Transaction not found or pending';
               }
               // handle success, parse logs, etc.
@@ -1114,7 +1009,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                   txHash: error.transaction ? error.transaction.hash : 'Unknown'
                 };
                 postTransactionFailed(info).then(response => {
-                  console.log('Backend response:', response);
+                  // console.log('Backend response:', response);
                   setIsTrading(false);
                 }).catch(error => {
                   console.error('Error posting data to backend:', error);
@@ -1152,7 +1047,12 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
       .then((res) => res.json())
       .then((data) => {
       // console.log("data for replies", data)
-      setReplies(data)});
+        setReplies(data)})
+      .catch((error) => {
+        console.error('Error fetching replies:', error);
+        setReplies([]);
+      });;
+      
 
     // console.log("ref")
   }
@@ -1223,7 +1123,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
       let url = '';
       try {
         url = await handleUploadImage(file);
-        console.log('Uploaded Image URL:', url);
+        // console.log('Uploaded Image URL:', url);
         updateReply('file_uri', url);
       } catch (error) {
         console.error('Failed to upload image:', error);
@@ -1314,7 +1214,9 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                 <span>
                   created by
                 </span>
-                <a href="/profile/{tokenDetails?.creator ? `${tokenDetails.creator.slice(-6)}` : 'Unknown'}">
+                {/* <a href="/profile/{tokenDetails?.creator ? `${tokenDetails.creator.slice(-6)}` : 'Unknown'}"> */}
+                <a href={`/profile/${tokenDetails?.creator ? tokenDetails.creator : 'Unknown'}`}>
+
                   <div className="flex gap-1 items-center">
                     {/* <img src="/logo.webp" className="w-4 h-4 rounded"></img> */}
                     <div className="relative w-4 h-4 rounded">
@@ -1327,7 +1229,9 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                       />
                     </div>
                     <div className="px-1 rounded hover:underline flex gap-1 text-black bg-pink-400" >
-                      {extractFirstSixCharac(tokenDetails?.creator || 'unknown')}
+                      {/* {extractFirstSixCharac(tokenDetails?.creator_username || tokenDetails?.creator || 'unknown')} */}
+                      {extractFirstSixCharac(tokenDetails?.creator_username ? tokenDetails.creator_username : (tokenDetails?.creator || 'unknown'))}
+
                     </div>
                   </div>
                 </a>
@@ -1420,7 +1324,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                       <a href={`/profile/${tokenDetails?.creator}`}>
                           <span className="flex gap-1 items-center">
                               <div className="px-1 rounded hover:underline flex gap-1 text-black bg-pink-400">
-                                  {extractFirstSixCharac(tokenDetails?.creator || 'unknown')}
+                                  {extractFirstSixCharac(tokenDetails?.creator_username? tokenDetails?.creator_username: tokenDetails?.creator || 'unknown')}
                               </div>
                           </span>
                       </a>
@@ -1930,7 +1834,11 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                                       target={getAccountUrl(params.tokenInfo[0], holder.account) ? "_blank" : undefined}
                                       rel={getAccountUrl(params.tokenInfo[0], holder.account) ? "noopener noreferrer" : undefined}
                                     >
-                                      {index + 1}. {holder.account.substring(2, 8)}
+                                      {index + 1}. {
+                                        holder.username ? 
+                                        (holder.username.startsWith('0x') ? holder.username.substring(2, 8) : holder.username.substring(0, 6)) 
+                                        : holder.account.substring(2, 8)
+                                        }
                                       {holder.account === tokenDetails?.creator ? ' 🤵‍♂️ (dev)' : ''}
                                       {holder.account === tokenDetails?.token_address ? ' 🏦 (bonding curve)' : ''}
                                     </a>

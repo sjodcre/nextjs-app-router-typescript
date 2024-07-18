@@ -21,18 +21,16 @@ app.prepare().then(() => {
 
   io.on("connection", (socket) => {
     // ...
-    console.log(socket.id);
+    // console.log(socket.id);
 
 
     socket.on('updated', (data) => {
-      console.log("recieved from client")
-      //console.log(data)
+      // console.log("recieved from client")
       io.emit('refresh', data)
     })
 
     socket.on('replyPost', () => {
-      console.log("recieved reply post")
-      //console.log(data)
+      // console.log("recieved reply post")
       io.emit('replyGet')
     })
 
@@ -71,6 +69,6 @@ app.prepare().then(() => {
       process.exit(1);
     })
     .listen(port, () => {
-      console.log(`> Ready on http://${hostname}:${port}`);
+      // console.log(`> Ready on http://${hostname}:${port}`);
     });
 });

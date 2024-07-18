@@ -10,7 +10,7 @@ import { calculatePrice } from "@/app/_utils/helpers";
 export  async function POST(req: Request) {
   const data = await req.json();
   const { tokenAddress, account, tx_status,token_amount, native_amount, time, price, volume,trade, tx_hash } = data;
-  console.log("updating database...")
+  console.log("init-mint-transac-and-ohlc database...")
 
   // Validate inputs
   if (!tx_hash || !tokenAddress || !account  || !tx_status  || !token_amount || !native_amount || typeof time !== 'number' || typeof price !== 'number' || typeof volume !== 'number' || (trade !== 'buy' && trade !== 'sell')) {
@@ -108,8 +108,6 @@ export  async function POST(req: Request) {
 
         const timeSlice = Math.floor(time / 300) * 300;
         const existing = await query(`SELECT * FROM ${ohlcTableName} WHERE token_address = $1 AND time = $2`, [tokenAddress, timeSlice]);
-
-        console.log("existing", existing);
 
         if (existing.length > 0) {
             const updatedOHLC = {

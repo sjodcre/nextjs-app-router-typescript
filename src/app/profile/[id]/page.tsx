@@ -27,6 +27,7 @@ const initialProfileData: Profile = {
 interface FolloweeData {
 
   followee: string;
+  followee_username: string;
   followee_count: string;
 
 }
@@ -34,6 +35,7 @@ interface FolloweeData {
 interface FollowerData {
 
   follower: string;
+  follower_username: string;
   follower_count: string;
 
 }
@@ -92,6 +94,8 @@ export default function Profile({ params }: { params: { id: string } }) {
   const [profileExist, setProfileExist] = useState(false);
   const [coinHeldData, setCoinHeld] = useState<CoinsHeld[]>([]);
   const [coinCreatedData, setCoinCreated] = useState<CoinsCreated[]>([]);
+  const [loading, setLoading] = useState(true);
+
 
   // Pagination helper
   const indexOfLastHeldItem = currentHeldPage * itemsPerPageHeld;
@@ -190,7 +194,7 @@ export default function Profile({ params }: { params: { id: string } }) {
       if (!response.ok) {
         if (response.status === 404) {
           console.error('Profile not found');
-
+          setLoading(false); // Set loading to false
           return;
         }
         throw new Error(`Failed to fetch profile: ${response.statusText}`);
@@ -206,12 +210,13 @@ export default function Profile({ params }: { params: { id: string } }) {
       setProfileExist(true);
     } catch (error) {
       console.error('Error fetching token:', error);
+    } finally {
+      setLoading(false); // Ensure loading is set to false after fetch
     }
   };
 
   const fetchCoinHeld = async (currentChain: string) => {
     try {
-      console.log("chain before fetch", chainId)
       const response = await fetch(`/api/coinsheld?id=${id}&chain=${currentChain}`);
       if (!response.ok) {
         throw new Error('Failed to fetch token');
@@ -222,7 +227,7 @@ export default function Profile({ params }: { params: { id: string } }) {
         ...data.details.find((detail: { token_address: any; }) => detail.token_address === profile.token_address) || {}
       }));
 
-      console.log("Merged Coin Held Data", mergedData);
+      // console.log("Merged Coin Held Data", mergedData);
       setCoinHeld(mergedData);
     } catch (error) {
       console.error('Error fetching token:', error);
@@ -237,7 +242,6 @@ export default function Profile({ params }: { params: { id: string } }) {
         throw new Error('Failed to fetch token');
       }
       const coinCreatedData = await response.json();
-      console.log("created coins", coinCreatedData)
       setCoinCreated(coinCreatedData);
     } catch (error) {
       console.error('Error fetching token:', error);
@@ -362,7 +366,6 @@ export default function Profile({ params }: { params: { id: string } }) {
       setFollowerlist(data.followerlist);
       setFolloweelist(data.followeelist);
 
-
     } catch (error) {
       console.error('Error fetching token:', error);
 
@@ -396,7 +399,17 @@ export default function Profile({ params }: { params: { id: string } }) {
 
   return (
 <>
-  {profileExist ? (
+  <a className="mt-8 p-4 inline-flex items-center justify-center whitespace-nowrap rounded-md font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 dark:ring-offset-slate-950 dark:focus-visible:ring-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50 h-10 px-4 py-2 -mt-5 text-2xl text-slate-50 hover:font-bold hover:bg-transparent hover:text-slate-50" href="/">
+    [ home ]
+  </a>
+  
+  { loading ? (
+      <div className="p-4 text-center text-blue-500">
+        Loading...
+      </div>
+    ) : 
+  
+    profileExist ? (
     <div className="text-green-400 bg-black min-h-screen p-6 font-mono">
       {id == address && (
         <button
@@ -642,7 +655,8 @@ export default function Profile({ params }: { params: { id: string } }) {
                     <div className="max-h-[300px] overflow-hidden h-fit p-2 flex border border-green-500 hover:bg-gray-800 gap-2 w-full justify-center">
 
                       <li className=' list-none'>
-                        {extractFirstSixCharac(follower.follower || 'unknown')}   {follower.follower_count} Followers
+                        {/* {extractFirstSixCharac(follower.follower || 'unknown')}   {follower.follower_count} Followers */}
+                        {extractFirstSixCharac(follower.follower_username)} {follower.follower_count} Followers
                       </li>
                     </div>
                   </Link>
@@ -666,7 +680,8 @@ export default function Profile({ params }: { params: { id: string } }) {
                     <div className="max-h-[300px] overflow-hidden h-fit p-2 flex border border-green-500 hover:bg-gray-800 gap-2 w-full justify-center">
 
                       <li className=' list-none'>
-                        {extractFirstSixCharac(followee.followee || "unknown")} {followee.followee_count} Followers
+                        {/* {extractFirstSixCharac(followee.followee || "unknown")} {followee.followee_count} Followers */}
+                        {extractFirstSixCharac(followee.followee_username)} {followee.followee_count} Followers
                       </li>
                     </div>
                   </Link>
@@ -691,9 +706,12 @@ export default function Profile({ params }: { params: { id: string } }) {
         </div>
       </div>
     </div>
-        ) : (
-          ""
-        )};
+    ) : (
+      <div className="p-4 text-center text-red-500">
+      Profile does not exist. Please connect with your account to create a profile.
+      </div>
+    )
+  };
 
 
     </>

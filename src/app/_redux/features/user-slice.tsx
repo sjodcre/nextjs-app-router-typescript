@@ -35,16 +35,18 @@ export const user = createSlice({
         logIn: (state, action: PayloadAction<string>) =>{
 
             return{
-                value:{
-                    
-                    user : action.payload,
+                value: {
+                    ...state.value,
+                    user: action.payload,
                     slippage: 1,
                     tokenBalance: 0,
                     nativeTokenBalance: 0,
-                   
-                }
+                  }
             }
         },
+        setNativeTokenBalance: (state, action: PayloadAction<number>) => {
+            state.value.nativeTokenBalance = action.payload;
+          },
         setSlippage: (state, action:PayloadAction<number>) => {
             state.value.slippage = action.payload
         },
@@ -52,5 +54,5 @@ export const user = createSlice({
 
 });
 
-export const {logIn,setSlippage, resetUser} = user.actions;
+export const {logIn,setSlippage, resetUser, setNativeTokenBalance} = user.actions;
 export default user.reducer;

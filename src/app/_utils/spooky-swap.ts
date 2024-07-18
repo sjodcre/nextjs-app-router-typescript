@@ -26,7 +26,7 @@ const buyTokensWithFTM = async (
   // const amountOutMin = ethers.utils.parseUnits('0', 18); // Adjust based on slippage calculation
   const amounts = await router.getAmountsOut(amountIn, [WFTM_ADDRESS, tokenAddress]);
   const amountOutWithoutSlippage = amounts[1];
-  console.log("amount estimate from the router ", Number(amounts[1]))
+  // console.log("amount estimate from the router ", Number(amounts[1]))
 
   // Calculate the minimum amount of tokens to receive based on slippage
   const amountOutMin = amountOutWithoutSlippage.mul(100 - slippage).div(100);
@@ -46,7 +46,7 @@ const buyTokensWithFTM = async (
       }
     );
     const txHash = tx.hash;
-    console.log("txHash", txHash);
+    // console.log("txHash", txHash);
 
     const result = await tx.wait();
     return { result, txHash };
@@ -74,10 +74,10 @@ const sellTokensForFTM = async (
     const gasPrice = ethers.utils.parseUnits('15', 'gwei');
     const amounts = await router.getAmountsOut(amountIn, [tokenAddress, WFTM_ADDRESS]);
     const amountOutWithoutSlippage = amounts[1];
-    console.log("amount estimate from the router ", Number(amounts[1]))
+    // console.log("amount estimate from the router ", Number(amounts[1]))
     // const amountOutMin = ethers.utils.parseUnits('0', 18); // Adjust based on slippage calculation
     const amountOutMin = amountOutWithoutSlippage.mul(100 - slippage).div(100);
-    console.log("amountmin with slippage", amountOutMin)
+    // console.log("amountmin with slippage", amountOutMin)
 
     const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes from the current time
   

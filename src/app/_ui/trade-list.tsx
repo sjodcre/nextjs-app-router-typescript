@@ -30,7 +30,7 @@ const timeSince = (date: number) => {
 
 const TradeItem = ({ trade, networkType }: { trade: TradeData, networkType: string }) => {
     const accountShort = useMemo(() => {
-        return extractFirstSixCharac(trade.account)
+        return extractFirstSixCharac(trade.account_username? trade.account_username : trade.account)
     }, [trade.account]);
 
     const txHashShort = useMemo(() => {

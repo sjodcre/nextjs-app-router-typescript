@@ -3,6 +3,7 @@
 import { BigNumber, ethers } from "ethers";
 import Decimal from 'decimal.js';
 import ERC20TestArtifact from '@/../artifacts/contracts/ERC20Lock.sol/ERC20Lock.json'
+import { useAppSelector } from "../_redux/store";
 
 
 
@@ -15,8 +16,11 @@ export const extractFirstSixCharac = (input: string): string => {
     // Check if the input starts with '0x' and has at least 8 characters
     if (input.startsWith('0x') && input.length >= 8) {
         return input.substring(2, 8);  // Skip '0x' and take the next six characters
+    } else if (input.length >= 6) {
+        return input.substring(0, 6);  // Take the first six characters
+
     }
-    return '';  // Return an empty string if conditions are not met
+    return input;  // Return an empty string if conditions are not met
 };
 
 export function calculateExpectedReturn(_supply: number, _reserveBalance: number, _reserveRatio: number, _depositAmount: number) {
@@ -254,7 +258,7 @@ export function getAccountUrl(chainid: string, holderAccount: string) {
 
     switch (chainid) {
         case 'ftm':
-            return `https://public-sonic.fantom.network/address/${holderAccount}`;
+            return `https://ftmscan.com/address/${holderAccount}`;
         case 'sei':
             return `https://seitrace.com/address/${holderAccount}`;
         default:
@@ -317,7 +321,7 @@ export function calculatePrice(reserveBalance: BigNumber, tokenSupply: BigNumber
 
 export function extractLogData(receipt, signerAddr) {
     const formattedSignerAddr = '0x' + signerAddr.toLowerCase().substring(2).padStart(64, '0');
-    console.log("Formatted Signer Address: ", formattedSignerAddr);
+    // console.log("Formatted Signer Address: ", formattedSignerAddr);
 
     // Filter logs that match the criteria
     const matchingLogs = receipt.logs.filter(log => 
@@ -330,13 +334,14 @@ export function extractLogData(receipt, signerAddr) {
     const validLog = matchingLogs.find(log => log.data !== "0x");
 
     if (validLog) {
-        console.log("Found valid log: ", validLog);
+        // console.log("Found valid log: ", validLog);
         const logData = validLog.data;
         const bigNumberValue = ethers.BigNumber.from(logData.toString());
         const decimalValue = bigNumberValue.toString();
         return decimalValue;
     } else {
-        console.log("No matching valid log found.");
+        // console.log("No matching valid log found.");
         return null;
     }
 }
+

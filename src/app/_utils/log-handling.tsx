@@ -23,7 +23,7 @@ const handleLogs = async (
   if (result.status === 1) {
 
     if (isPhaseTwo) {
-        console.log("phase 2 so do no logging")
+        // console.log("phase 2 so do no logging")
       // Handle Phase Two logs
     //   const account = result.from;
     //   const amount = hexToNumber(result.logs[2].data);
@@ -66,7 +66,7 @@ const handleLogs = async (
         try {
           const parsedLog = iface.parseLog(log);
           if (parsedLog?.name === 'ContinuousMint') {
-            console.log('ContinuousMint Event Args:', parsedLog.args);
+            // console.log('ContinuousMint Event Args:', parsedLog.args);
 
             const info = {
               selectedChain: chain,
@@ -83,7 +83,7 @@ const handleLogs = async (
             };
 
             postTransactionAndOHLC(info, false).then(response => {
-              console.log('Backend response:', response.message);
+              // console.log('Backend response:', response.message);
               const updatedInfo = {
                 ...info,
                 txid: response.txid,
@@ -98,7 +98,7 @@ const handleLogs = async (
               console.error('Error posting data to backend:', error);
             });
           } else if (parsedLog?.name === 'ContinuousBurn') {
-            console.log("Continuous Burn")
+            // console.log("Continuous Burn")
             const info = {
                 selectedChain: chain,
                 contractAddress: ERC20TestContractAddress,
@@ -113,7 +113,7 @@ const handleLogs = async (
                 txHash: txHash
               };
             postTransactionAndOHLC(info, false).then(response => {
-            console.log('Backend response:', response.message);
+            // console.log('Backend response:', response.message);
             const updatedInfo = {
               ...info,
               txid: response.txid,

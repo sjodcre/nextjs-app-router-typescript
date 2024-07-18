@@ -166,7 +166,6 @@ export default function Deploy() {
 	}
 
 	const handleSeiChainButton = () => {
-		console.log(chainType)
 
         if (selectedChain === "ftm") {
             setSelectedChain("sei");
@@ -175,7 +174,6 @@ export default function Deploy() {
         } 
     };
 	const handleFtmChainButton = () => {
-		console.log(chainType)
 
         if (selectedChain === "sei") {
             setSelectedChain("ftm");
@@ -198,7 +196,6 @@ export default function Deploy() {
 				targetChainId = FTM_CHAIN_ID;
 			}
 	
-			console.log("targetchainId: ",  targetChainId)
 			if (targetChainId !== null) {
 				switchNetwork(targetChainId)
 					.then(() => {
@@ -224,7 +221,7 @@ export default function Deploy() {
 				let url = '';
 				try {
 					url = await handleUploadImage(file);
-					console.log('Uploaded Image URL:', url);
+					// console.log('Uploaded Image URL:', url);
 				} catch (error) {
 					console.error('Failed to upload image:', error);
 					// Consider whether you want to continue or throw an error here
@@ -244,7 +241,7 @@ export default function Deploy() {
 				await postTokenData(tokenData);
 				await initOHLCData(selectedChain, tokenListData.token_address, tokenListData.creator, tokenListData.datetime, tokenListData.tx_hash)
 				.then(async response => {
-					console.log('Backend response:', response);
+					// console.log('Backend response:', response);
 					if (mintAmount > 0) {
 						// const depositAmount = Number(ethers.utils.parseUnits(mintAmount.toString(), 18));
 						const depositAmount = ethers.utils.parseUnits(mintAmount.toString(), 18);
@@ -256,7 +253,7 @@ export default function Deploy() {
 						// const tokensWithoutSlippage = calculateExpectedReturn(10**16, 10**17, 50000, depositAmount);
 						// const tokensWithoutSlippage = Math.round(calculateExpectedReturn(Number(supply), Number(reserveBalance), 50000, Number(depositAmount)));
 						const tokensWithoutSlippage = logData
-						console.log("tokensWithoutSlippage", tokensWithoutSlippage)
+						// console.log("tokensWithoutSlippage", tokensWithoutSlippage)
 						const info = {
 							selectedChain: selectedChain,
 							contractAddress: tokenListData.token_address,
@@ -270,7 +267,7 @@ export default function Deploy() {
 						  };
 	
 						await postTransactionAndOHLC(info, true).then(response => {
-						console.log('Backend response:', response.message);
+						// console.log('Backend response:', response.message);
 						// txid = response.primaryKey;
 						}).catch((error: any) => {
 						console.error('Error posting data to backend tx ohlc:', error);
@@ -303,7 +300,7 @@ export default function Deploy() {
 			})
 
 		} catch (error) {
-			console.log(error);
+			// console.log(error);
 			toast.error(`Deploy manager contract failed: ` + error);
 		}
 	}
@@ -400,7 +397,7 @@ export default function Deploy() {
 
 		} catch (error: any) {
 
-			console.log(error);
+			// console.log(error);
 			toast.error(`Deployment failed: ` + error);
 			setIsDeploying(false); 
 

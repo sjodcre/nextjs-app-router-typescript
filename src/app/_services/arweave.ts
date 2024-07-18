@@ -3,6 +3,7 @@ import fs from 'fs';
 import dotenv from 'dotenv';
 import Transaction from 'arweave/node/lib/transaction';
 import crypto from "crypto"
+// import logger from '../_utils/logger';
 
 
 // Load environment variables
@@ -87,6 +88,7 @@ export const submitArTx = async (arweave: Arweave, tx: Transaction) => new Promi
             await uploader.uploadChunk()
         }
     } catch (err) {
+        // logger.error('Submit Arweave Tx error:', err);
         if (uploader.lastResponseStatus > 0) {
             return reject({
                 status: uploader.lastResponseStatus,
@@ -120,8 +122,9 @@ export const uploadImage = async (file: Buffer, fileName: string): Promise<strin
         return tx.id
 
     } catch (e) {
-        console.log("Failed to upload image: "+ e)
-        throw new Error('File upload failed:'+ e);
+        // console.log("Failed to upload image: "+ e)
+        // logger.error('Failed to upload image:', e);
+        // throw new Error('File upload failed:'+ e);
         // res.status(500).json({ error: 'Failed to upload to Arweave' });
     }
  
@@ -139,10 +142,8 @@ export const uploadImage = async (file: Buffer, fileName: string): Promise<strin
 
 // Example usage
 // uploadFileToArweave('./loner69.webp').then(url => {
-//     console.log('Uploaded Image URL:', url);
 //     // Here you might want to save the URL to your backend database
 // }).catch(console.error);
 // uploadImage('./loner69.webp').then(url => {
-//         console.log('Uploaded Image URL:', url);
 //         // Here you might want to save the URL to your backend database
 //     }).catch(console.error);

@@ -7,6 +7,7 @@ import { DeployTokenResult, TokenListData, TokenParams } from '../_utils/types'
 import { calculateMinReturnWithSlippage, calculateMinTokensWithSlippage, calculateRequiredDeposit, extractLogData } from '../_utils/helpers'
 import { postPendingData } from './db-write'
 import ManagerArtifact from '@/../artifacts/contracts/Manager.sol/Manager.json'
+// import logger from '../_utils/logger'
 // import { EventParams, EventStruct, TicketStruct } from '@/utils/type.dt'
 // import { globalActions } from '@/store/globalSlices'
 // import { store } from '@/store'
@@ -29,9 +30,8 @@ async function deployManager(walletProvider: any) {
   const provider = new ethers.providers.Web3Provider(walletProvider); // Use MetaMask provider
   const signer = provider.getSigner();
   const network = await provider.getNetwork();
-  console.log('Connected to network:', network);
   const gasPrice = await provider.getGasPrice();
-  console.log('Current gas price:', gasPrice.toString());
+  // console.log('Current gas price:', gasPrice.toString());
   const feeReceiver = "0x0287b980Ffb856cfF0cB61B926219ccf977B6fB4"; // Replace with your address
   const feeAmount = ethers.utils.parseUnits("0.1", 18);
   const contractOwner = "0xf759c09456A4170DCb5603171D726C3ceBaDd3D5" 
@@ -48,16 +48,17 @@ async function deployManager(walletProvider: any) {
           gasPrice: gasPrice,
       });
 
-      console.log("Deploying Manager contract...");
+      // console.log("Deploying Manager contract...");
 
       await ManagerContract.deployed();
 
-      console.log("Manager contract deployed at:", ManagerContract.address);
+      // console.log("Manager contract deployed at:", ManagerContract.address);
 
       return ManagerContract.address;
   } catch (error) {
+      // logger.error('Error deploying Manager contract:', JSON.stringify(error,null,4));
       console.error("Error deploying Manager contract:", JSON.stringify(error,null,4));
-      throw error;
+      // throw error;
   }
 }
 
@@ -84,11 +85,10 @@ const deployToken = async (selectedChain: string, token: TokenParams, mintAmount
   const signer = await provider.getSigner()
   const signerAddr = await signer.getAddress();
   const gasPrice = await provider.getGasPrice();
-  console.log('Current gas price:', gasPrice.toString());
   const ManagerContract = new ethers.Contract(managerContractAddress, ManagerArtifact.abi, signer);
 
   try {
-    console.log("minAmount", mintAmount)
+    // console.log("minAmount", mintAmount)
     const feeAmount = ethers.utils.parseUnits("0.1", 18) // Payment amount in ETH
     const mintAmountWFees = mintAmount *1.01
     const mintAmountParse = ethers.utils.parseUnits(mintAmountWFees.toString(), 18)
@@ -96,7 +96,7 @@ const deployToken = async (selectedChain: string, token: TokenParams, mintAmount
     const mintValue = Number(mintAmountParse)
     // const gasPrice = ethers.utils.parseUnits('40', 'gwei');
 
-    console.log("mintValue", mintValue)
+    // console.log("mintValue", mintValue)
     const tx = await ManagerContract.deployERC20(
       (token.reserveRatio).toString(),
       token.name,
@@ -112,14 +112,8 @@ const deployToken = async (selectedChain: string, token: TokenParams, mintAmount
     );
      // Wait for the transaction to be mined
      const receipt = await tx.wait();
-     console.log("Transaction receipt:", receipt);
 
      const logData = extractLogData(receipt, signerAddr);
-     console.log("Log Data: ", logData);
-    //  console.log("Log Data Converted to String: ", logData.toString());
-
-    //  console.log("transaction receipt events", receipt.events);
-     console.log("stringify the events", JSON.stringify(receipt.events, null, 2));
 
      // Extract the deployed contract address from the event
      const deployedEvent = receipt.events.find((event: any) => event.event === "ERC20Deployed");
@@ -128,7 +122,6 @@ const deployToken = async (selectedChain: string, token: TokenParams, mintAmount
 
      console.log("Contract deployed at:", contractAddress);
      console.log("Transaction hash:", txHash);
-     console.log("Signer address:", signerAddr);
 
 
     const tokenListData: TokenListData = {
@@ -147,7 +140,7 @@ const deployToken = async (selectedChain: string, token: TokenParams, mintAmount
 
 } catch (error) {
     // reportError(error)
-    console.log("error while deploying", error)
+    // logger.error('Error deploying token:', error);
     return Promise.reject(error)
   }
 }
@@ -189,7 +182,7 @@ const mintToken = async (
       const bnTokenSum = ethers.BigNumber.from(tokenSum)
       // let depositAmount = calculateRequiredDeposit(tokenSum, reserveBalance, reserveRatio, Number(tokenAmountToTrade));
       let depositAmount = calculateRequiredDeposit(bnTokenSum, reserveBalance, reserveRatio, bnTokenAmountToTrade);
-      console.log("estimated deposit required", depositAmount.toString());
+      // console.log("estimated deposit required", depositAmount.toString());
       // const feeDeposit = depositAmount * feePercentage;
       // const feeDeposit = depositAmount.mul(feePercentage);
       const feeBasisPoints = BigNumber.from((feePercentage * 100).toString()); // Convert to basis points (1% => 100 basis points)
@@ -197,7 +190,7 @@ const mintToken = async (
 
       // let totalDepositAmount = Math.round(depositAmount.add(feeDeposit));
       let totalDepositAmount = depositAmount.add(feeDeposit);
-      console.log("total deposit amount plus fees", totalDepositAmount.toString())
+      // console.log("total deposit amount plus fees", totalDepositAmount.toString())
       // console.log("plus fees", totalDepositAmount)
       // console.log("format depost units", ethers.utils.formatUnits(totalDepositAmount.toString(), 18))
       options = {
@@ -206,7 +199,6 @@ const mintToken = async (
       };
       ethValue = depositAmount;
     } else {
-      console.log("totalAmount pre estimate gas", totalAmount)
       options = {
         value: ethers.utils.parseUnits(totalAmount.toString(), 18),
         gasLimit: ethers.utils.hexlify(1000000), // Correct use of hexlify
@@ -217,35 +209,9 @@ const mintToken = async (
 
     // console.log("ethValue used to calculate slippage", ethValue)
     try {
-      console.log("VALUES", tokenSum, reserveBalance.toString(), reserveRatio.toString(), ethValue.toString(), slippage)
       let {estToken,estTokenWSlippage} = calculateMinTokensWithSlippage(Number(tokenSum), Number(reserveBalance), reserveRatio, Number(ethValue), slippage);
       
-      console.log("estTokenWSlippage", estTokenWSlippage.toString())
-      console.log("estToken", estToken.toString())
-      const tokensRemain = await ERC20TestContract.getTokensRemaining();
-      console.log("tokens remaining", tokensRemain.toString())
-      if(estToken > tokensRemain){
-        console.log("token to buy too much")
-      //   let depositAmount = calculateRequiredDeposit(tokenSum, reserveBalance, reserveRatio, Number(tokensRemain));
-      // // console.log("estimated deposit required", depositAmount);
-      //   const feeDeposit = depositAmount * feePercentage;
-      //   let totalDepositAmount = Math.round(depositAmount + feeDeposit);
-      //   // console.log("plus fees", totalDepositAmount)
-      //   // console.log("format depost units", ethers.utils.formatUnits(totalDepositAmount.toString(), 18))
-      //   options = {
-      //     value: ethers.utils.parseUnits(totalDepositAmount.toString(),0),
-      //     gasLimit: ethers.utils.hexlify(1000000), // Correct use of hexlify
-      //   };
-      //   ethValue = depositAmount;
-      //   ({ estToken, estTokenWSlippage } = calculateMinTokensWithSlippage(tokenSum, reserveBalance, reserveRatio, ethValue, slippage));
-
-      }
-
-      // {estToken,estTokenWSlippage} = calculateMinTokensWithSlippage(tokenSum, reserveBalance, reserveRatio, ethValue, slippage);
-      
-      // console.log("estTokenWSlippage again", estTokenWSlippage)
-      // console.log("estToken again", estToken)
-
+      // console.log("estToken", estToken.toString())
 
       let info = {
         status: 'pending',
@@ -259,20 +225,22 @@ const mintToken = async (
         txHash: ''
       };
 
-      console.log("amount pending", estToken.toString())
-      console.log("deposit pending", ethValue.toString())
+      // console.log("amount pending", estToken.toString())
+      // console.log("deposit pending", ethValue.toString())
       // Calculate gas estimate
       // const mintTx = await ERC20TestContract.mint(minTokens.toString(), options);
       const mintTx = await ERC20TestContract.mint(estTokenWSlippage.toString(), options);
       const txHash = mintTx.hash;
-      console.log("txHash", txHash);
+      // console.log("txHash", txHash);
       info.txHash = txHash;
 
       await postPendingData(info).then(response => {
-        console.log('Backend response:', response);
+        // console.log('Backend response:', response);
         // txid = response.primaryKey;
       }).catch((error: any) => {
         console.error('Error posting data to backend:', error);
+        // logger.error('Error posting data to backend:', error);
+
       });
 
       const result = await mintTx.wait();
@@ -282,8 +250,8 @@ const mintToken = async (
 
       // return Promise.resolve(tx)
     } catch (error) {
-      // console.log("is it this error?")
       // reportError(error)
+      // logger.error('Error minting token:', error);
       return Promise.reject(error)
     }
   }
@@ -297,16 +265,17 @@ const mintToken = async (
     const signer = await provider.getSigner()
     const signerAddr = await signer.getAddress()
     const ERC20TestContract = new Contract(tokenAddress, ERC20TestArtifact.abi, provider);
-    console.log("signerAddr check", signerAddr)
+    // console.log("signerAddr check", signerAddr)
     try {
       tx = await ERC20TestContract.balanceOf(signerAddr)
   
-      console.log(tx)
+      // console.log(tx)
       // await tx.wait()
   
       return tx
     } catch (error) {
-      reportError(error)
+      // logger.error('Error getting user balance:', error);
+      // reportError(error)
       return Promise.reject(error)
     }
   }
@@ -336,16 +305,13 @@ const mintToken = async (
    
   
     try {
-      console.log("tokenSum",tokenSum)
-      console.log("nativeSum", nativeSum)
-      console.log("slippage",slippage)
       const bnTokenSum = ethers.BigNumber.from(tokenSum)
       const bnNativeSum= ethers.BigNumber.from(nativeSum)
       const bnTokenAmountToTrade = ethers.BigNumber.from(tokenAmountToTrade); 
       // const {estAmount,estAmountWSlippage} = calculateMinReturnWithSlippage(tokenSum, nativeSum, reserveRatio, Number(tokenAmountToTrade.toString()), slippage);
       const {estAmount,estAmountWSlippage} = calculateMinReturnWithSlippage(Number(bnTokenSum), Number(bnNativeSum), reserveRatio, Number(bnTokenAmountToTrade), slippage);
-      console.log("estAmount", estAmount)
-      console.log("tokenAmountToTrade", tokenAmountToTrade)
+      // console.log("estAmount", estAmount)
+      // console.log("tokenAmountToTrade", tokenAmountToTrade)
 
       let info = {
         status: 'pending',
@@ -366,12 +332,14 @@ const mintToken = async (
         // console.log('Backend response: to update', response);
         // txid = response.primaryKey;
       }).catch((error: any) => {
+        // logger.error('Error posting data to backend:', error);
         console.error('Error posting data to backend:', error);
       }); 
       const result = await burnTx.wait();
 
       return { result, txHash };
     } catch (error) {
+      // logger.error('Error selling tokens:', error);
       // reportError(error)
       return Promise.reject(error)
     }

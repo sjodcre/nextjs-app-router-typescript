@@ -35,12 +35,12 @@ export async function POST(req: Request) {
     const nativeSumBN = ethers.BigNumber.from(sum_native)
     const bondingPrice = calculatePrice(nativeSumBN,sumTokenBN,ethers.BigNumber.from('50000'));
     const priceBN = ethers.utils.parseUnits(bondingPrice.toString(), 18); // Assuming price is in 18 decimal places
-    console.log("bonding price",bondingPrice)
-    console.log("priceBN", priceBN)
+    // console.log("bonding price",bondingPrice)
+    // console.log("priceBN", priceBN)
     const marketCapBN = sumTokenBN.mul(priceBN).div(ethers.BigNumber.from("1000000000000000000"));
     const marketCap = ethers.utils.formatUnits(marketCapBN, 18);
     const marketCapString = marketCap.toString();
-console.log("marketcapString", marketCapString)
+// console.log("marketcapString", marketCapString)
 
     const sql = `INSERT INTO ${transactionTableName} (token_address, account, token_amount, native_amount, price_per_token, timestamp, trade, sum_token, sum_native, tx_hash, tx_status, marketcap)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)` ;
@@ -57,7 +57,7 @@ console.log("marketcapString", marketCapString)
       const sql3 = `INSERT INTO ${ohlcTableName} (token_address, time, open, high, low, close, volume)
       VALUES ($1, $2, $3, $4, $5, $6 ,$7)`;
   await query(sql3, [tokenAddress, timeSlice, bondingPrice, bondingPrice, bondingPrice, bondingPrice, volume]);
-  console.log("'No data available for the specified token address and time' ")
+  // console.log("'No data available for the specified token address and time' ")
     } else {
           const updatedOHLC = {
         open: existing[0].open,

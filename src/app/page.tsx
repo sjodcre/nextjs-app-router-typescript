@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { setChain } from "@/app/_redux/features/chain-slice";
 import { useDispatch } from 'react-redux';
 import { AppDispatch, useAppSelector } from '@/app/_redux/store';
-// import Header from './_ui/header';
+// import logger from './_utils/logger';
 
 
 interface Token {
@@ -52,10 +52,12 @@ const Home: React.FC = () => {
                 throw new Error('Failed to fetch tokens');
             }
             const data = await response.json();
-            console.log("data", data)
+            // console.log("data", data)
             setTokens(data);
         } catch (error) {
             console.error('Error fetching data:', error);
+            // logger.error('Error fetching data:', error);
+
         }
     };
 

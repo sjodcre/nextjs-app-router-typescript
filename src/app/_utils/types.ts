@@ -17,6 +17,7 @@ export interface ExtendedWidgetOptions extends ChartingLibraryWidgetOptions {
 
 export interface TokenHolder {
   account: string;
+  username: string;
   balance: string;
 }
 
@@ -35,6 +36,7 @@ export type TokenPageDetails = {
   token_description: string;
   image_url: string; 
   creator: string;
+  creator_username: string;
   twitter:string;
   telegram: string;
   website: string;
@@ -56,6 +58,7 @@ export interface TradeData {
   txid: number;
   token_address: string;
   account: string;
+  account_username: string
   token_amount: number;
   native_amount: number;
   // price_per_token: number;
@@ -73,5 +76,6 @@ export interface Reply {
   file_uri :string
   text :string
   creator :string
+  creator_username: string
   created_at :string
 }

@@ -1,10 +1,5 @@
 import { query } from "../db";
 
-
-
-
-
-
 export async function GET(req: Request) {
 
   const url = new URL(req.url)
@@ -16,11 +11,19 @@ export async function GET(req: Request) {
     return new Response(JSON.stringify({ error: 'Token address is required' }), { status: 400 });
 }
 
-  console.log(tokenAddress)
   try {
   
     // const transactions = await query(`SELECT * FROM transaction_history_ftm WHERE token_address = $1 AND tx_status = 'successful' ORDER BY timestamp DESC`, [tokenAddress]);
-    const transactions = await query(`SELECT * FROM ftm_transaction_history WHERE token_address = $1 AND tx_status = 'successful' ORDER BY timestamp DESC`, [tokenAddress]);
+    // const transactions = await query(`SELECT * FROM ftm_transaction_history WHERE token_address = $1 AND tx_status = 'successful' ORDER BY timestamp DESC`, [tokenAddress]);
+
+    const sql = `
+    SELECT t.*, p.username as account_username
+    FROM ftm_transaction_history t
+    LEFT JOIN profile_ftm p ON t.account = p.account
+    WHERE t.token_address = $1 AND t.tx_status = 'successful'
+    ORDER BY t.timestamp DESC`;
+
+    const transactions = await query(sql, [tokenAddress]);
 
     return new Response(JSON.stringify(transactions), { status: 200 });
     

@@ -5,6 +5,10 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useWeb3Modal, useWeb3ModalAccount, useWeb3ModalProvider } from '@web3modal/ethers5/react';
 import { extractFirstSixCharac } from '../_utils/helpers';
 import { ethers } from 'ethers';
+import { AppDispatch, useAppSelector } from '../_redux/store';
+import { useDispatch } from 'react-redux';
+import { logIn, setNativeTokenBalance } from '../_redux/features/user-slice';
+import { setChain } from '../_redux/features/chain-slice';
 
 interface SpanProps {
   balance?: number; // balance can be optional and is a number
@@ -13,12 +17,15 @@ interface SpanProps {
 }
 
 const Header = () => {
+  const dispatch = useDispatch<AppDispatch>();
   const [providerReady, setProviderReady] = useState(false);
   const [currentChain, setCurrentChain] = useState('');
   const [currentBalance, setCurrentBalance] = useState(0);
   const { open } = useWeb3Modal()
   const { address, chainId, isConnected } = useWeb3ModalAccount()
   const { walletProvider } = useWeb3ModalProvider();
+  const [userName, setUserName] = useState('');
+ 
   
   // if (walletProvider){
   //   const ethersProvider = new ethers.providers.Web3Provider(walletProvider);
@@ -42,13 +49,13 @@ const Header = () => {
       if (walletProvider) {
         const ethersProvider = new ethers.providers.Web3Provider(walletProvider);
         fetchBalance(ethersProvider).then(balance => {
-          console.log("balance i got ", balance)
           setCurrentBalance(Number(balance))
+          dispatch(setNativeTokenBalance(Number(balance)));
         }).catch(error => {
           console.error("Failed to fetch balance:", error);
       });
       } else {
-        console.log("provider is not ready to read user")
+        // console.log("provider is not ready to read user")
       }
     }
   }, [address, chainId, providerReady]);
@@ -96,8 +103,10 @@ const Header = () => {
     if(chainId){
       if (chainId === SEI_CHAIN_ID){
         setCurrentChain("SEI")
+        dispatch(setChain("sei"));
       } else if (chainId === FTM_CHAIN_ID){
         setCurrentChain("FTM")
+        dispatch(setChain("ftm"));
       }
 
     }
@@ -107,10 +116,22 @@ const Header = () => {
 
 
   useEffect(() => {
-    if (currentChain) {
+    if (currentChain && isConnected) {
+      // dispatch(logIn(address));
      initProfile();
     }
   }, [currentChain,isConnected]);
+
+  // const initProfile = async () => {
+  //   try {
+  //     const response = await fetch(`/api/initProfile?id=${address}&chain=${currentChain}`);
+  //     if (!response.ok) {
+  //       throw new Error('Failed to init');
+  //     }
+  //         } catch (error) {
+  //     console.error('Error init:', error);
+  //   }
+  // };
 
   const initProfile = async () => {
     try {
@@ -118,7 +139,9 @@ const Header = () => {
       if (!response.ok) {
         throw new Error('Failed to init');
       }
-          } catch (error) {
+      const data = await response.json();
+      dispatch(logIn(data.username)); // Use the returned username to log in
+    } catch (error) {
       console.error('Error init:', error);
     }
   };
@@ -139,12 +162,24 @@ const Header = () => {
   //     console.log("making sure code not infinite loop")
   //   }
   // }, [currentChain, isConnected, initProfile]);
+  
 
+  const userState = useAppSelector((state) => state.userReducer.value); // Use selector inside the component
+
+  const handleCheckState = () => {
+    console.log('Current User State:', userState);
+  };
 
 
   return (
 <div className="bg-black text-green-400 py-4 px-10 flex justify-end items-center">
   <div className="flex items-center gap-4">
+  <button
+          className={`w-40 h-8 rounded-full bg-green-400 text-black hover:text-white text-sm font-medium leading-5 transition-colors`}
+          onClick={handleCheckState}
+        >
+          Check Redux State
+        </button>
   <button
       className={`w-40 h-8 rounded-full bg-green-400 text-black hover:text-white text-sm font-medium leading-5 transition-colors`}
       onClick={() => open()}
@@ -154,7 +189,7 @@ const Header = () => {
     {isConnected && (
       <div>
         <div className="text-sm">
-          <span>({currentBalance.toFixed(2)} {currentChain}) {extractFirstSixCharac(address || 'unknown')}</span>
+          <span>({currentBalance.toFixed(2)} {currentChain}) {extractFirstSixCharac(userState.user || address)}</span>
         </div>
         <Link href={`/profile/${address}`} className="text-sm hover:underline transition-colors">
           [view profile]

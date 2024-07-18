@@ -10,7 +10,7 @@ import { calculatePrice } from "@/app/_utils/helpers";
 export  async function POST(req: Request) {
   const data = await req.json();
   const { tokenAddress, account, tx_status,token_amount, native_amount, time, price, volume,trade, tx_hash} = data;
-  console.log("updating database...")
+  console.log("transaction-and-ohlc database...")
 
   // Validate inputs
   if (!tx_hash || !tokenAddress || !account  || !tx_status  || !token_amount ||  !native_amount || typeof time !== 'number' || typeof price !== 'number' || typeof volume !== 'number' || (trade !== 'buy' && trade !== 'sell')) {
@@ -82,7 +82,6 @@ export  async function POST(req: Request) {
         // let result2 = await query(`UPDATE ${transactionTableName} SET sum_native = $1 ,sum_token = $2, tx_status = $3 , timestamp = $4 , token_amount = $5 , price_per_token = $6, marketcap = $7 WHERE tx_hash = $8 RETURNING txid` , [sum_native_str, sum_token_str, tx_status, time , token_amount, price, marketCapString, tx_hash]);
         let result2 = await query(`UPDATE ${transactionTableName} SET sum_native = $1 ,sum_token = $2, tx_status = $3 , timestamp = $4 , token_amount = $5 , price_per_token = $6, marketcap = $7 WHERE tx_hash = $8 RETURNING txid` , [sum_native_str, sum_token_str, tx_status, time , token_amount, bondingPrice, marketCapString, tx_hash]);
 
-        console.log("transaction&ohlc result", result2)
 
         const txid = result2[0].txid;
 
@@ -109,8 +108,6 @@ export  async function POST(req: Request) {
 
         const timeSlice = Math.floor(time / 300) * 300;
         const existing = await query(`SELECT * FROM ${ohlcTableName} WHERE token_address = $1 AND time = $2`, [tokenAddress, timeSlice]);
-
-        console.log("existing", existing);
 
         if (existing.length > 0) {
             const updatedOHLC = {

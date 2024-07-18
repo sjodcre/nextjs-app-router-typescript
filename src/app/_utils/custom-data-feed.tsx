@@ -112,7 +112,7 @@ class CustomDatafeed {
                         close: d.close
                         }));
                         if (data.length < countBack) {
-                        console.log(`Requested ${countBack} bars, but only ${data.length} are available.`);
+                        // console.log(`Requested ${countBack} bars, but only ${data.length} are available.`);
                         // onHistoryCallback(correctedData, { noData: length === 0 });
                         // console.log("what is this boolean pt 1", firstDataRequest)
                         // console.log("value being saved as last bar pt 1", correctedData[correctedData.length - 1])
@@ -153,7 +153,7 @@ class CustomDatafeed {
                             })
                             .then(lastData => {
                                 const nextT = lastData.latestTime; // Convert to milliseconds
-                                console.log(`Next available time: ${nextT}`);
+                                // console.log(`Next available time: ${nextT}`);
                                 onHistoryCallback([], { noData: true, nextTime: nextT });
                             }).catch(onErrorCallback);
                         } else {
@@ -225,11 +225,7 @@ class CustomDatafeed {
                 let descriptionSnippet = '';
                 if (data.length > 0 && data[0].token_description) {
                     descriptionSnippet = data[0].token_description.substring(0, 10);
-                    // console.log(descriptionSnippet);
-                } else {
-                    console.log("Description is not available");
-                }
-                // console.log(data)
+                } 
                 const symbolInfo: LibrarySymbolInfo = {
                     listed_exchange: '', 
                     format:'price', 
@@ -271,7 +267,7 @@ class CustomDatafeed {
         subscriberUID: string,
         onResetCacheNeededCallback: () => void
     ) {
-        console.log('[subscribeBars]: Subscribed', subscriberUID);
+        // console.log('[subscribeBars]: Subscribed', subscriberUID);
         // console.log("current resolution", resolution)
         subscribeOnStream(
             symbolInfo,
@@ -285,16 +281,16 @@ class CustomDatafeed {
     }
 
     public unsubscribeBars(subscriberUID: string) {
-        console.log('[unsubscribeBars]: Unsubscribed', subscriberUID);
+        // console.log('[unsubscribeBars]: Unsubscribed', subscriberUID);
         unsubscribeFromStream(subscriberUID);
     }
 
     public getQuotes (symbols: any, onDataCallback: any, onErrorCallback: ErrorCallback){
-        console.log("get quotes")
+        // console.log("get quotes")
     }
 
     public subscribeQuotes(symbols: any, fastSymbols: any, onRealtimeCallback: any, listenerGUID: any) {
-        console.log("subscribe quotes")
+        // console.log("subscribe quotes")
         
     }
 

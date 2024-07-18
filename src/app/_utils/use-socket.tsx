@@ -17,11 +17,8 @@ interface EventListener {
 // }
 
 function getNextFiveMinuteBarTime(barTime: any) {
-  console.log("bartime into function", barTime)
   const date = new Date(barTime.time);
-  console.log("date wth is this thing?",date )
   date.setMinutes(date.getMinutes() + 5); // Increment by 5 minutes
-  console.log("after doing the setminutes what is the date?", date)
   return date.getTime() / 1000;
 }
 
@@ -66,8 +63,7 @@ const useSocket = (listeners: EventListener[] = []) => {
     });
 
     socket.on('refresh', (data: { bondingPrice: number, deposit: string; amount: string; timestamp: string; token_description: string; token_ticker: any; token_name: any; }) => {
-      console.log('[socket] Message at refresh:', data);
-      console.log('did i get the bonding price?', data.bondingPrice)
+      // console.log('[socket] Message at refresh:', data);
       // const tradePrice = parseFloat(tradePriceStr);
       // const tradeTime = parseInt(tradeTimeStr);
       // const tradePrice = parseFloat(data.deposit) / parseFloat(data.amount);
@@ -81,13 +77,13 @@ const useSocket = (listeners: EventListener[] = []) => {
       const channelString = `0~${data.token_ticker}~${data.token_name}~${descriptionSnippet}`;
 
       const subscriptionItem = channelToSubscription.get(channelString);
-      console.log("subscriptionItem", subscriptionItem)
+      // console.log("subscriptionItem", subscriptionItem)
       if (subscriptionItem === undefined) {
           return;
       }
       const lastBar = subscriptionItem.lastBar;
       // const lastFiveMinsBar = subscriptionItem.lastDailyBar;
-      console.log("lastBar", lastBar)
+      // console.log("lastBar", lastBar)
       let nextBarTime = getNextFiveMinuteBarTime(lastBar);
 
       // let nextBarTime;
@@ -103,8 +99,8 @@ const useSocket = (listeners: EventListener[] = []) => {
       // }
       // const nextDailyBarTime = getNextDailyBarTime(lastDailyBar.time);
       // const nextFiveMinsBarTime = getNextFiveMinuteBarTime(lastFiveMinsBar);
-      console.log("nextFiveMinsBarTime", nextBarTime)
-      console.log("tradeTime", tradeTime)
+      // console.log("nextFiveMinsBarTime", nextBarTime)
+      // console.log("tradeTime", tradeTime)
       let bar = {};
       if (tradeTime >= nextBarTime) {
           bar = {
@@ -114,7 +110,7 @@ const useSocket = (listeners: EventListener[] = []) => {
               low: tradePrice,
               close: tradePrice,
           };
-          console.log('[socket] Generate new bar', bar);
+          // console.log('[socket] Generate new bar', bar);
       } else {
           bar = {
               ...lastBar,
@@ -122,7 +118,7 @@ const useSocket = (listeners: EventListener[] = []) => {
               low: Math.min(lastBar.low, tradePrice),
               close: tradePrice,
           };
-          console.log('[socket] Update the latest bar by price', tradePrice);
+          // console.log('[socket] Update the latest bar by price', tradePrice);
       }
       // let bar = {
       //     ...lastDailyBar,
@@ -184,14 +180,8 @@ export function subscribeOnStream(
   lastBar: any
 )
 {
-  // if (symbolInfo.base_name) {
-  //     console.log(symbolInfo.base_name[0])
-  // }
-  // console.log("symbolInfo", symbolInfo)
-  // console.log(symbolInfo.description)
-  // console.log(symbolInfo.ticker)
+
   const parsedSymbol = parseFullSymbol(`${symbolInfo.exchange}:${symbolInfo.name}`);
-  // console.log("description", symbolInfo?.description)
   let descriptionSnippet = symbolInfo?.description.substring(0, 10);
 
   const channelString = `0~${symbolInfo?.ticker}~${symbolInfo?.name}~${descriptionSnippet}`;
@@ -215,7 +205,7 @@ export function subscribeOnStream(
   channelToSubscription.set(channelString, subscriptionItem);
   socket.emit('SubAdd', { subs: [channelString] });
 
-  console.log('[subscribeBars]: Subscribe to streaming. Channel:', channelString);
+  // console.log('[subscribeBars]: Subscribe to streaming. Channel:', channelString);
 }
 
 export function unsubscribeFromStream(subscriberUID: string) {
@@ -232,7 +222,7 @@ export function unsubscribeFromStream(subscriberUID: string) {
 
           if (subscriptionItem.handlers.length === 0) {
               // Unsubscribe from the channel if it is the last handler
-              console.log('[unsubscribeBars]: Unsubscribe from streaming. Channel:', channelString);
+              // console.log('[unsubscribeBars]: Unsubscribe from streaming. Channel:', channelString);
               socket.emit('SubRemove', { subs: [channelString] });
               channelToSubscription.delete(channelString);
               break;
