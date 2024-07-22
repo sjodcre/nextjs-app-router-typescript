@@ -95,10 +95,12 @@ const Home: React.FC = () => {
 
     const handleSortChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         setSortBy(event.target.value);
+        setCurrentPage(1);
     };
 
     const handleOrderChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         setOrder(event.target.value);
+        setCurrentPage(1);
     };
 
     const handleClicks = () => {
