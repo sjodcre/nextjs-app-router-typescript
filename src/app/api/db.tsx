@@ -8,6 +8,8 @@ const pool = new Pool({
   database: process.env.DB_DATABASE,
   password: process.env.DB_PASSWORD,
   port: 5432, // Use environment variable for connection string
+  connectionTimeoutMillis: 10000, // 10 seconds
+  idle_in_transaction_session_timeout: 60000,
   ssl: {
     rejectUnauthorized: false, // For local development without SSL
   },
