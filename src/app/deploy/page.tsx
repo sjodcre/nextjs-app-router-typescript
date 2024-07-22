@@ -63,9 +63,9 @@ export default function Deploy() {
 	const { switchNetwork} = useSwitchNetwork()
 	const [showOptions, setShowOptions] = useState(false);
 	const [file,setFile] = useState<File>();
-	const [selectedChain, setSelectedChain] = useState<string>('sei');  // Default sort by market cap
+	const [selectedChain, setSelectedChain] = useState<string>('ftm');  // Default sort by market cap
 	const dispatch = useDispatch<AppDispatch>();
-    const chainType = useAppSelector((state) => state.chainReducer.value.chainType);
+    // const chainType = useAppSelector((state) => state.chainReducer.value.chainType);
 	const [isDeploying, setIsDeploying] = useState(false);
 	const toggleOptions = () => setShowOptions(!showOptions);
 	
@@ -165,38 +165,40 @@ export default function Deploy() {
 		
 	}
 
-	const handleSeiChainButton = () => {
+	// const handleSeiChainButton = () => {
 
-        if (selectedChain === "ftm") {
-            setSelectedChain("sei");
-			setFormData(initialFormData);
-            dispatch(setChain(selectedChain));
-        } 
-    };
-	const handleFtmChainButton = () => {
+    //     if (selectedChain === "ftm") {
+    //         setSelectedChain("sei");
+	// 		setFormData(initialFormData);
+    //         dispatch(setChain(selectedChain));
+    //     } 
+    // };
+	// const handleFtmChainButton = () => {
 
-        if (selectedChain === "sei") {
-            setSelectedChain("ftm");
-			setFormData(initialFormData);
-            dispatch(setChain(selectedChain));
-        }
-    };
+    //     if (selectedChain === "sei") {
+    //         setSelectedChain("ftm");
+	// 		setFormData(initialFormData);
+    //         dispatch(setChain(selectedChain));
+    //     }
+    // };
 
 	async function handleChainChange() {
 		return new Promise((resolve, reject) => {
 			// Assuming chain IDs for 'sei' and 'ftm' as constants for clarity
-			const SEI_CHAIN_ID = 713715;
+			// const SEI_CHAIN_ID = 713715;
 			// const FTM_CHAIN_ID = 64165;
 			const FTM_CHAIN_ID = 250;
 			let targetChainId = 250;
 	
-			if (selectedChain === "sei" && chainId !== SEI_CHAIN_ID) {
-				targetChainId = SEI_CHAIN_ID;
-			} else if (selectedChain === "ftm" && chainId !== FTM_CHAIN_ID) {
-				targetChainId = FTM_CHAIN_ID;
-			}
+			// if (selectedChain === "sei" && chainId !== SEI_CHAIN_ID) {
+			// 	targetChainId = SEI_CHAIN_ID;
+			// } else if (selectedChain === "ftm" && chainId !== FTM_CHAIN_ID) {
+			// 	targetChainId = FTM_CHAIN_ID;
+			// }
 	
-			if (targetChainId !== null) {
+			// if (targetChainId !== null) {
+			if (chainId !== targetChainId) {
+
 				switchNetwork(targetChainId)
 					.then(() => {
 						// resolve(`Switched to ${targetChainId} successfully.`);
@@ -408,180 +410,189 @@ export default function Deploy() {
   
 
 	return (
-<div className="bg-black shadow-md px-8 py-8 rounded sm:w-full md:w-1/2 mx-auto border-4 border-green-500">
-    <div className="inline-flex shadow-md rounded-full overflow-hidden h-8 leading-5 mb-4">
-        <button
-            className={`transition duration-300 ease-in-out font-bold py-2 px-4
-                        ${selectedChain === "sei" ? 'bg-gradient-to-r from-green-400 to-blue-500 text-black shadow-lg' : 'bg-gray-700 text-green-400 hover:bg-gray-600'}
-                        focus:outline-none focus:ring-2 focus:ring-green-500`}
-            onClick={handleSeiChainButton}
-            disabled={selectedChain === "sei"}>
-            SEI
-        </button>
-        <button
-            className={`transition duration-300 ease-in-out font-bold py-2 px-4
-                        ${selectedChain === "ftm" ? 'bg-gradient-to-r from-green-400 to-blue-500 text-black shadow-lg' : 'bg-gray-700 text-green-400 hover:bg-gray-600'}
-                        focus:outline-none focus:ring-2 focus:ring-green-500`}
-            onClick={handleFtmChainButton}
-            disabled={selectedChain === "ftm"}>
-            FTM
-        </button>
-    </div>
+<>
+	<div className='md:block  mt-8 p-4'>
+		<div className="flex justify-center">
+			<a className="inline-flex items-center justify-center whitespace-nowrap rounded-md font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 dark:ring-offset-slate-950 dark:focus-visible:ring-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50 h-10 px-4 py-2 -mt-5 text-2xl text-slate-50 hover:font-bold hover:bg-transparent hover:text-slate-50" href="/">
+				[ home ]
+			</a>
+		</div>
+	</div>
+	
+	<div className="bg-black shadow-md px-8 py-8 rounded sm:w-full md:w-1/2 mx-auto border-4 border-green-500">
+		{/* <div className="inline-flex shadow-md rounded-full overflow-hidden h-8 leading-5 mb-4"> */}
+			{/* <button
+				className={`transition duration-300 ease-in-out font-bold py-2 px-4
+							${selectedChain === "sei" ? 'bg-gradient-to-r from-green-400 to-blue-500 text-black shadow-lg' : 'bg-gray-700 text-green-400 hover:bg-gray-600'}
+							focus:outline-none focus:ring-2 focus:ring-green-500`}
+				onClick={handleSeiChainButton}
+				disabled={selectedChain === "sei"}>
+				SEI
+			</button>
+			<button
+				className={`transition duration-300 ease-in-out font-bold py-2 px-4
+							${selectedChain === "ftm" ? 'bg-gradient-to-r from-green-400 to-blue-500 text-black shadow-lg' : 'bg-gray-700 text-green-400 hover:bg-gray-600'}
+							focus:outline-none focus:ring-2 focus:ring-green-500`}
+				onClick={handleFtmChainButton}
+				disabled={selectedChain === "ftm"}>
+				FTM
+			</button> */}
+		{/* </div> */}
 
-    {/* Form */}
-    <div className="mb-4">
-        <label className="block text-green-500 text-sm font-bold mb-2" htmlFor="name">
-            Name
-        </label>
-        <input
-            className={`shadow appearance-none border rounded w-full py-2 px-3 text-green-400 bg-black leading-tight focus:outline-none focus:shadow-outline ${errors.name ? 'border-green-500' : ''
-                }`}
-            id="name"
-            type="text"
-            placeholder="Token name"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-        />
-        {errors.name && <p className="text-red-500 text-xs italic">{errors.name}</p>}
-    </div>
+		{/* Form */}
+		<div className="mb-4">
+			<label className="block text-green-500 text-sm font-bold mb-2" htmlFor="name">
+				Name
+			</label>
+			<input
+				className={`shadow appearance-none border rounded w-full py-2 px-3 text-green-400 bg-black leading-tight focus:outline-none focus:shadow-outline ${errors.name ? 'border-green-500' : ''
+					}`}
+				id="name"
+				type="text"
+				placeholder="Token name"
+				name="name"
+				value={formData.name}
+				onChange={handleChange}
+			/>
+			{errors.name && <p className="text-red-500 text-xs italic">{errors.name}</p>}
+		</div>
 
-    <div className="mb-4">
-        <label className="block text-green-500 text-sm font-bold mb-2" htmlFor="ticker">
-            Ticker
-        </label>
-        <input
-            className={`shadow appearance-none border rounded w-full py-2 px-3 text-green-400 bg-black leading-tight focus:outline-none focus:shadow-outline ${errors.ticker ? 'border-green-500' : ''
-                }`}
-            id="ticker"
-            type="text"
-            placeholder="Token symbol"
-            name="ticker"
-            value={formData.ticker}
-            onChange={handleChange}
-        />
-        {errors.ticker && <p className="text-red-500 text-xs italic">{errors.ticker}</p>}
-    </div>
+		<div className="mb-4">
+			<label className="block text-green-500 text-sm font-bold mb-2" htmlFor="ticker">
+				Ticker
+			</label>
+			<input
+				className={`shadow appearance-none border rounded w-full py-2 px-3 text-green-400 bg-black leading-tight focus:outline-none focus:shadow-outline ${errors.ticker ? 'border-green-500' : ''
+					}`}
+				id="ticker"
+				type="text"
+				placeholder="Token symbol"
+				name="ticker"
+				value={formData.ticker}
+				onChange={handleChange}
+			/>
+			{errors.ticker && <p className="text-red-500 text-xs italic">{errors.ticker}</p>}
+		</div>
 
-    <div className="mb-4">
-        <label className="block text-green-500 text-sm font-bold mb-2" htmlFor="description">
-            Description
-        </label>
-        <input
-            className={`shadow appearance-none border rounded w-full py-2 px-3 text-green-400 bg-black leading-tight focus:outline-none focus:shadow-outline ${errors.description ? 'border-green-500' : ''
-                }`}
-            id="description"
-            type="text"
-            placeholder="Token description"
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-        />
-        {errors.description && <p className="text-red-500 text-xs italic">{errors.description}</p>}
-    </div>
+		<div className="mb-4">
+			<label className="block text-green-500 text-sm font-bold mb-2" htmlFor="description">
+				Description
+			</label>
+			<input
+				className={`shadow appearance-none border rounded w-full py-2 px-3 text-green-400 bg-black leading-tight focus:outline-none focus:shadow-outline ${errors.description ? 'border-green-500' : ''
+					}`}
+				id="description"
+				type="text"
+				placeholder="Token description"
+				name="description"
+				value={formData.description}
+				onChange={handleChange}
+			/>
+			{errors.description && <p className="text-red-500 text-xs italic">{errors.description}</p>}
+		</div>
 
-    <div className="mb-4">
-        <label className="block text-green-500 text-sm font-bold mb-2" htmlFor="image">
-            Image
-        </label>
-        <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-green-400 bg-black leading-tight focus:outline-none focus:shadow-outline"
-            id="image"
-            type="file"
-            name="image"
-            onChange={(e) => { setFile(e.target.files?.[0]) }}
-        />
-        <p className="text-gray-500 text-xs italic">{file ? file.name : 'No file chosen'}</p>
-    </div>
+		<div className="mb-4">
+			<label className="block text-green-500 text-sm font-bold mb-2" htmlFor="image">
+				Image
+			</label>
+			<input
+				className="shadow appearance-none border rounded w-full py-2 px-3 text-green-400 bg-black leading-tight focus:outline-none focus:shadow-outline"
+				id="image"
+				type="file"
+				name="image"
+				onChange={(e) => { setFile(e.target.files?.[0]) }}
+			/>
+			<p className="text-gray-500 text-xs italic">{file ? file.name : 'No file chosen'}</p>
+		</div>
 
-    <div className="mb-4">
-        <label className="block text-green-500 text-sm font-bold mb-2" htmlFor="mintAmount">
-            Creator Initial Mint Amount
-        </label>
-        <input
-            className={`shadow appearance-none border rounded w-full py-2 px-3 text-green-400 bg-black leading-tight focus:outline-none focus:shadow-outline ${errors.mintAmount ? 'border-green-500' : ''
-                }`}
-            id="mintAmount"
-            type="number"
-            placeholder="0 optional"
-            name="mintAmount"
-            value={formData.mintAmount}
-            onChange={handleChange}
-        />
-        {errors.mintAmount && <p className="text-red-500 text-xs italic">{errors.mintAmount}</p>}
-    </div>
+		<div className="mb-4">
+			<label className="block text-green-500 text-sm font-bold mb-2" htmlFor="mintAmount">
+				Creator Initial Mint Amount
+			</label>
+			<input
+				className={`shadow appearance-none border rounded w-full py-2 px-3 text-green-400 bg-black leading-tight focus:outline-none focus:shadow-outline ${errors.mintAmount ? 'border-green-500' : ''
+					}`}
+				id="mintAmount"
+				type="number"
+				placeholder="0 optional"
+				name="mintAmount"
+				value={formData.mintAmount}
+				onChange={handleChange}
+			/>
+			{errors.mintAmount && <p className="text-red-500 text-xs italic">{errors.mintAmount}</p>}
+		</div>
 
-    <button onClick={toggleOptions} className="mb-4 bg-green-500 text-black px-4 py-2 rounded hover:bg-green-600">
-        {showOptions ? 'Show less options' : 'Show more options'}
-    </button>
+		<button onClick={toggleOptions} className="mb-4 bg-green-500 text-black px-4 py-2 rounded hover:bg-green-600">
+			{showOptions ? 'Show less options' : 'Show more options'}
+		</button>
 
-    {showOptions && (
-        <>
-            <div className="mb-4">
-                <label className="block text-green-500 text-sm font-bold mb-2" htmlFor="twitter">
-                    Twitter Link
-                </label>
-                <input
-                    className={`shadow appearance-none border rounded w-full py-2 px-3 text-green-400 bg-black leading-tight focus:outline-none focus:shadow-outline ${errors.twitter ? 'border-green-500' : ''
-                        }`}
-                    id="twitter"
-                    type="text"
-                    placeholder="(optional)"
-                    name="twitter"
-                    value={formData.twitter}
-                    onChange={handleChange}
-                />
-                {errors.twitter && <p className="text-red-500 text-xs italic">{errors.twitter}</p>}
-            </div>
-            <div className="mb-4">
-                <label className="block text-green-500 text-sm font-bold mb-2" htmlFor="telegram">
-                    Telegram Link
-                </label>
-                <input
-                    className={`shadow appearance-none border rounded w-full py-2 px-3 text-green-400 bg-black leading-tight focus:outline-none focus:shadow-outline ${errors.minter ? 'border-green-500' : ''
-                        }`}
-                    id="telegram"
-                    type="text"
-                    placeholder="(optional)"
-                    name="telegram"
-                    value={formData.telegram}
-                    onChange={handleChange}
-                />
-                {errors.telegram && <p className="text-red-500 text-xs italic">{errors.telegram}</p>}
-            </div>
-            <div className="mb-4">
-                <label className="block text-green-500 text-sm font-bold mb-2" htmlFor="website">
-                    Website Link
-                </label>
-                <input
-                    className={`shadow appearance-none border rounded w-full py-2 px-3 text-green-400 bg-black leading-tight focus:outline-none focus:shadow-outline ${errors.minter ? 'border-green-500' : ''
-                        }`}
-                    id="website"
-                    type="text"
-                    placeholder="(optional)"
-                    name="website"
-                    value={formData.website}
-                    onChange={handleChange}
-                />
-                {errors.website && <p className="text-red-500 text-xs italic">{errors.website}</p>}
-            </div>
-        </>
-    )}
+		{showOptions && (
+			<>
+				<div className="mb-4">
+					<label className="block text-green-500 text-sm font-bold mb-2" htmlFor="twitter">
+						Twitter Link
+					</label>
+					<input
+						className={`shadow appearance-none border rounded w-full py-2 px-3 text-green-400 bg-black leading-tight focus:outline-none focus:shadow-outline ${errors.twitter ? 'border-green-500' : ''
+							}`}
+						id="twitter"
+						type="text"
+						placeholder="(optional)"
+						name="twitter"
+						value={formData.twitter}
+						onChange={handleChange}
+					/>
+					{errors.twitter && <p className="text-red-500 text-xs italic">{errors.twitter}</p>}
+				</div>
+				<div className="mb-4">
+					<label className="block text-green-500 text-sm font-bold mb-2" htmlFor="telegram">
+						Telegram Link
+					</label>
+					<input
+						className={`shadow appearance-none border rounded w-full py-2 px-3 text-green-400 bg-black leading-tight focus:outline-none focus:shadow-outline ${errors.minter ? 'border-green-500' : ''
+							}`}
+						id="telegram"
+						type="text"
+						placeholder="(optional)"
+						name="telegram"
+						value={formData.telegram}
+						onChange={handleChange}
+					/>
+					{errors.telegram && <p className="text-red-500 text-xs italic">{errors.telegram}</p>}
+				</div>
+				<div className="mb-4">
+					<label className="block text-green-500 text-sm font-bold mb-2" htmlFor="website">
+						Website Link
+					</label>
+					<input
+						className={`shadow appearance-none border rounded w-full py-2 px-3 text-green-400 bg-black leading-tight focus:outline-none focus:shadow-outline ${errors.minter ? 'border-green-500' : ''
+							}`}
+						id="website"
+						type="text"
+						placeholder="(optional)"
+						name="website"
+						value={formData.website}
+						onChange={handleChange}
+					/>
+					{errors.website && <p className="text-red-500 text-xs italic">{errors.website}</p>}
+				</div>
+			</>
+		)}
 
-    {/* Deploy Button */}
-    <div className="relative flex h-16 items-center justify-between">
-        <div />
-        <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
-            <span className="absolute -inset-1.5" />
-            <div className='relative ml-3'>
-                <button className='relative flex bg-green-500 text-black px-6 hover:text-white rounded-lg py-2 text-sm font-medium leading-5'
-                    type="button" onClick={handleDeploy} disabled={isDeploying}>
-                    Deploy
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
+		{/* Deploy Button */}
+		<div className="relative flex h-16 items-center justify-between">
+			<div />
+			<div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
+				<span className="absolute -inset-1.5" />
+				<div className='relative ml-3'>
+					<button className='relative flex bg-green-500 text-black px-6 hover:text-white rounded-lg py-2 text-sm font-medium leading-5'
+						type="button" onClick={handleDeploy} disabled={isDeploying}>
+						Deploy
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</>
 	);
 }

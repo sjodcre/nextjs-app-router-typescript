@@ -40,7 +40,6 @@ interface FollowerData {
 
 }
 
-
 interface FollowData {
   followerlist: FollowerData[];
   followeelist: FolloweeData[];
@@ -73,9 +72,9 @@ export default function Profile({ params }: { params: { id: string } }) {
   // const url = usePathname();
   // const id = url.substring("/profile/".length);
   const id = params.id;
-  const { address, chainId } = useWeb3ModalAccount()
+  const { address, chainId,isConnected } = useWeb3ModalAccount()
   const { walletProvider } = useWeb3ModalProvider();
-  const [currentChain, setCurrentChain] = useState('');
+  const [currentChain, setCurrentChain] = useState('ftm');
   const [providerReady, setProviderReady] = useState(false);
   const [currentHeldPage, setCurrentHeldPage] = useState(1);
   const itemsPerPageHeld = 5; // This can also be dynamic if needed
@@ -144,21 +143,16 @@ export default function Profile({ params }: { params: { id: string } }) {
   }, [walletProvider]);
 
 
-  useEffect(() => {
-
-
-    if (chainId) {
-      if (chainId === SEI_CHAIN_ID) {
-        setCurrentChain("sei")
-      } else if (chainId === FTM_CHAIN_ID) {
-        setCurrentChain("ftm")
-      }
-
-    }
-
-    // fetchCoinHeld();
-
-  }, [chainId]);
+  // useEffect(() => {
+  //   if (chainId) {
+  //     if (chainId === SEI_CHAIN_ID) {
+  //       setCurrentChain("sei")
+  //     } else if (chainId === FTM_CHAIN_ID) {
+  //       setCurrentChain("ftm")
+  //     }
+  //   }
+  //   // fetchCoinHeld();
+  // }, [chainId]);
 
   useEffect(() => {
     // const fetchCoinHeld = async () => {
@@ -168,6 +162,8 @@ export default function Profile({ params }: { params: { id: string } }) {
     //     // Fetch coin held logic...
     //   }
     // };
+    // console.log("current chain", currentChain)
+    // console.log('is connected?', isConnected)
     if (currentChain) {
       fetchCoinHeld(currentChain);
       fetchCoinCreated(currentChain);
@@ -217,7 +213,9 @@ export default function Profile({ params }: { params: { id: string } }) {
 
   const fetchCoinHeld = async (currentChain: string) => {
     try {
+      console.log("chain before fetching coin held", currentChain)
       const response = await fetch(`/api/coinsheld?id=${id}&chain=${currentChain}`);
+      console.log("response coin held", response)
       if (!response.ok) {
         throw new Error('Failed to fetch token');
       }
@@ -228,6 +226,7 @@ export default function Profile({ params }: { params: { id: string } }) {
       }));
 
       // console.log("Merged Coin Held Data", mergedData);
+      console.log("coin held displayed", mergedData)
       setCoinHeld(mergedData);
     } catch (error) {
       console.error('Error fetching token:', error);
@@ -478,7 +477,7 @@ export default function Profile({ params }: { params: { id: string } }) {
         <p className="text-lg font-bold">Username: {profileData.username}</p>
         <div className="flex justify-between items-center mt-4">
           <p className="text-sm">{followerlist.length} Followers</p>
-          {id !== address && (
+          {id !== address && isConnected && (
             <button
               className={`w-40 h-8 rounded-full bg-green-400 text-black hover:bg-green-600 text-sm font-medium leading-5`}
               onClick={handleFollow}
@@ -603,7 +602,7 @@ export default function Profile({ params }: { params: { id: string } }) {
               </div>
               <div className={openTab === 2 ? "block" : "hidden"} id="link2">
                 {currentCreatedItems.map((coinData: CoinsCreated, index: number) => (
-                  <Link href={`/token/${coinData.token_address}`} key={index}>
+                  <Link href={`/token/${currentChain}/${coinData.token_address}`} key={index}>
                     <div className="max-h-[300px] overflow-hidden h-fit p-2 flex border border-green-500 hover:bg-gray-800 gap-2 w-full">
                       {/* <img className='mr-4 w-12 h-auto flex' src={coinData.image_url || "https://via.placeholder.com/150"} alt="Token Image" /> */}
                       <div className="relative mr-4 w-12 h-auto flex">

@@ -16,17 +16,20 @@ interface EventListener {
 //   return date.getTime() / 1000;
 // }
 
-function getNextFiveMinuteBarTime(barTime: any) {
-  const date = new Date(barTime.time);
-  date.setMinutes(date.getMinutes() + 5); // Increment by 5 minutes
-  return date.getTime() / 1000;
-}
-
-// function getNextThirtyMinuteBarTime(barTime: number) {
-//   const date = new Date(barTime * 1000);
-//   date.setMinutes(date.getMinutes() + 30); // Increment by 30 minutes
+// function getNextFiveMinuteBarTime(barTime: any) {
+//   const date = new Date(barTime.time);
+//   date.setMinutes(date.getMinutes() + 5); // Increment by 5 minutes
 //   return date.getTime() / 1000;
 // }
+
+function getFiveMinuteBarStartTime(unixTimestamp: number) {
+  const date = new Date(unixTimestamp * 1000); // Convert seconds to milliseconds
+  date.setMilliseconds(0);
+  date.setSeconds(0);
+  const minutes = date.getMinutes();
+  date.setMinutes(minutes - (minutes % 5)); // Round down to the nearest 5 minutes
+  return date.getTime() / 1000; // Convert back to seconds
+}
 
 const channelToSubscription = new Map();
 
@@ -68,9 +71,10 @@ const useSocket = (listeners: EventListener[] = []) => {
       // const tradeTime = parseInt(tradeTimeStr);
       // const tradePrice = parseFloat(data.deposit) / parseFloat(data.amount);
       const tradePrice = data.bondingPrice;
-
+      console.log("timestamp given", data.timestamp)
       // const tradePrice = calculatePrice()
       const tradeTime = parseInt(data.timestamp);
+      console.log("tradeTime", tradeTime)
 
       // const channelString = `0~${exchange}~${fromSymbol}~${toSymbol}`;
       let descriptionSnippet = data.token_description.substring(0, 10);
@@ -82,52 +86,49 @@ const useSocket = (listeners: EventListener[] = []) => {
           return;
       }
       const lastBar = subscriptionItem.lastBar;
-      // const lastFiveMinsBar = subscriptionItem.lastDailyBar;
-      // console.log("lastBar", lastBar)
-      let nextBarTime = getNextFiveMinuteBarTime(lastBar);
 
-      // let nextBarTime;
-      // if (data.chartResolution ===5){
-      //   nextBarTime = getNextFiveMinuteBarTime(lastBar);
-
-      // } else if (data.chartResolution ===30){
-      //   nextBarTime = getNextThirtyMinuteBarTime(lastBar);
-
+      // let nextBarTime = getNextFiveMinuteBarTime(lastBar);
+      // let bar = {};
+      // if (tradeTime >= nextBarTime) {
+      //     bar = {
+      //         time: nextBarTime*1000,
+      //         open: lastBar.close,
+      //         high: tradePrice,
+      //         low: tradePrice,
+      //         close: tradePrice,
+      //     };
+      //     // console.log('[socket] Generate new bar', bar);
       // } else {
-      //   nextBarTime = getNextFiveMinuteBarTime(lastBar);
-
+      //     bar = {
+      //         ...lastBar,
+      //         high: Math.max(lastBar.high, tradePrice),
+      //         low: Math.min(lastBar.low, tradePrice),
+      //         close: tradePrice,
+      //     };
+      //     // console.log('[socket] Update the latest bar by price', tradePrice);
       // }
-      // const nextDailyBarTime = getNextDailyBarTime(lastDailyBar.time);
-      // const nextFiveMinsBarTime = getNextFiveMinuteBarTime(lastFiveMinsBar);
-      // console.log("nextFiveMinsBarTime", nextBarTime)
-      // console.log("tradeTime", tradeTime)
-      let bar = {};
-      if (tradeTime >= nextBarTime) {
-          bar = {
-              time: nextBarTime*1000,
-              open: lastBar.close,
-              high: tradePrice,
-              low: tradePrice,
-              close: tradePrice,
-          };
-          // console.log('[socket] Generate new bar', bar);
-      } else {
-          bar = {
-              ...lastBar,
-              high: Math.max(lastBar.high, tradePrice),
-              low: Math.min(lastBar.low, tradePrice),
-              close: tradePrice,
-          };
-          // console.log('[socket] Update the latest bar by price', tradePrice);
-      }
-      // let bar = {
-      //     ...lastDailyBar,
-      //     high: Math.max(lastDailyBar.high, tradePrice),
-      //     low: Math.min(lastDailyBar.low, tradePrice),
-      //     close: tradePrice,
-      // };
-      // console.log('[socket] Update the latest bar by price', tradePrice);
 
+      const tradeBarTime = getFiveMinuteBarStartTime(tradeTime);
+
+      let bar: any = {};
+      console.log("tradeBarTime", tradeBarTime)
+      console.log("lastBar time", lastBar.time)
+      if (tradeBarTime !== (lastBar.time/1000)) {
+        bar = {
+          time: tradeBarTime * 1000,
+          open: lastBar.close,
+          high: tradePrice,
+          low: tradePrice,
+          close: tradePrice,
+        };
+      } else {
+        bar = {
+          ...lastBar,
+          high: Math.max(lastBar.high, tradePrice),
+          low: Math.min(lastBar.low, tradePrice),
+          close: tradePrice,
+        };
+      }
 
       subscriptionItem.lastBar = bar;
   
