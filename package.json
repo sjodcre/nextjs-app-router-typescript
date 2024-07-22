@@ -10,7 +10,9 @@
     "lint": "next lint",
     "testscript": "npx ts-node src/app/_services/arweave.ts",
     "dev:bot": "node src/bot.js",
-    "dev:all": "concurrently \"npm run dev\" \"npm run dev:bot\""
+    "dev:all": "concurrently \"npm run dev\" \"npm run dev:bot\"",
+    "start:bot": "NODE_ENV=production node src/bot.js",
+    "start:all": "concurrently \"npm run start\" \"npm run start:bot\""
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.2.3",
@@ -45,6 +47,7 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "autoprefixer": "^10.4.19",
+    "concurrently": "^8.2.2",
     "eslint": "^8",
     "eslint-config-next": "14.1.4",
     "hardhat": "^2.22.2",
