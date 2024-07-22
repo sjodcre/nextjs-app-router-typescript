@@ -39,8 +39,6 @@ export const user = createSlice({
                     ...state.value,
                     user: action.payload,
                     slippage: 1,
-                    tokenBalance: 0,
-                    nativeTokenBalance: 0,
                   }
             }
         },

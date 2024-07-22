@@ -109,6 +109,10 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   const marketCapLimit = nativeTokenPrice && finalSupply? priceLimit *Number(ethers.utils.formatUnits(finalSupply, 18))* nativeTokenPrice : 0;
   // console.log("market cap limit", marketCapLimit)
   // const tokenAddress = params.tokenInfo[1]
+    //popup model
+    const [showModal, setShowModal] = useState(false);
+  
+    const [file,setFile] = useState<File>();
 
 
   //fetch final supply
@@ -149,7 +153,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     } else {
       setProgress(newProgress);
     }
-  }, [marketCap, tokenSum]);
+  }, [marketCap, tokenSum, finalSupply]);
 
   // const updateProgress = () => {
   //   const initialTokenSum = BigNumber.from('5000000000000000000'); // Initial token sum in BigNumber format
@@ -198,12 +202,10 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
   //provider ready, get data
   useEffect(() => {
-
     if (providerReady) {
       if (walletProvider) {
         const ethersProvider = new ethers.providers.Web3Provider(walletProvider);
 
-        checkPauseStatus(ethersProvider, params.tokenInfo[1])
         fetchERC20Balance(ethersProvider, params.tokenInfo[1])
           .then(balance => {
             setUserBalance(prevState => ({
@@ -226,26 +228,49 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
           // console.log("fail to fetch locked tokens:", error)
         });
 
-        fetchMaxSupply(ethersProvider, params.tokenInfo[1])
-        .then(maxTokenSupply => {
-          setFinalSupply(maxTokenSupply)
-        }) .catch(error => {
-          // Error handling
-          // console.log("fail to fetch  token max supply:", error)
-        });
-
+        
       } 
     }
-  }, [providerReady, transactionDone]);
+  }, [providerReady, transactionDone, chainId, walletProvider]);
+
+  //non signer providers
+  useEffect(() => {
+    const checkAndSetPauseStatus = async () => {
+      try {
+        await checkPauseStatus(params.tokenInfo[1]);
+
+      } catch (error) {
+        console.error("Failed to fetch contract pause status:", error);
+      }
+    }
+    const fetchAndSetMaxSupply = async () => {
+      try {
+        const maxTokenSupply = await fetchMaxSupply(params.tokenInfo[1]);
+        if (maxTokenSupply) {
+          setFinalSupply(maxTokenSupply);
+        } else {
+          console.error("Failed to fetch max token supply. Returned value is undefined.");
+        }
+      } catch (error) {
+        console.error("Failed to fetch max token supply:", error);
+      }
+    };
+    fetchAndSetMaxSupply();
+    checkAndSetPauseStatus();
+  },[params.tokenInfo])
 
   //set native token info
   useEffect(() => {
 
     setNativeTokenInfo({
-      chain: params.tokenInfo[0] === 'sei' ? 'SEI' : 'FTM',
+      // chain: params.tokenInfo[0] === 'sei' ? 'SEI' : 'FTM',
+      // // chainId: params.tokenInfo[0] === 'sei' ? 713715 : 64165,
+      // chainId: params.tokenInfo[0] === 'sei' ? 713715 : 250,
+      // chainLogo: params.tokenInfo[0] === 'sei' ? '/sei-logo.png' : '/ftm-logo.png'
+      chain: params.tokenInfo[0] === 'ftm' ? 'FTM' : 'wtf??',
       // chainId: params.tokenInfo[0] === 'sei' ? 713715 : 64165,
-      chainId: params.tokenInfo[0] === 'sei' ? 713715 : 250,
-      chainLogo: params.tokenInfo[0] === 'sei' ? '/sei-logo.png' : '/ftm-logo.png'
+      chainId: params.tokenInfo[0] === 'ftm' ? 250 : 0,
+      chainLogo: params.tokenInfo[0] === 'ftm' ?  '/ftm-logo.png': 'skull-head.jpg'
     });
   }, [params.tokenInfo, nativeTokenPrice])
 
@@ -260,15 +285,12 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   useEffect(() => {
 
     // Initial fetch of data
-    // fetchData();
-    // listenForTransferEvents();
-    // ReplyList(params.tokenInfo[1]);
-    if (isTokenPriceFetched) {
+    // if (isTokenPriceFetched) {
       // fetchData();
       // // listenForTransferEvents();
       // ReplyList(params.tokenInfo[1]);
       fetchDataAndUpdateProgress();
-    }
+    // }
 
     onEvent("refresh", fetchDataAndUpdateProgress);
 
@@ -294,11 +316,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     ReplyList(params.tokenInfo[1]);
 
     onEvent("replyGet", (value: any) => {
-
-
       ReplyList(params.tokenInfo[1]);
-
-
     });
 
     return () => {
@@ -378,108 +396,78 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   //   }
   // }, [tokenAddress, emitEvent, onEvent, offEvent]);
 
+  //fetch token info once only
+  const fetchTokenInfoData = async () => {
+    try {
+      const tokenInfo = await fetchTokenInfo(params.tokenInfo[0], params.tokenInfo[1]);
+      setDexUrl(tokenInfo[0].dex_url);
+      setIsPhaseTwo(tokenInfo[0].phase_two);
+      setTokenDetails(tokenInfo[0]);
+    } catch (error) {
+      console.error("Error fetching token info:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchTokenInfoData();
+  }, []);
+
+  //calculate and set market cap
+  const calculateAndSetMarketCap = async (tradesData) => {
+    if (tradesData && tradesData.length > 0 && nativeTokenPrice !== null) {
+      let marketCap = 0;
+      if (!isPhaseTwo) {
+        marketCap = tradesData[0].sum_token * tradesData[0].price_per_token * nativeTokenPrice / 1E18;
+        console.log("marketcap from calculation", marketCap);
+        console.log("marketcap from db", tradesData[0].marketcap * nativeTokenPrice);
+      } else {
+        try {
+          const reservesData = await getReserves(dexUrl);
+          const tokenPriceInUSD = calculateTokenPrice(reservesData, nativeTokenPrice);
+          setTokenPrice(tokenPriceInUSD);
+
+          marketCap =
+            reservesData.reserve1 * tokenPriceInUSD +
+            reservesData.reserve0 * nativeTokenPrice;
+        } catch (error) {
+          console.error("Error setting phase 2 market cap", error);
+        }
+      }
+
+      const formattedMarketCap = formatMarketCap(marketCap);
+      setMarketCap(formattedMarketCap);
+    }
+  };
+
+    //fetch token holders
+    const fetchHolders = async () => {
+      setIsLoading(true); // Start loading
+  
+      const data = await getTopTokenHolders(params.tokenInfo[0], params.tokenInfo[1]); // Assume this fetches the data as shown in your example
+      setHolders(data);
+  
+      // const sum = data.reduce((acc: any, holder: { balance: any; }) => acc + holder.balance, 0);
+      setIsLoading(false); // End loading
+    };
+  
+
   // Function to fetch data
   const fetchData = async () => {
-    const tokenInfoPromise = fetchTokenInfo(params.tokenInfo[0], params.tokenInfo[1]);
+    // const tokenInfoPromise = fetchTokenInfo(params.tokenInfo[0], params.tokenInfo[1]);
     const tradesDataPromise = getTokenTrades(params.tokenInfo[0], params.tokenInfo[1]);
-    // Wait for both promises to resolve
-    const [tokenInfo, tradesData] = await Promise.all([tokenInfoPromise, tradesDataPromise]);
-    setDexUrl(tokenInfo[0].dex_url)
-    setIsPhaseTwo(tokenInfo[0].phase_two)
-    // Update state with fetched data
-    setTokenDetails(tokenInfo[0]);
+    // const [tokenInfo, tradesData] = await Promise.all([tokenInfoPromise, tradesDataPromise]);
+    const tradesData = await tradesDataPromise;
+
     setTrades(tradesData);
     setTokenSum(tradesData[0].sum_token);
     // console.log("tokenSum",tradesData[0].sum_token )
     setBnTokenSum(ethers.BigNumber.from(tradesData[0].sum_token));
     setNativeSum(tradesData[0].sum_native);
     setBnNativeSum(ethers.BigNumber.from(tradesData[0].sum_native));
-    // getTopTokenHolders(params.tokenInfo[0], params.tokenInfo[1]);
     fetchHolders();
-    // console.log("tradesData length", tradesData.length)
-    if (tradesData && tradesData.length > 0 && nativeTokenPrice) {
-      let marketCap = 0;
-      if (!tokenInfo[0].phase_two) {
-          marketCap = tradesData[0].sum_token * tradesData[0].price_per_token * nativeTokenPrice / 1E18;
-      } else {
-        try {
-          const reservesData = await getReserves(tokenInfo[0].dex_url);
-  
-          // setReserves(reservesData);
-          // setWFTMPrice(wftmPriceData);
-          // console.log("reservesData", reservesData)
-          const tokenPriceInUSD = calculateTokenPrice(reservesData, nativeTokenPrice);
-          setTokenPrice(tokenPriceInUSD);
-          // console.log("tokenPriceInUSD", tokenPriceInUSD)
 
-          marketCap =
-            reservesData.reserve1 * tokenPriceInUSD +
-            reservesData.reserve0 * nativeTokenPrice;
-          
-          // console.log("marketCap", marketCap)
-        } catch (error) {
-          // console.log("error setting phase 2 market cap", error)
-        } 
-      }
-
-      // const formattedMarketCap = marketCap.toLocaleString('en-US', {
-      //   style: 'decimal',
-      //   minimumFractionDigits: 2,
-      //   maximumFractionDigits: 2
-      // });
-      const formattedMarketCap = formatMarketCap(marketCap)
-      // console.log("formattted market cap", formattedMarketCap)
-      // console.log("market cap wftm", tradesData[0].sum_token * tradesData[0].price_per_token )
-      // console.log("sum_token", tradesData[0].sum_token)
-      setMarketCap(formattedMarketCap);
-    }
-
+    await calculateAndSetMarketCap(tradesData);
     // console.log("data fetch");
-  };
-
-  //fetch token holders
-  const fetchHolders = async () => {
-    setIsLoading(true); // Start loading
-
-    const data = await getTopTokenHolders(params.tokenInfo[0], params.tokenInfo[1]); // Assume this fetches the data as shown in your example
-    setHolders(data);
-    // const sum = data.reduce((acc: any, holder: { balance: any; }) => acc + holder.balance, 0);
-    setIsLoading(false); // End loading
-  };
-
-  //slippage dialog
-  const toggleDialog = () => setDialogOpen(!dialogOpen);
-
-  //tokena mount to buy/sell
-  const handleSetAmount = (amount: string) => {
-    setTokenAmountToTrade(amount);  // Assuming tokenAmount is a string, if not, convert appropriately
-  };
-
-  
-
-  const handleSetPercentage = (percentage: number) => {
-    // handleChainChange()
-    // const fullAmount = userBalance.token; // Assuming `userBalance.token` holds the full token balance as a number
-    // const amountToSet = (fullAmount * percentage / 100).toFixed(0); // Calculating the percentage and rounding it to the nearest whole number
-
-    handleChainChange()
-      .then(async () => {
-        
-        // This code executes after successful network change
-        const percentageBigNumber = BigNumber.from(percentage);
-        const fullAmount = userBalance.token;
-        const sellableAmount = ethers.BigNumber.from(fullAmount).sub(lockedTokens);
-        // const amountToSet = (sellableAmount * percentage / 100).toFixed(0); // Calculating the percentage and rounding it to the nearest whole number
-        const amountToSet = sellableAmount
-        .mul(percentageBigNumber)
-        .div(100);
-
-        setTokenAmountToTrade(amountToSet.toString()); // Convert to string to match your state expectation
-      })
-      .catch(error => {
-        // Handle error if network change fails
-        console.error("Network change failed:", error);
-      });
   };
 
   async function fetchLockedTokens (walletProvider: any, tokenAddress:string )  {
@@ -505,11 +493,17 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
   }
 
-  async function fetchMaxSupply (walletProvider: any, tokenAddress:string )  {
-    if (walletProvider && (chainId == nativeTokenInfo.chainId)) {
+  async function fetchMaxSupply (tokenAddress:string )  {
+    // if ((chainId !== nativeTokenInfo.chainId)) {
+    //   console.error("chainId does not match nativeTokenInfo.chainId");
+    //   return undefined;
+    // }
+    // console.log('tokanAddress',tokenAddress)
       // const provider = new ethers.providers.Web3Provider(walletProvider)
-      const signer = await walletProvider.getSigner()
-      const ERC20LockContract = new ethers.Contract(tokenAddress, ERC20TestArtifact.abi, signer);
+      const provider = new ethers.providers.JsonRpcProvider('https://fantom-rpc.publicnode.com/');
+
+      // const signer = await walletProvider.getSigner()
+      const ERC20LockContract = new ethers.Contract(tokenAddress, ERC20TestArtifact.abi, provider);
       try {
         const maxTokenSupply = await ERC20LockContract.getMaxTokenSupply();
         // console.log("maxToken supply", maxTokenSupply.toString())
@@ -517,12 +511,127 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
         return maxTokenSupply
       } catch (error){
         console.error("Error getting max supply:", error);
-      throw error;
+        throw error;
       }
 
-    }
+    
 
   }
+
+  async function checkPauseStatus(tokenAddress: string) {
+    // const signer = await walletProvider.getSigner();
+    // const signerAddr = await signer.getAddress();
+    const provider = new ethers.providers.JsonRpcProvider('https://fantom-rpc.publicnode.com/');
+
+    const ERC20LockContract = new ethers.Contract(tokenAddress, ERC20TestArtifact.abi, provider);
+    try {
+      const liquidityPoolStatus = await ERC20LockContract.isLiquidityPoolSetup();
+      // console.log("liquidityPoolStatus", liquidityPoolStatus);
+      // setIsLiquidityPoolSetup(liquidityPoolStatus); // Ensure setIsLiquidityPoolSetup is defined in your component
+      setIsLiquidityPoolSetup(liquidityPoolStatus)
+
+    } catch (error) {
+      // console.log("error checking liquidity pool status", error);
+    }
+  }
+
+  async function fetchERC20Balance(walletProvider: any, tokenAddress: string) {
+    const signer = await walletProvider.getSigner();
+    const signerAddr = await signer.getAddress();
+    const contract = new ethers.Contract(tokenAddress, ERC20TestArtifact.abi, signer);
+
+    try {
+
+      if (chainId === nativeTokenInfo.chainId) {
+        const balance = await contract.balanceOf(signerAddr.toString());
+        const bigNumberValue = ethers.BigNumber.from(balance);
+
+        // console.log('BigNumber Value:', bigNumberValue.toString());
+        return bigNumberValue;
+      } else {
+        return 0;
+      }
+
+    } catch (error) {
+      console.error("Failed to fetch token balance:", error);
+      throw error;  // or handle error appropriately
+    }
+  }
+
+  const ensureAbsoluteUrl = (url: string): string => {
+    if (!/^https?:\/\//i.test(url)) {
+      return `https://${url}`;
+    }
+    return url;
+  };
+
+  //slippage dialog
+  const toggleDialog = () => setDialogOpen(!dialogOpen);
+
+  const updateReply = (property: any, value: any) => {
+    setNewReply((prevReply) => ({
+      ...prevReply,
+      [property]: value,
+    }));
+  };
+
+  const formattedLockedTokens = useMemo(() => formatTokenAmount(Number(lockedTokens? lockedTokens: 0)), [lockedTokens]);//no need precision so Number cast
+
+  // Calculate the percentage using useMemo
+  const lockedPercentage = useMemo(() => {
+   if (userBalance.token === '0') return 0;
+   return ((Number(lockedTokens) / Number(userBalance.token)) * 100).toFixed(2);//will lose precision either way
+ }, [lockedTokens, userBalance.token]);
+
+  // Threads Code
+  const ReplyList = (token_address: string) => {
+  fetch(`/api/thread/replies?token_address=${token_address}&chain=${params.tokenInfo[0]}`)
+    .then((res) => res.json())
+    .then((data) => {
+    // console.log("data for replies", data)
+      setReplies(data)})
+    .catch((error) => {
+      console.error('Error fetching replies:', error);
+      setReplies([]);
+    });
+  }
+
+  //tokena mount to buy/sell
+  const handleSetAmount = (amount: string) => {
+    setTokenAmountToTrade(amount);  // Assuming tokenAmount is a string, if not, convert appropriately
+  };
+
+  const handleSetPercentage = (percentage: number) => {
+    // handleChainChange()
+    // const fullAmount = userBalance.token; // Assuming `userBalance.token` holds the full token balance as a number
+    // const amountToSet = (fullAmount * percentage / 100).toFixed(0); // Calculating the percentage and rounding it to the nearest whole number
+    if (!isConnected){
+      setIsTrading(false); 
+      toast.error("User is not connected")
+      return
+    }
+
+
+    handleChainChange()
+      .then(async () => {
+        
+        // This code executes after successful network change
+        const percentageBigNumber = BigNumber.from(percentage);
+        const fullAmount = userBalance.token;
+        const sellableAmount = ethers.BigNumber.from(fullAmount).sub(lockedTokens);
+        // const amountToSet = (sellableAmount * percentage / 100).toFixed(0); // Calculating the percentage and rounding it to the nearest whole number
+        const amountToSet = sellableAmount
+        .mul(percentageBigNumber)
+        .div(100);
+
+        setTokenAmountToTrade(amountToSet.toString()); // Convert to string to match your state expectation
+      })
+      .catch(error => {
+        // Handle error if network change fails
+        console.error("Network change failed:", error);
+      });
+  };
+
   // threads/trades tab change
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
@@ -545,20 +654,21 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   async function handleChainChange() {
     return new Promise((resolve, reject) => {
       // Assuming chain IDs for 'sei' and 'ftm' as constants for clarity
-      const SEI_CHAIN_ID = 713715;
+      // const SEI_CHAIN_ID = 713715;
       // const FTM_CHAIN_ID = 64165;
       const FTM_CHAIN_ID = 250;
 
 
       let targetChainId = 250;
 
-      if (params.tokenInfo[0] === "sei" && chainId !== SEI_CHAIN_ID) {
-        targetChainId = SEI_CHAIN_ID;
-      } else if (params.tokenInfo[0] === "ftm" && chainId !== FTM_CHAIN_ID) {
-        targetChainId = FTM_CHAIN_ID;
-      }
+      // if (params.tokenInfo[0] === "sei" && chainId !== SEI_CHAIN_ID) {
+      //   targetChainId = SEI_CHAIN_ID;
+      // } else if (params.tokenInfo[0] === "ftm" && chainId !== FTM_CHAIN_ID) {
+      //   targetChainId = FTM_CHAIN_ID;
+      // }
 
-      if (targetChainId !== null) {
+      // if (targetChainId !== null) {
+      if (chainId !== targetChainId) {
         switchNetwork(targetChainId)
           .then(() => {
             // if (walletProvider)
@@ -630,44 +740,6 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   //   }
   // }
 
-  async function checkPauseStatus(walletProvider: any, tokenAddress: string) {
-    const signer = await walletProvider.getSigner();
-    const signerAddr = await signer.getAddress();
-    const ERC20LockContract = new ethers.Contract(tokenAddress, ERC20TestArtifact.abi, signer);
-    try {
-      const liquidityPoolStatus = await ERC20LockContract.isLiquidityPoolSetup();
-      // console.log("liquidityPoolStatus", liquidityPoolStatus);
-      // setIsLiquidityPoolSetup(liquidityPoolStatus); // Ensure setIsLiquidityPoolSetup is defined in your component
-      setIsLiquidityPoolSetup(liquidityPoolStatus)
-
-    } catch (error) {
-      // console.log("error checking liquidity pool status", error);
-    }
-  }
-
-  async function fetchERC20Balance(walletProvider: any, tokenAddress: string) {
-    const signer = await walletProvider.getSigner();
-    const signerAddr = await signer.getAddress();
-    const contract = new ethers.Contract(tokenAddress, ERC20TestArtifact.abi, signer);
-
-    try {
-
-      if (chainId === nativeTokenInfo.chainId) {
-        const balance = await contract.balanceOf(signerAddr.toString());
-        const bigNumberValue = ethers.BigNumber.from(balance);
-
-        // console.log('BigNumber Value:', bigNumberValue.toString());
-        return bigNumberValue;
-      } else {
-        return 0;
-      }
-
-    } catch (error) {
-      console.error("Failed to fetch token balance:", error);
-      throw error;  // or handle error appropriately
-    }
-  }
-
   async function handleBuyToken(walletProvider: any, tokenAmountToTrade: { toString: () => string; }, chain: string) {
     const ERC20TestContractAddress = params.tokenInfo[1].toString();
     // const ERC20TestContract = new Contract(ERC20TestContractAddress, ERC20TestArtifact.abi, signer);
@@ -697,15 +769,6 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     return toRet;
   }
 
-
-  const formattedLockedTokens = useMemo(() => formatTokenAmount(Number(lockedTokens)), [lockedTokens]);//no need precision so Number cast
-
-   // Calculate the percentage using useMemo
-   const lockedPercentage = useMemo(() => {
-    if (userBalance.token === '0') return 0;
-    return ((Number(lockedTokens) / Number(userBalance.token)) * 100).toFixed(2);//will lose precision either way
-  }, [lockedTokens, userBalance.token]);
-
   // place trade handler
   const handlePlaceTrade = async () => {
     if (isTrading) return; // Prevent further actions if already trading
@@ -725,10 +788,11 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
       let chain: string;
 
       await handleChainChange().then(async (updatedChainId) => {
-        if (updatedChainId === 713715) {
-          chain = "sei"
-        // } else if (updatedChainId === 64165) {
-        } else if (updatedChainId === 250) {
+        // if (updatedChainId === 713715) {
+        //   chain = "sei"
+        // // } else if (updatedChainId === 64165) {
+        // } else 
+        if (updatedChainId === 250) {
 
           chain = "ftm"
         } else {
@@ -1036,31 +1100,10 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
     } catch (error: any) {
 
-      toast.error(`Deployment failed: ` + error);
+      toast.error(`Transaction failed: ` + error);
       setIsTrading(false);
     }
   };
-
-  /// Threads Code
-  const ReplyList = (token_address: string) => {
-    fetch(`/api/thread/replies?token_address=${token_address}&chain=${params.tokenInfo[0]}`)
-      .then((res) => res.json())
-      .then((data) => {
-      // console.log("data for replies", data)
-        setReplies(data)})
-      .catch((error) => {
-        console.error('Error fetching replies:', error);
-        setReplies([]);
-      });;
-      
-
-    // console.log("ref")
-  }
-
-  //popup model
-  const [showModal, setShowModal] = useState(false);
-  
-  const [file,setFile] = useState<File>();
 
   const handleReplyChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -1084,6 +1127,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 					method: 'POST',
 					body: data
 				})
+        
 				const result = await response.json();
 				if (response.ok) {
 					toast.success(`Image uploaded. Arweave URL: ${result}`);
@@ -1103,13 +1147,6 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
   const handleChartSwitch = (chart: 'current' | 'pump') => {
     setCurrentChart(chart);
-  };
-
-  const updateReply = (property: any, value: any) => {
-    setNewReply((prevReply) => ({
-      ...prevReply,
-      [property]: value,
-    }));
   };
 
   const handleReplySubmit = async (e: React.FormEvent<HTMLButtonElement>) => {
@@ -1154,6 +1191,8 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   if (!params.tokenInfo[1] || params.tokenInfo[1] === "") {
     return <div>Error: Token not found</div>;  // Display error if tokenAddress is undefined or empty
   }
+
+
   return (
     // <div style={{ display: 'grid', height: '100vh', gridTemplateRows: 'auto auto auto 1fr', alignItems: 'start' }}>
 
@@ -1368,7 +1407,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                               <span> {newReply.username ? (<div className="px-1 rounded hover:underline flex gap-1 text-black bg-pink-400" >
                                 {newReply.username}
                               </div>) : (<div className="px-1 rounded hover:underline flex gap-1 text-black bg-pink-400" >
-                                {extractFirstSixCharac(reply?.creator || 'unknown')}
+                                {extractFirstSixCharac(reply.creator_username? reply.creator_username: (reply?.creator || 'unknown'))}
                               </div>)} </span>
                             </span>
                           </a>
@@ -1564,7 +1603,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                     <>
                       {buySell === "sell" ? (
                         <div className={`text-xs py-1 px-2 rounded bg-black text-gray-400 hover:bg-gray-800 hover:text-gray-300`}>
-                          Locked: {formattedLockedTokens || 0} ({lockedPercentage}%)
+                          Locked: {formattedLockedTokens|| 0} ({lockedPercentage}%)
                         </div>
                       ) : (
                         <button
@@ -1693,17 +1732,17 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
             <div className="w-[350px] bg-transparent text-gray-400 rounded-lg border border-none grid gap-4">
               <div className="flex gap-4">
                 {tokenDetails?.twitter && (
-                  <a href={tokenDetails?.twitter} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:underline">
+                  <a href={ensureAbsoluteUrl(tokenDetails.twitter)} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:underline">
                     [twitter]
                   </a>
                 )}
                 {tokenDetails?.telegram && (
-                  <a href={tokenDetails?.telegram} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:underline">
+                  <a href={ensureAbsoluteUrl(tokenDetails?.telegram)} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:underline">
                     [telegram]
                   </a>
                 )}
                 {tokenDetails?.website && (
-                  <a href={tokenDetails?.website} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:underline">
+                  <a href={ensureAbsoluteUrl(tokenDetails?.website)} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:underline">
                     [website]
                   </a>
                 )}
@@ -1818,11 +1857,11 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                                 let percentage;
                                 if (holder.account === tokenDetails?.token_address) {
                                   const totalMinted = Number(bnTokenSum.sub(initialTokenSum));
-                                  const totalMintable = Number(finalSupply.sub(initialTokenSum));
+                                  const totalMintable = Number(finalSupply? finalSupply.sub(initialTokenSum): 0);
                                   const contractIntermediate = (totalMinted / totalMintable)*100;
                                   percentage = (100 - contractIntermediate).toFixed(2);
                                 } else {
-                                  const totalMintable = Number(finalSupply.sub(initialTokenSum));
+                                  const totalMintable = Number(finalSupply? finalSupply.sub(initialTokenSum): 0);
                                   percentage = ((holderBalance / totalMintable) * 100).toFixed(2);
                                 }
 

@@ -211,7 +211,8 @@ const mintToken = async (
     try {
       let {estToken,estTokenWSlippage} = calculateMinTokensWithSlippage(Number(tokenSum), Number(reserveBalance), reserveRatio, Number(ethValue), slippage);
       
-      // console.log("estToken", estToken.toString())
+      console.log("estToken", estToken.toString())
+      console.log("estTokenWSlippage", estTokenWSlippage.toString())
 
       let info = {
         status: 'pending',
