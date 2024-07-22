@@ -33,17 +33,17 @@ interface Token {
 const Home: React.FC = () => {
     const [tokens, setTokens] = useState<Token[]>([]);
     const [sortBy, setSortBy] = useState<string>('lastUpdatedTime');
-    const [selectedChain, setSelectedChain] = useState<string>('sei');  // Default sort by market cap
+    const [selectedChain, setSelectedChain] = useState<string>('ftm');  // Default sort by market cap
     const [order, setOrder] = useState<string>('desc'); // Default order is descending
     const [currentPage, setCurrentPage] = useState<number>(1);
     const [itemsPerPage] = useState<number>(15); 
-    const [isSeiActive, setIsSeiActive] = useState(true);
-    const [isFtmActive, setIsFtmActive] = useState(false);
+    // const [isSeiActive, setIsSeiActive] = useState(true);
+    // const [isFtmActive, setIsFtmActive] = useState(false);
 
     //resux
 
     const dispatch = useDispatch<AppDispatch>();
-    const chainType = useAppSelector((state) => state.chainReducer.value.chainType);
+    // const chainType = useAppSelector((state) => state.chainReducer.value.chainType);
 
     const fetchTokens = async () => {
         try {
@@ -103,21 +103,21 @@ const Home: React.FC = () => {
         setCurrentPage(1);
     };
 
-    const handleClicks = () => {
-        if (isFtmActive === false) {
-            setIsFtmActive(true);
-            setIsSeiActive(false)
-            setSelectedChain("ftm");
-            dispatch(setChain(selectedChain));
-        } else {
-            setIsFtmActive(false);
-            setIsSeiActive(true)
-            setSelectedChain("sei");
-            dispatch(setChain(selectedChain));
-        }
+    // const handleClicks = () => {
+    //     if (isFtmActive === false) {
+    //         setIsFtmActive(true);
+    //         setIsSeiActive(false)
+    //         setSelectedChain("ftm");
+    //         dispatch(setChain(selectedChain));
+    //     } else {
+    //         setIsFtmActive(false);
+    //         setIsSeiActive(true)
+    //         setSelectedChain("sei");
+    //         dispatch(setChain(selectedChain));
+    //     }
 
 
-    };
+    // };
 
     return (
         <>
@@ -160,7 +160,7 @@ const Home: React.FC = () => {
       </div>
     </div>
 
-    <div className="py-6 grid gap-4 items-start justify-center">
+    {/* <div className="py-6 grid gap-4 items-start justify-center">
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-green-950 rounded-lg blur"></div>
         <div className="relative px-7 py-4 bg-black rounded-lg leading-none flex items-center divide-x divide-gray-600">
@@ -180,7 +180,7 @@ const Home: React.FC = () => {
           </button>
         </div>
       </div>
-    </div>
+    </div> */}
 
     <div className="mt-6 mb-4 flex justify-center font-semibold text-green-400">
       <label htmlFor="sortOptions" className="mr-2">

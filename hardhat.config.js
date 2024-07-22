@@ -10,13 +10,13 @@ module.exports = {
     },
     bitfinity: {
       url: 'https://testnet.bitfinity.network',
-      accounts: ["0499308649cbfa0231701a19ee71d9c4204be4a8a14ac9e1bb8ccc41c9be57bf"],
+      accounts: [],
       chainId: 355113,
     },
     fantom: {
       url: 'https://fantom-rpc.publicnode.com/',
       // url: process.env.FTM_RPC_URL,
-      accounts: ['0499308649cbfa0231701a19ee71d9c4204be4a8a14ac9e1bb8ccc41c9be57bf'], // Replace with your private key
+      accounts: [], // Replace with your private key
     },
   },
   solidity: {
