@@ -32,6 +32,7 @@ interface Token {
 
 const Home: React.FC = () => {
     const [tokens, setTokens] = useState<Token[]>([]);
+    const [topTokens, setTopTokens] = useState([]);
     const [sortBy, setSortBy] = useState<string>('lastUpdatedTime');
     const [selectedChain, setSelectedChain] = useState<string>('ftm');  // Default sort by market cap
     const [order, setOrder] = useState<string>('desc'); // Default order is descending
@@ -52,7 +53,7 @@ const Home: React.FC = () => {
                 throw new Error('Failed to fetch tokens');
             }
             const data = await response.json();
-            // console.log("data", data)
+            //console.log("data", data)
             setTokens(data);
         } catch (error) {
             console.error('Error fetching data:', error);
@@ -60,6 +61,22 @@ const Home: React.FC = () => {
 
         }
     };
+
+    const fetchTopTokens = async () => {
+      try {
+          const response = await fetch(`/api/getTopToken`);
+          if (!response.ok) {
+              throw new Error('Failed to fetch tokens');
+          }
+          const data = await response.json();
+          //console.log("data", data)
+          setTopTokens(data);
+      } catch (error) {
+          console.error('Error fetching data:', error);
+          // logger.error('Error fetching data:', error);
+
+      }
+  };
 
     // const fetchTokens = useCallback(async () => {
     //     try {
@@ -79,6 +96,7 @@ const Home: React.FC = () => {
     useEffect(() => {
         dispatch(setChain(selectedChain));
         fetchTokens();
+        fetchTopTokens();
     }, [sortBy, order, selectedChain]);
 
     // useEffect(() => {
@@ -95,10 +113,12 @@ const Home: React.FC = () => {
 
     const handleSortChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         setSortBy(event.target.value);
+        setCurrentPage(1);
     };
 
     const handleOrderChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         setOrder(event.target.value);
+        setCurrentPage(1);
     };
 
     // const handleClicks = () => {
@@ -135,27 +155,44 @@ const Home: React.FC = () => {
         [start a new coin]
       </a>
 
-      <div className="text-white max-w-[800px] grid gap-4">
-        <a href="/EqcNxUzQ18C8HsG6QGL4XWVvGV3cGbs7xcfGfE3o1xye">
-          <div className="p-4 flex border border-green-400 rounded-lg hover:bg-gray-800 gap-4 w-full max-h-[300px] overflow-hidden">
-            <div className="min-w-20"></div>
-            <div className="grid gap-2">
-              <div className="text-xs text-blue-200 flex items-center gap-2">
-                <span>Created by</span>
-                <button type="button" className="px-1 rounded hover:underline bg-transparent">
-                  FRgyc4
-                </button>
+      {topTokens.length > 0 ? (
+        topTokens.map((topToken, index) => (
+          <div className="text-white max-w-[800px] grid gap-4" key={index}>
+            <Link href={`/token/ftm/${topToken.token_address}`} passHref>
+              <div className="p-4 flex border border-green-400 rounded-lg hover:bg-gray-800 gap-4 w-full max-h-[300px] overflow-hidden">
+                <div className="min-w-20">
+                  <Image 
+                    src={topToken?.image_url || "https://via.placeholder.com/150"} 
+                    width={128} 
+                    height={128} 
+                    className="w-32 h-32 object-contain cursor-pointer" 
+                    alt={topToken?.token_name || "Placeholder image"} 
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <div className="text-xs text-blue-200 flex items-center gap-2">
+                    <span>Created By </span>
+                  
+                      <div className="px-1 rounded hover:underline bg-transparent" >
+                        {topToken.creator}
+                      </div>
+                      
+                    
+                  </div>
+                  <div className="text-xs text-green-300 flex gap-1 items-center">
+                    <span>Market Cap: {topToken.marketcap}</span>
+                    <span className="text-green-500 ml-2"></span>
+                  </div>
+                  <p className="text-xs">Replies: {topToken.reply_count}</p>
+                  <p className="text-sm font-bold">{topToken.token_name} (Ticker : {topToken.token_ticker}) : {topToken.token_description}</p>
+                </div>
               </div>
-              <div className="text-xs text-green-300 flex gap-1 items-center">
-                <span>market cap: 35.78K</span>
-                <span className="text-green-500 ml-2">[badge: ]</span>
-              </div>
-              <p className="text-xs">replies: 3</p>
-              <p className="text-sm font-bold">Get Money [ticker: GM]</p>
-            </div>
+            </Link>
           </div>
-        </a>
-      </div>
+        ))
+      ) : (
+        <div>No data found</div>
+      )}
     </div>
 
     {/* <div className="py-6 grid gap-4 items-start justify-center">

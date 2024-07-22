@@ -1155,13 +1155,13 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
       toast.error("Text and creator fields cannot be empty.")
         return; // Stop the function if validation fails
     } 
-
+    let updatedReply = { ...newReply};
     if(file){
       let url = '';
       try {
         url = await handleUploadImage(file);
         // console.log('Uploaded Image URL:', url);
-        updateReply('file_uri', url);
+        updatedReply.file_uri=url;
       } catch (error) {
         console.error('Failed to upload image:', error);
         // Consider whether you want to continue or throw an error here
@@ -1169,10 +1169,11 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   
     }
     
+    
     try {
       const response = await fetch(`/api/thread/replies`, {
         method: 'POST',
-        body: JSON.stringify(newReply),
+        body: JSON.stringify(updatedReply),
       });
       const responseData = await response.json();
 
@@ -1180,6 +1181,9 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
         
         emitEvent("replyPost", '');
         setShowModal(false);
+        setFile(null); // Reset the file state
+        
+        
       } 
 
     } catch (error) {
