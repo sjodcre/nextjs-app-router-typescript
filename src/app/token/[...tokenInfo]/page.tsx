@@ -74,15 +74,21 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     chainLogo: '',
   })
   const [replies, setReplies] = useState<Reply[]>([]);
-  const [newReply, setNewReply] = useState({
+
+  const initialState = {
     token_address: params.tokenInfo[1],
     file_uri: '',
     text: '',
     creator: user,
     chain: params.tokenInfo[0],
     username: ''
+  };
 
-  });
+  const [newReply, setNewReply] = useState(initialState);
+
+  const resetReply = () => {
+    setNewReply(initialState);
+  };
   const [isPhaseTwo, setIsPhaseTwo] = useState<boolean>(false); // Change this based on your logic
   const [currentChart, setCurrentChart] = useState<'current' | 'pump'>('current'); // Default to "Current chart"
 
@@ -1182,7 +1188,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
         emitEvent("replyPost", '');
         setShowModal(false);
         setFile(null); // Reset the file state
-        
+        resetReply(); //reset to initial state
         
       } 
 
