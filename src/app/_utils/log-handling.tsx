@@ -1,7 +1,6 @@
 import { ethers } from 'ethers';
 import ERC20TestArtifact from '@/../artifacts/contracts/ERC20Lock.sol/ERC20Lock.json'
 import { postTransactionAndOHLC } from '../_services/db-write';
-import useSocket from "@/app/_utils/use-socket";
 
 // Function to convert hex data to number
 const hexToNumber = (hex: string) => {

@@ -3,7 +3,6 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { getSocket } from '../../socket';  // Adjust the path as necessary
 import { LibrarySymbolInfo, ResolutionString, SubscribeBarsCallback } from 'public/static/charting_library/charting_library';
 import { calculatePrice, parseFullSymbol } from './helpers';
-// import { parseFullSymbol } from './helpers';
 const socket = getSocket();
 interface EventListener {
     event: string;
