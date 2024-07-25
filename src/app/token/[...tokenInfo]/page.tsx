@@ -39,6 +39,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   const [buySell, setBuySell] = useState('buy');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isAddingComment, setIsAddingComment] = useState<boolean>(false);
   const [progress, setProgress] = useState(0);
   const [holders, setHolders] = useState<TokenHolder[]>([]);
   // const [tokenSum, setTokenSum] = useState(0);
@@ -138,6 +139,10 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   //   fetchFinalSupply();
   // }, []);
 
+  useEffect(() => {
+    console.log("isAddingComment state updated:", isAddingComment);
+  }, [isAddingComment]);
+  
   //set bonding curve %
   useEffect(() => {
     // const marketCapValue = parseFloat(marketCap.replace(/,/g, ''));
@@ -1120,36 +1125,68 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
   };
 
-  const handleUploadImage = async (imageFile?: File): Promise<string> => {
-		if (!imageFile) {
-			toast.error('No image file provided');
-        return Promise.reject(new Error('No image file provided'));
-		}
+  // const handleUploadImage = async (imageFile?: File): Promise<string> => {
+	// 	if (!imageFile) {
+	// 		toast.error('No image file provided');
+  //       return Promise.reject(new Error('No image file provided'));
+	// 	}
 
-			try{
-				const data = new FormData()
-				data.set('file',imageFile)
-				const response = await fetch ("/api/deploy", {
-					method: 'POST',
-					body: data
-				})
+	// 		try{
+	// 			const data = new FormData()
+	// 			data.set('file',imageFile)
+	// 			const response = await fetch ("/api/deploy", {
+	// 				method: 'POST',
+	// 				body: data
+	// 			})
         
-				const result = await response.json();
-				if (response.ok) {
-					toast.success(`Image uploaded. Arweave URL: ${result}`);
-					return result;
-				} else {
-				  throw new Error(result.error || 'Upload failed');
-				}
+	// 			const result = await response.json();
+	// 			if (response.ok) {
+	// 				toast.success(`Image uploaded. Arweave URL: ${result}`);
+	// 				return result;
+	// 			} else {
+	// 			  throw new Error(result.error || 'Upload failed');
+	// 			}
 
-			} catch (error: any) {
-				// console.error('Image upload error:', error);
-    			toast.error(`Error: ${error.message}`);
-				return Promise.reject(new Error(error.message || 'Upload failed'));
+	// 		} catch (error: any) {
+	// 			// console.error('Image upload error:', error);
+  //   			toast.error(`Error: ${error.message}`);
+	// 			return Promise.reject(new Error(error.message || 'Upload failed'));
 
-			}		
+	// 		}		
 		
-	}
+	// }
+
+  const handleUploadImage = async (imageFile?: File): Promise<string> => {
+    if (!imageFile) {
+      toast.error('No image file provided');
+      return Promise.reject(new Error('No image file provided'));
+    }
+  
+    const uploadPromise = async () => {
+      const data = new FormData();
+      data.set('file', imageFile);
+      const response = await fetch('/api/deploy', {
+        method: 'POST',
+        body: data,
+      });
+  
+      const result = await response.json();
+      if (response.ok) {
+        return result;
+      } else {
+        throw new Error(result.error || 'Upload failed');
+      }
+    };
+  
+    return toast.promise(
+      uploadPromise(),
+      {
+        pending: 'Uploading image...',
+        success: 'Image uploaded successfully!',
+        error: 'Image upload failed'
+      }
+    );
+  };
 
   const handleChartSwitch = (chart: 'current' | 'pump') => {
     setCurrentChart(chart);
@@ -1157,19 +1194,35 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
   const handleReplySubmit = async (e: React.FormEvent<HTMLButtonElement>) => {
     e.preventDefault();
+    if (isAddingComment) return; // Prevent further actions if already trading
+
+    setIsAddingComment(true);
+    setIsAddingComment((prevState) => {
+      return prevState;
+    });
+
     if (!newReply.text.trim() || !newReply.creator.trim()) {
       toast.error("Text and creator fields cannot be empty.")
-        return; // Stop the function if validation fails
+      setIsAddingComment(false)
+      return; // Stop the function if validation fails
     } 
     let updatedReply = { ...newReply};
     if(file){
-      let url = '';
+      // let url = '';
+      const fileSizeInMB = file.size / (1024 * 1024);
+      if (fileSizeInMB > 1) {
+        toast.error("Image size should not exceed 1MB.");
+        setIsAddingComment(false);
+        return;
+      }
       try {
-        url = await handleUploadImage(file);
+        const url = await handleUploadImage(file);
         // console.log('Uploaded Image URL:', url);
         updatedReply.file_uri=url;
       } catch (error) {
         console.error('Failed to upload image:', error);
+        setIsAddingComment(false)
+        return;
         // Consider whether you want to continue or throw an error here
       }
   
@@ -1193,9 +1246,18 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
       } 
 
     } catch (error) {
+      setIsAddingComment(false)
       alert(error);
       console.error('Error posting reply:', error);
+      toast.error('Error posting reply');
+      
+    }finally {
+      setIsAddingComment(false);
     }
+
+    console.log("isaddingcomment end",isAddingComment)
+
+
   };
 
   if (!params.tokenInfo[1] || params.tokenInfo[1] === "") {
@@ -1555,8 +1617,14 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                   
                   <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
 
-                    <button onClick={handleReplySubmit} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2
-                     bg-blue-500 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
+                    <button 
+                      onClick={handleReplySubmit} 
+                      disabled={isAddingComment}
+                    //   className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2
+                    //  bg-blue-500 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
+                      className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2
+                      bg-blue-500 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm 
+                      ${isAddingComment ? 'disabled:pointer-events-none disabled:opacity-50' : ''}`}
                     >
                       Post
                     </button>
@@ -1564,7 +1632,11 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                     {/* Cancel button */}
                     <button
                       onClick={() => setShowModal(false)}
-                      className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                      disabled = {isAddingComment}
+                      // className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                      className={`mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 
+                      bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm 
+                      ${isAddingComment ? 'disabled:pointer-events-none disabled:opacity-50' : ''}`}
                     >
                       Cancel
                     </button>
