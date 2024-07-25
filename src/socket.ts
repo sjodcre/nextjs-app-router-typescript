@@ -20,7 +20,9 @@ let socket: Socket | undefined;
 
 export const getSocket = (): Socket => {
     if (!socket) {
-        socket = io("http://ec2-13-239-16-108.ap-southeast-2.compute.amazonaws.com:3000"); // Update this line
+        // socket = io("http://ec2-13-239-16-108.ap-southeast-2.compute.amazonaws.com:3000"); // Update this line
+        socket = io("wss://beep-beep.xyz"); // Use wss:// for secure connection
+
     }
     return socket;
 };
