@@ -1,14 +1,14 @@
-import logger from "@/app/_utils/logger";
+// import logger from "@/app/_utils/logger";
 import { query } from "../db";
 
 export async function GET(req: Request) {
   const url = new URL(req.url)
 
   const tokenAddress = url.searchParams.get("token_address");
-  logger.info('getting trades for ftm', {tokenAddress})
+  // logger.info('getting trades for ftm', {tokenAddress})
 
   if (!tokenAddress) {
-    logger.warn('token address not provided')
+    // logger.warn('token address not provided')
     return new Response(JSON.stringify({ error: 'Token address is required' }), { status: 400 });
   }
 
@@ -30,7 +30,7 @@ export async function GET(req: Request) {
     
   } catch (error) {
     // console.error('Failed to fetch latest data time:', error);
-    logger.error('failed to get trades', {error})
+    // logger.error('failed to get trades', {error})
     // If an error occurs during fetching, return a 500 status code
     return new Response(JSON.stringify('Internal Server Error'+ error ), { status: 500 });
   }

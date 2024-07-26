@@ -50,3 +50,9 @@ hardhat.config.js
 # solidity-coverage files
 /coverage
 /coverage.json
+
+# Sentry Config File
+.env.sentry-build-plugin
+
+# Sentry Config File
+.env.sentry-build-plugin

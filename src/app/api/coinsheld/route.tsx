@@ -1,4 +1,4 @@
-import logger from "@/app/_utils/logger";
+// import logger from "@/app/_utils/logger";
 import { query } from "../db";
 
 
@@ -10,7 +10,7 @@ export async function GET(req: Request, route: { params: { id: string } }) {
 
     const chain= url.searchParams.get("chain")
     const id= url.searchParams.get("id")
-    logger.info("getting coins held by user", {id})
+    // logger.info("getting coins held by user", {id})
     let tableName ='';
     let detailsTable = '';
     if (chain ==="sei"){
@@ -49,7 +49,7 @@ export async function GET(req: Request, route: { params: { id: string } }) {
     return new Response(JSON.stringify(response), { status: 200 });
   } catch (error) {
     // console.error('Error fetching Coin:', error);
-    logger.error('Error fetching coins held:', {error});
+    // logger.error('Error fetching coins held:', {error});
     return new Response(JSON.stringify('Internal Server Error'), { status: 500 });
   }
 }

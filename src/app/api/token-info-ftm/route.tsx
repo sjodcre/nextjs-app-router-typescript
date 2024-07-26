@@ -1,10 +1,10 @@
-import logger from "@/app/_utils/logger";
+// import logger from "@/app/_utils/logger";
 import { query } from "../db";
 
 
 
 export async function GET(req: Request) {
-  logger.info('getting token info ftm')
+  // logger.info('getting token info ftm')
   const url = new URL(req.url)
 
   const token_address = url.searchParams.get("token_address");
@@ -25,16 +25,16 @@ export async function GET(req: Request) {
        const rows = await query(sql,[token_address]); // Correctly passing the parameter
     if (rows.length > 0) {
       // If a token is found, return it as a JSON response with a 200 status code
-      logger.info('token info found')
+      // logger.info('token info found')
       return new Response(JSON.stringify(rows), { status: 200 });
     } else {
-      logger.info('token info not found')
+      // logger.info('token info not found')
       return new Response(JSON.stringify({ message: "No data found for the specified token address." }), { status: 400 });
        
     }
     
   } catch (error) {
-    logger.error('Error fetching token info', {error})
+    // logger.error('Error fetching token info', {error})
     // console.error('Error fetching coin:', error);
     // If an error occurs during fetching, return a 500 status code
     return new Response(JSON.stringify('Internal Server Error'), { status: 500 });

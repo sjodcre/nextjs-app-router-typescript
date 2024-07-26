@@ -571,6 +571,7 @@ export default function Profile({ params }: { params: { id: string } }) {
                           src={coinData.image_url || "https://via.placeholder.com/150"}
                           alt="Token Image"
                           fill
+                          sizes="48px"
                           className="object-contain"
                         />
                       </div>
@@ -610,6 +611,7 @@ export default function Profile({ params }: { params: { id: string } }) {
                           src={coinData.image_url || "https://via.placeholder.com/150"}
                           alt="Token Image"
                           fill
+                          sizes="48px"
                           className="object-contain"
                         />
                       </div>

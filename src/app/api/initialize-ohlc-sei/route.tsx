@@ -2,13 +2,13 @@ import { access } from "fs";
 import { query } from "../db";
 import { ethers } from "ethers";
 import { calculatePrice } from "@/app/_utils/helpers";
-import logger from "@/app/_utils/logger";
+// import logger from "@/app/_utils/logger";
 import { error } from "console";
 
 export async function POST(req: Request) {
   const data = await req.json();
   const { tokenAddress, account, token_amount, native_amount, time, price, volume, trade, tx_hash } = data;
-  logger.info('initializing ohlc for new token sei', {tokenAddress})
+  // logger.info('initializing ohlc for new token sei', {tokenAddress})
 
 
   // Validate inputs
@@ -43,7 +43,7 @@ export async function POST(req: Request) {
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)` ;
     // Insert transaction data into the transaction history table
     await query(sql, [tokenAddress, account, token_amount, native_amount, bondingPrice, time, trade, sum_token, sum_native, tx_hash, tx_status, marketCapString]);
-    logger.info('done initializing transaction data')
+    // logger.info('done initializing transaction data')
 
     // Handle OHLC data
     const timeSlice = Math.floor(time / 300) * 300;
@@ -72,12 +72,12 @@ export async function POST(req: Request) {
     // const sql4 = 'INSERT INTO token_balances_sei (account, token_address, balance) VALUES ($1, $2, $3)';
     const sql4 = 'INSERT INTO sei_users_balance (account, token_address, balance) VALUES ($1, $2, $3)';
     await query(sql4, [tokenAddress, tokenAddress, token_amount]);
-    logger.info('done initializing ohlc')
+    // logger.info('done initializing ohlc')
 
     return new Response(JSON.stringify({ message: 'Transaction and OHLC data updated successfully.' }), { status: 201 });
 
   } catch (error) {
-    logger.error('Error initializing transaction and ohlc data', {error})
+    // logger.error('Error initializing transaction and ohlc data', {error})
 
     return new Response(JSON.stringify(error), { status: 500 });
     //res.status(500).json({ message: 'Internal server error' });

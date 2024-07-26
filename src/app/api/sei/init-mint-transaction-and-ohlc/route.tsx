@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 import { query } from "../../db";
 import { calculatePrice } from "@/app/_utils/helpers";
-import logger from "@/app/_utils/logger";
+// import logger from "@/app/_utils/logger";
 
 
 
@@ -12,11 +12,11 @@ export  async function POST(req: Request) {
   const data = await req.json();
   const { tokenAddress, account, tx_status,token_amount, native_amount, time, price, volume,trade, tx_hash } = data;
 //   console.log("init-mint-transac-and-ohlc database...")
-  logger.info("updating initial mint token transaction and ohlc sei", {tokenAddress})
+//   logger.info("updating initial mint token transaction and ohlc sei", {tokenAddress})
 
   // Validate inputs
   if (!tx_hash || !tokenAddress || !account  || !tx_status  || !token_amount || !native_amount || typeof time !== 'number' || typeof price !== 'number' || typeof volume !== 'number' || (trade !== 'buy' && trade !== 'sell')) {
-    logger.warn('Invalid input data initial mint token tx and ohlc sei');
+    // logger.warn('Invalid input data initial mint token tx and ohlc sei');
     return new Response(JSON.stringify({ error: 'Invalid input data'}), { status: 400});
    }
  // Define table names based on chain id
@@ -86,7 +86,7 @@ export  async function POST(req: Request) {
         // } else {
         //     result2 = await query(`UPDATE ${transactionTableName} SET sum_native = $1 ,sum_token = $2, tx_status = $3 , timestamp = $4 , token_amount = $5 WHERE tx_hash = $6 RETURNING txid` , [sum_native, sum_token, tx_status, time , token_amount, tx_hash]);
         // }
-        logger.info("inserted transaction sei")
+        // logger.info("inserted transaction sei")
 
         const txid = result2[0].txid;
 
@@ -143,7 +143,7 @@ export  async function POST(req: Request) {
                         VALUES ($1, $2, $3, $4, $5, $6, $7)`, [tokenAddress, timeSlice, openPrice, bondingPrice, bondingPrice, bondingPrice, volume]);
         }
 
-        logger.info("inserted ohlc data sei")
+        // logger.info("inserted ohlc data sei")
 
 
         //token_balance table
@@ -202,13 +202,13 @@ export  async function POST(req: Request) {
         DO UPDATE SET balance = EXCLUDED.balance
     `, [account, tokenAddress, newBalanceStr]);
 
-    logger.info("inserted user balance sei")
+    // logger.info("inserted user balance sei")
         
     return new Response(JSON.stringify({ message: 'Transaction and OHLC data updated successfully.' , txid, bondingPrice}), { status: 201});
     
   } catch (error) {
 //    console.log(error)
-    logger.error("Error initializing new token transaction and ohlc sei", {error})
+    // logger.error("Error initializing new token transaction and ohlc sei", {error})
     return new Response(JSON.stringify('Error:' + error), { status: 500 });
     //res.status(500).json({ message: 'Internal server error' });
   }

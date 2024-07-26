@@ -1,4 +1,4 @@
-import logger from '@/app/_utils/logger';
+// import logger from '@/app/_utils/logger';
 import { query } from '../../db';
 
 export async function GET(req: Request, route: { params: { id: string } }) {
@@ -6,7 +6,7 @@ export async function GET(req: Request, route: { params: { id: string } }) {
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
     const chain = url.searchParams.get("chain");
-    logger.info("getting follower/wee list", {id})
+    // logger.info("getting follower/wee list", {id})
 
     // Fetch followers with their usernames
     const followerlist = await query(`
@@ -37,7 +37,7 @@ export async function GET(req: Request, route: { params: { id: string } }) {
 
   } catch (error) {
     // console.error('Error fetching profile:', error);
-    logger.error('Error fetching follower/wee list:', {error});
+    // logger.error('Error fetching follower/wee list:', {error});
     return new Response(JSON.stringify('Internal Server Error'), { status: 500 });
   }
 }
