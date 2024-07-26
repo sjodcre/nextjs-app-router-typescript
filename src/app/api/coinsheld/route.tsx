@@ -1,3 +1,4 @@
+import logger from "@/app/_utils/logger";
 import { query } from "../db";
 
 
@@ -5,11 +6,11 @@ import { query } from "../db";
 
 export async function GET(req: Request, route: { params: { id: string } }) {
   try {
-
     const url = new URL(req.url)
 
     const chain= url.searchParams.get("chain")
     const id= url.searchParams.get("id")
+    logger.info("getting coins held by user", {id})
     let tableName ='';
     let detailsTable = '';
     if (chain ==="sei"){
@@ -27,7 +28,7 @@ export async function GET(req: Request, route: { params: { id: string } }) {
     const profiles = await query(sql,[id]);
 
     if (profiles.length === 0) {
-      
+      console.info("no coins held found")
       // If no token is found with the specified ID, returnq a 404 status code
       return new Response(JSON.stringify(`Coin not found: ${id}`), { status: 404 });
     }
@@ -47,8 +48,8 @@ export async function GET(req: Request, route: { params: { id: string } }) {
     // If a token is found, return it as a JSON response with a 200 status code
     return new Response(JSON.stringify(response), { status: 200 });
   } catch (error) {
-    console.error('Error fetching Coin:', error);
-    // If an error occurs during fetching, return a 500 status code
+    // console.error('Error fetching Coin:', error);
+    logger.error('Error fetching coins held:', {error});
     return new Response(JSON.stringify('Internal Server Error'), { status: 500 });
   }
 }

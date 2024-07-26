@@ -3,7 +3,7 @@ import { query } from "./db";
 
 
 export async function GET(req: Request) {
-
+    
     const url = new URL(req.url)
 
     const sortBy = url.searchParams.get("sortBy")

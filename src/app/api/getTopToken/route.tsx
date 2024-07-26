@@ -1,10 +1,11 @@
+import logger from "@/app/_utils/logger";
 import { query } from "../db";
 
 
 
 
 export async function GET(req: Request) {
-
+logger.info('getting top token')
         const queryResult = await query(`
 WITH recent_trades AS (
     SELECT 

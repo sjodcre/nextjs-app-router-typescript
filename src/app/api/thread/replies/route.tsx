@@ -1,10 +1,11 @@
 import { user } from "@/app/_redux/features/user-slice";
 import { query } from "../../db";
+import logger from "@/app/_utils/logger";
 
 
 
 export async function GET(req: Request) {
-
+  logger.info('getting threads data')
   const url = new URL(req.url)
 
   const token_address = url.searchParams.get("token_address");
@@ -23,9 +24,11 @@ export async function GET(req: Request) {
 
        const rows = await query(sql,[token_address]); // Correctly passing the parameter
     if (rows.length > 0) {
-          // If a token is found, return it as a JSON response with a 200 status code
-    return new Response(JSON.stringify(rows), { status: 200 });
+      // If a token is found, return it as a JSON response with a 200 status code
+      logger.info('threads data found')
+      return new Response(JSON.stringify(rows), { status: 200 });
     } else {
+      logger.info('threads data not found')
       // return new Response(JSON.stringify([]), { status: 400 });
       return new Response(JSON.stringify([]), { status: 200 });
 
@@ -33,7 +36,8 @@ export async function GET(req: Request) {
     }
     
   } catch (error) {
-    console.error('Error fetching coin:', error);
+    logger.error('Error getting thread data', {error})
+    // console.error('Error fetching coin:', error);
     // If an error occurs during fetching, return a 500 status code
     return new Response(JSON.stringify('Internal Server Error'), { status: 500 });
   }

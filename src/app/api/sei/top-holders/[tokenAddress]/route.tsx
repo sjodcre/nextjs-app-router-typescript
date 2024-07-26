@@ -1,3 +1,4 @@
+import logger from "@/app/_utils/logger";
 import { query } from "@/app/api/db";
 import { NextApiRequest, NextApiResponse } from "next";
 
@@ -10,6 +11,7 @@ export async function GET(req: Request, route: { params: { tokenAddress: string 
   try {
     // console.log("req.query", req.url
     const tokenAddress = route.params.tokenAddress as string;
+    logger.info('fetching top holders info sei', tokenAddress)
     // console.log("tokenAddr", tokenAddress)
     // const id = route.params.id;
     // Fetch token data based on the ID from the database using parameterized query
@@ -30,7 +32,8 @@ export async function GET(req: Request, route: { params: { tokenAddress: string 
     // res.status(200).json(holders);
 
   } catch (error) {
-    console.error('Error fetching token:', error);
+    logger.error('Error fetching top holders sei', {error})
+    // console.error('Error fetching token:', error);
     // If an error occurs during fetching, return a 500 status code
     return new Response(JSON.stringify('Internal Server Error'), { status: 500 });
     // res.status(500).json({ message: 'Internal Server Error' });

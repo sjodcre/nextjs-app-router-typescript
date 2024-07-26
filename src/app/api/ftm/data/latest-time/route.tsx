@@ -1,3 +1,4 @@
+import logger from "@/app/_utils/logger";
 import { query } from "@/app/api/db";
 
 
@@ -5,7 +6,6 @@ import { query } from "@/app/api/db";
 
 
 export async function GET(req: Request, route: { params: { id: string } }) {
-
 
   // const data = await req.json();
    
@@ -18,8 +18,10 @@ export async function GET(req: Request, route: { params: { id: string } }) {
   const url = new URL(req.url)
 
   const tokenAddress = url.searchParams.get("token_address");
+  logger.info("fetching latest ohlc ftm", {tokenAddress})
 
   if (!tokenAddress ) {
+    logger.warn("no token address provided")
     return new Response(JSON.stringify({error: 'Token address required'}), { status: 400 });
     }
 
@@ -35,12 +37,15 @@ export async function GET(req: Request, route: { params: { id: string } }) {
       return new Response(JSON.stringify({latestTime: row[0].latesttime }), { status: 200 });
         
     } else {
+      logger.info("No ohlc data available for the specified token address ftm")
       return new Response(JSON.stringify({error: 'No data available for the specified token address' }), { status: 400 });
    
     }
 
   } catch (error) {
-    console.error('Failed to fetch latest data time:', error);
+    // console.error('Failed to fetch latest data time:', error);
+    logger.error('Failed to fetch latest data time for chart ftm:', {error});
+
     // If an error occurs during fetching, return a 500 status code
     return new Response(JSON.stringify('Internal Server Error'), { status: 500 });
   }

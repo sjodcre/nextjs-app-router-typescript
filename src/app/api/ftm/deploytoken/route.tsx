@@ -1,16 +1,12 @@
+import logger from "@/app/_utils/logger";
 import { query } from "../../db";
-
-
-
-
-
-
 
 export async function POST(req: Request) {
   const data = await req.json();
   const { chainid, token_address, token_ticker, token_name, token_description, image_url, creator, twitter, telegram, website, datetime } = data;
-
+  logger.info('storing deployed token data ftm', {token_address})
   if (chainid !== 'ftm' && chainid !== 'sei') {
+    logger.warn('Invalid chain ID. Must be either "ftm" or "sei".');
     throw new Error('Invalid chain ID. Must be either "ftm" or "sei".');
   }
   // Define table names based on chain id
@@ -18,10 +14,7 @@ export async function POST(req: Request) {
   const tokenListTableName = `token_list_ftm`;
   // console.log('Received chainid:', chainid, 'Using table:', tokenListTableName);
 
-
-
   try {
-
 
       const sql = `
       INSERT INTO ${tokenListTableName} 
@@ -38,6 +31,7 @@ export async function POST(req: Request) {
 
   } catch (error) {
 
+    logger.error('Error after deploy token save token data', {error});
     return new Response(JSON.stringify('Error:' + error), { status: 500 });
     //res.status(500).json({ message: 'Internal server error' });
   }

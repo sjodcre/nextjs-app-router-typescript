@@ -1,0 +1,42 @@
+{"level":"info","message":"getting trades for ftm","timestamp":"2024-07-26 12:29:43"}
+{"level":"info","message":"getting trades for ftm","timestamp":"2024-07-26 12:29:43"}
+{"level":"info","message":"getting trades for ftm","timestamp":"2024-07-26 12:29:44"}
+{"level":"info","message":"initiating profile","timestamp":"2024-07-26 15:22:18"}
+{"level":"info","message":"initiating profile","timestamp":"2024-07-26 15:22:18"}
+{"level":"info","message":"getting trades for ftm","timestamp":"2024-07-26 15:22:18","tokenAddress":"0x5c34016c396fF07A2DC59e4443578FA05B3645D2"}
+{"level":"info","message":"getting token info ftm","timestamp":"2024-07-26 15:22:18"}
+{"level":"info","message":"getting threads data","timestamp":"2024-07-26 15:22:18"}
+{"level":"info","message":"threads data found","timestamp":"2024-07-26 15:22:19"}
+{"level":"info","message":"user profile already exists ","timestamp":"2024-07-26 15:22:19"}
+{"level":"info","message":"token info found","timestamp":"2024-07-26 15:22:19"}
+{"level":"info","message":"user profile already exists ","timestamp":"2024-07-26 15:22:19"}
+{"level":"info","message":"getting threads data","timestamp":"2024-07-26 15:22:20"}
+{"level":"info","message":"initiating profile","timestamp":"2024-07-26 15:22:20"}
+{"level":"info","message":"getting trades for ftm","timestamp":"2024-07-26 15:22:20","tokenAddress":"0x5c34016c396fF07A2DC59e4443578FA05B3645D2"}
+{"level":"info","message":"threads data found","timestamp":"2024-07-26 15:22:20"}
+{"level":"info","message":"user profile already exists ","timestamp":"2024-07-26 15:22:20"}
+{"level":"info","message":"getting token info ftm","timestamp":"2024-07-26 15:22:21"}
+{"level":"info","message":"getting threads data","timestamp":"2024-07-26 15:22:21"}
+{"level":"info","message":"getting pending transactions ftm","timestamp":"2024-07-26 15:22:21","token_address":"0x5c34016c396fF07A2DC59e4443578FA05B3645D2"}
+{"level":"info","message":"getting trades for ftm","timestamp":"2024-07-26 15:22:21","tokenAddress":"0x5c34016c396fF07A2DC59e4443578FA05B3645D2"}
+{"level":"info","message":"fetching top holders info ftm","timestamp":"2024-07-26 15:22:21"}
+{"level":"info","message":"threads data found","timestamp":"2024-07-26 15:22:22"}
+{"level":"info","message":"token info found","timestamp":"2024-07-26 15:22:22"}
+{"level":"info","message":"getting threads data","timestamp":"2024-07-26 15:22:22"}
+{"level":"info","message":"threads data found","timestamp":"2024-07-26 15:22:22"}
+{"level":"info","message":"getting ohlc data ftm","timestamp":"2024-07-26 15:22:22","token_address":"0x5c34016c396fF07A2DC59e4443578FA05B3645D2"}
+{"level":"info","message":"fetching top holders info ftm","timestamp":"2024-07-26 15:22:22"}
+{"level":"info","message":"initiating profile","timestamp":"2024-07-26 15:22:24"}
+{"level":"info","message":"initiating profile","timestamp":"2024-07-26 15:22:24"}
+{"level":"info","message":"getting top token","timestamp":"2024-07-26 15:22:24"}
+{"level":"info","message":"user profile already exists ","timestamp":"2024-07-26 15:22:25"}
+{"level":"info","message":"user profile already exists ","timestamp":"2024-07-26 15:22:25"}
+{"level":"info","message":"initiating profile","timestamp":"2024-07-26 15:22:26"}
+{"id":"0x372173ca23790098F17f376F59858a086Cae9Fb0","level":"info","message":"fetching coins created by user","timestamp":"2024-07-26 15:22:27"}
+{"id":"0x372173ca23790098F17f376F59858a086Cae9Fb0","level":"info","message":"getting user profile","timestamp":"2024-07-26 15:22:27"}
+{"followee":"0x372173ca23790098F17f376F59858a086Cae9Fb0","follower":"0x372173ca23790098F17f376F59858a086Cae9Fb0","level":"info","message":"get following status","timestamp":"2024-07-26 15:22:27"}
+{"id":"0x372173ca23790098F17f376F59858a086Cae9Fb0","level":"info","message":"getting follower/wee list","timestamp":"2024-07-26 15:22:27"}
+{"id":"0x372173ca23790098F17f376F59858a086Cae9Fb0","level":"info","message":"getting coins held by user","timestamp":"2024-07-26 15:22:27"}
+{"level":"info","message":"user profile already exists ","timestamp":"2024-07-26 15:22:27"}
+{"level":"info","message":"user profile found","timestamp":"2024-07-26 15:22:27"}
+{"level":"info","message":"user is not following","timestamp":"2024-07-26 15:22:27"}
