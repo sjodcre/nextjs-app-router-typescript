@@ -1,5 +1,7 @@
 // import logger from "@/app/_utils/logger";
 import { query } from "../../db";
+import * as Sentry from '@sentry/nextjs';
+
 
 export async function POST(req: Request) {
   const data = await req.json();
@@ -32,6 +34,7 @@ export async function POST(req: Request) {
   } catch (error) {
 
     // logger.error('Error after deploy token save token data', {error});
+    Sentry.captureException(error)
     return new Response(JSON.stringify('Error:' + error), { status: 500 });
     //res.status(500).json({ message: 'Internal server error' });
   }

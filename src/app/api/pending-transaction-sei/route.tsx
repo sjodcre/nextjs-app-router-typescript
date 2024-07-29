@@ -2,6 +2,8 @@ import { ethers } from "ethers";
 import { query } from "../db";
 import { calculatePrice } from "@/app/_utils/helpers";
 // import logger from "@/app/_utils/logger";
+import * as Sentry from '@sentry/nextjs';
+
 
 export  async function POST(req: Request) {
   const data = await req.json();
@@ -91,6 +93,7 @@ const result = await query(sql, [tokenAddress, tokenAddress]);
   } catch (error) {
   //  console.log("err:" + error)
   //  logger.error('Error updating pending transaction sei', {error})
+    Sentry.captureException(error)
     return new Response(JSON.stringify(error), { status: 500 });
     //res.status(500).json({ message: 'Internal server error' });
   }

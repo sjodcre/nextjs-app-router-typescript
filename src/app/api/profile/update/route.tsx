@@ -1,9 +1,6 @@
-
-
-
-import { user } from '@/app/_redux/features/user-slice';
 import { query } from '../../db';
 // import logger from '@/app/_utils/logger';
+import * as Sentry from '@sentry/nextjs';
 
 
 export async function POST(req: Request) {
@@ -60,6 +57,7 @@ export async function POST(req: Request) {
 
   } catch (error) {
     // logger.error('error updating user profile', {error})
+    Sentry.captureException(error)
     return new Response(JSON.stringify('Error' + error), { status: 500 });
     //res.status(500).json({ message: 'Internal server error' });
   }

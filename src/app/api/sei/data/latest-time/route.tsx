@@ -1,9 +1,6 @@
 // import logger from "@/app/_utils/logger";
 import { query } from "@/app/api/db";
-
-
-
-
+import * as Sentry from '@sentry/nextjs';
 
 export async function GET(req: Request, route: { params: { id: string } }) {
 
@@ -46,7 +43,7 @@ export async function GET(req: Request, route: { params: { id: string } }) {
   } catch (error) {
     // console.error('Failed to fetch latest data time:', error);
     // logger.error('Failed to fetch latest data time for chart sei:', {error});
-    // If an error occurs during fetching, return a 500 status code
+    Sentry.captureException(error)
     return new Response(JSON.stringify('Internal Server Error'), { status: 500 });
   }
 }

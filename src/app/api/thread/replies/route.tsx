@@ -1,6 +1,6 @@
-import { user } from "@/app/_redux/features/user-slice";
 import { query } from "../../db";
 // import logger from "@/app/_utils/logger";
+import * as Sentry from '@sentry/nextjs';
 
 
 
@@ -38,7 +38,7 @@ export async function GET(req: Request) {
   } catch (error) {
     // logger.error('Error getting thread data', {error})
     // console.error('Error fetching coin:', error);
-    // If an error occurs during fetching, return a 500 status code
+    Sentry.captureException(error)
     return new Response(JSON.stringify('Internal Server Error'), { status: 500 });
   }
 }

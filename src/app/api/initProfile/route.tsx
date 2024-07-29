@@ -33,6 +33,7 @@
 
 // import logger from "@/app/_utils/logger";
 import { query } from "../db";
+import * as Sentry from '@sentry/nextjs';
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -62,6 +63,7 @@ export async function GET(req: Request) {
   } catch (error) {
     // console.log(error);
     // logger.error('Error initializing user profile', {error})
+    Sentry.captureException(error)
     return new Response(JSON.stringify(error), { status: 500 });
   }
 }

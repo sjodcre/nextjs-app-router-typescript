@@ -1,5 +1,6 @@
 // import logger from "@/app/_utils/logger";
 import { query } from "../db";
+import * as Sentry from '@sentry/nextjs';
 
 type ResolutionMap = {
   '1': number;
@@ -57,6 +58,7 @@ export async function GET(req: Request) {
   } catch (error) {
     // logger.error('Error getting ohlc data sei', {error})
     // console.error('Error fetching data:', error);
+    Sentry.captureException(error)
     return new Response(JSON.stringify('Internal Server Error'), { status: 500 });
   }
 }

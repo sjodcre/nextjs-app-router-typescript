@@ -1,5 +1,6 @@
 // import logger from "@/app/_utils/logger";
 import { query } from "../db";
+import * as Sentry from '@sentry/nextjs';
 
 
 
@@ -23,7 +24,7 @@ export async function GET(req: Request, route: { params: { id: string } }) {
     FROM ${tableName} 
     WHERE creator = $1`;
     const created = await query(sql,[id]);
-
+    
     if (created.length === 0) {
       // logger.info("no coins created found")
       // If no token is found with the specified ID, return a 404 status code
@@ -35,6 +36,7 @@ export async function GET(req: Request, route: { params: { id: string } }) {
   } catch (error) {
     // console.error('Error fetching coin:', error);
     // logger.error('Error fetching coins created', {error});
+    Sentry.captureException(error); // Capture the error with Sentry
     return new Response(JSON.stringify('Internal Server Error'), { status: 500 });
   }
 }

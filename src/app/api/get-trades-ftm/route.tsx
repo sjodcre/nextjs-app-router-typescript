@@ -1,5 +1,6 @@
 // import logger from "@/app/_utils/logger";
 import { query } from "../db";
+import * as Sentry from '@sentry/nextjs';
 
 export async function GET(req: Request) {
   const url = new URL(req.url)
@@ -31,7 +32,7 @@ export async function GET(req: Request) {
   } catch (error) {
     // console.error('Failed to fetch latest data time:', error);
     // logger.error('failed to get trades', {error})
-    // If an error occurs during fetching, return a 500 status code
+    Sentry.captureException(error)
     return new Response(JSON.stringify('Internal Server Error'+ error ), { status: 500 });
   }
 }

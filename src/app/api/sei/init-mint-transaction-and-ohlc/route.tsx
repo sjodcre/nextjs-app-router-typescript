@@ -2,11 +2,7 @@ import { ethers } from "ethers";
 import { query } from "../../db";
 import { calculatePrice } from "@/app/_utils/helpers";
 // import logger from "@/app/_utils/logger";
-
-
-
-
-
+import * as Sentry from '@sentry/nextjs';
 
 export  async function POST(req: Request) {
   const data = await req.json();
@@ -207,8 +203,8 @@ export  async function POST(req: Request) {
     return new Response(JSON.stringify({ message: 'Transaction and OHLC data updated successfully.' , txid, bondingPrice}), { status: 201});
     
   } catch (error) {
-//    console.log(error)
     // logger.error("Error initializing new token transaction and ohlc sei", {error})
+    Sentry.captureException(error)    
     return new Response(JSON.stringify('Error:' + error), { status: 500 });
     //res.status(500).json({ message: 'Internal server error' });
   }

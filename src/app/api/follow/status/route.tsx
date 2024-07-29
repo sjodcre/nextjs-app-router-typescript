@@ -1,5 +1,6 @@
 // import logger from '@/app/_utils/logger';
 import { query } from '../../db';
+import * as Sentry from '@sentry/nextjs';
 
 export async function GET(req: Request, route: { params: { id: string } }) {
   try {
@@ -32,7 +33,7 @@ export async function GET(req: Request, route: { params: { id: string } }) {
   } catch (error) {
     // console.error('Error fetching data whether user is following account:', error);
     // logger.error('Error fetching data whether user is following account', {error})
-    // If an error occurs during fetching, return a 500 status code
+    Sentry.captureException(error)
     return new Response(JSON.stringify('Internal Server Error'), { status: 500 });
   }
 }
@@ -75,6 +76,7 @@ export async function POST(req: Request) {
 
   } catch (error) {
     // logger.error('Error following/unfollowing:', {error});
+    Sentry.captureException(error)
     return new Response(JSON.stringify('Error' + error), { status: 500 });
     //res.status(500).json({ message: 'Internal server error' });
   }

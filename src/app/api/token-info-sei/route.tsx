@@ -1,5 +1,6 @@
 // import logger from "@/app/_utils/logger";
 import { query } from "../db";
+import * as Sentry from '@sentry/nextjs';
 
 
 
@@ -35,7 +36,7 @@ export async function GET(req: Request) {
   } catch (error) {
     // console.error('Error fetching data:', error);
     // logger.error('Error fetching token info', {error})
-    // If an error occurs during fetching, return a 500 status code
+    Sentry.captureException(error)
     return new Response(JSON.stringify('Internal Server Error'), { status: 500 });
   }
 }

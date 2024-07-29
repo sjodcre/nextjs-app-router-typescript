@@ -3,6 +3,8 @@ import { query } from "../db";
 import { ethers } from "ethers";
 import { calculatePrice } from "@/app/_utils/helpers";
 // import logger from "@/app/_utils/logger";
+import * as Sentry from '@sentry/nextjs';
+
 
 export async function POST(req: Request) {
   const data = await req.json();
@@ -80,6 +82,7 @@ export async function POST(req: Request) {
   } catch (error) {
     // console.log("error at server for initialize-ohlc-ftm", error)
     // logger.error('Error initializing transaction and ohlc data', {error})
+    Sentry.captureException(error)
     return new Response(JSON.stringify(error), { status: 500 });
     //res.status(500).json({ message: 'Internal server error' });
   }

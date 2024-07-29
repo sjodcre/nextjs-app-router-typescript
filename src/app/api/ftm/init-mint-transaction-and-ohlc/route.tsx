@@ -2,6 +2,8 @@ import { ethers } from "ethers";
 import { query } from "../../db";
 import { calculatePrice } from "@/app/_utils/helpers";
 // import logger from "@/app/_utils/logger";
+import * as Sentry from '@sentry/nextjs';
+
 
 export  async function POST(req: Request) {
      const data = await req.json();
@@ -203,6 +205,7 @@ export  async function POST(req: Request) {
     
   } catch (error) {
 //    console.log(error)
+    Sentry.captureException(error)
     // logger.error("Error initializing new token transaction and ohlc ftm", {error})
     return new Response(JSON.stringify('Error:' + error), { status: 500 });
     //res.status(500).json({ message: 'Internal server error' });

@@ -2,6 +2,7 @@ import { ethers } from "ethers";
 import { query } from "../../db";
 import { calculatePrice } from "@/app/_utils/helpers";
 // import logger from "@/app/_utils/logger";
+import * as Sentry from '@sentry/nextjs';
 
 
 export  async function POST(req: Request) {
@@ -195,6 +196,7 @@ export  async function POST(req: Request) {
   } catch (error) {
 //    console.log(error)
     // logger.error('Error updating transaction and ohlc data ftm', {error})
+    Sentry.captureException(error)
     return new Response(JSON.stringify('Error:' + error), { status: 500 });
     //res.status(500).json({ message: 'Internal server error' });
   }

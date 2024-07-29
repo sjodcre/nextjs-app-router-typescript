@@ -1,5 +1,7 @@
 // import logger from '@/app/_utils/logger';
 import { query } from '../../db';
+import * as Sentry from '@sentry/nextjs';
+
 
 export async function GET(req: Request, route: { params: { id: string } }) {
   try {
@@ -38,6 +40,7 @@ export async function GET(req: Request, route: { params: { id: string } }) {
   } catch (error) {
     // console.error('Error fetching profile:', error);
     // logger.error('Error fetching follower/wee list:', {error});
+    Sentry.captureException(error)
     return new Response(JSON.stringify('Internal Server Error'), { status: 500 });
   }
 }

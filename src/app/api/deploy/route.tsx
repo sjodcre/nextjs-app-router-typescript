@@ -1,6 +1,7 @@
 import { uploadImage } from "@/app/_services/arweave";
 // import logger from "@/app/_utils/logger";
 import { NextResponse, NextRequest } from "next/server";
+import * as Sentry from '@sentry/nextjs';
 
 export async function POST(req: NextRequest) {
     // logger.info("Uploading image at deploy.")
@@ -20,6 +21,7 @@ export async function POST(req: NextRequest) {
 
     } catch (error) {
         // logger.error('Error uploading image when deploy:', {error});
+        Sentry.captureException(error);
         return NextResponse.json (error, {status: 500});
     }
 }
