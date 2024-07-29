@@ -1,18 +1,18 @@
 import { ethers } from "ethers";
 import { query } from "../../db";
 import { calculatePrice } from "@/app/_utils/helpers";
-import logger from "@/app/_utils/logger";
+// import logger from "@/app/_utils/logger";
 
 export  async function POST(req: Request) {
      const data = await req.json();
     const { tokenAddress, account, tx_status,token_amount, native_amount, time, price, volume,trade, tx_hash } = data;
     //   console.log("init-mint-transac-and-ohlc database...")
-    logger.info("updating initial mint token transaction and ohlc ftm", {tokenAddress})
+    // logger.info("updating initial mint token transaction and ohlc ftm", {tokenAddress})
 
     // Validate inputs
     //   if (!tx_hash || !tokenAddress || !account  || !tx_status  || typeof token_amount !== 'number' || typeof native_amount !== 'number' || typeof time !== 'number' || typeof price !== 'number' || typeof volume !== 'number' || (trade !== 'buy' && trade !== 'sell')) {
     if (!tx_hash || !tokenAddress || !account  || !tx_status  || !token_amount || !native_amount || typeof time !== 'number' || typeof price !== 'number' || typeof volume !== 'number' || (trade !== 'buy' && trade !== 'sell')) {
-        logger.warn('Invalid input data initial mint token tx and ohlc ftm');
+        // logger.warn('Invalid input data initial mint token tx and ohlc ftm');
         return new Response(JSON.stringify({ error: 'Invalid input data'}), { status: 400});
    }
     // Define table names based on chain id
@@ -82,7 +82,7 @@ export  async function POST(req: Request) {
         //     result2 = await query(`UPDATE ${transactionTableName} SET sum_native = $1 ,sum_token = $2, tx_status = $3 , timestamp = $4 , token_amount = $5 WHERE tx_hash = $6 RETURNING txid` , [sum_native, sum_token, tx_status, time , token_amount, tx_hash]);
         // }
         // let result2 = await query(`UPDATE ${transactionTableName} SET sum_native = $1 ,sum_token = $2, tx_status = $3 , timestamp = $4 , token_amount = $5 WHERE tx_hash = $6 RETURNING txid` , [sum_native, sum_token, tx_status, time , token_amount, tx_hash]);
-        logger.info("inserted transaction ftm")
+        // logger.info("inserted transaction ftm")
         // transaction_history table
         const txid = result2[0].txid;
                           
@@ -138,7 +138,7 @@ export  async function POST(req: Request) {
             await query(`INSERT INTO ${ohlcTableName} (token_address, time, open, high, low, close, volume)
                         VALUES ($1, $2, $3, $4, $5, $6, $7)`, [tokenAddress, timeSlice, openPrice, bondingPrice, bondingPrice, bondingPrice, volume]);
         }
-        logger.info("inserted ohlc data ftm")
+        // logger.info("inserted ohlc data ftm")
 
 
         //token_balance table
@@ -197,13 +197,13 @@ export  async function POST(req: Request) {
         DO UPDATE SET balance = EXCLUDED.balance
     `, [account, tokenAddress, newBalanceStr]);
 
-    logger.info("inserted user balance ftm")
+    // logger.info("inserted user balance ftm")
          
     return new Response(JSON.stringify({ message: 'Transaction and OHLC data updated successfully.' , txid, bondingPrice}), { status: 201});
     
   } catch (error) {
 //    console.log(error)
-    logger.error("Error initializing new token transaction and ohlc ftm", {error})
+    // logger.error("Error initializing new token transaction and ohlc ftm", {error})
     return new Response(JSON.stringify('Error:' + error), { status: 500 });
     //res.status(500).json({ message: 'Internal server error' });
   }

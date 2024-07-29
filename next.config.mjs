@@ -32,7 +32,9 @@ org: "era-dynamics-trading",
 project: "javascript-nextjs",
 
 // Only print logs for uploading source maps in CI
-silent: !process.env.CI,
+// silent: !process.env.CI,
+silent: false,
+authToken: process.env.SENTRY_AUTH_TOKEN,
 
 // For all available options, see:
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
@@ -45,6 +47,8 @@ widenClientFileUpload: true,
 // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
 // side errors will fail.
 // tunnelRoute: "/monitoring",
+tunnelRoute: "/monitoring-tunnel",
+
 
 // Hides source maps from generated client bundles
 hideSourceMaps: true,
@@ -56,5 +60,5 @@ disableLogger: true,
 // See the following for more information:
 // https://docs.sentry.io/product/crons/
 // https://vercel.com/docs/cron-jobs
-automaticVercelMonitors: true,
+automaticVercelMonitors: false,
 });

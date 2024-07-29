@@ -24,7 +24,7 @@ import {buyTokensWithFTM,calculateTokenPrice,getReserves,sellTokensForFTM} from 
 import handleLogs from "@/app/_utils/log-handling";
 // import AddTokenButton from "@/app/_utils/add-token-to-wallet";
 import dynamic from 'next/dynamic';
-import axios from "axios";
+// import axios from "axios";
 
 const AddTokenButton = dynamic(() => import('@/app/_utils/add-token-to-wallet'), { ssr: false });
 
