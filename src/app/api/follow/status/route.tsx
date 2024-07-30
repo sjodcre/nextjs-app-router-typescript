@@ -33,7 +33,8 @@ export async function GET(req: Request, route: { params: { id: string } }) {
   } catch (error) {
     // console.error('Error fetching data whether user is following account:', error);
     // logger.error('Error fetching data whether user is following account', {error})
-    Sentry.captureException(error)
+    const comment = "Error fetching data whether user is following account"
+    Sentry.captureException(error, { extra: { comment } });
     return new Response(JSON.stringify('Internal Server Error'), { status: 500 });
   }
 }
@@ -76,7 +77,8 @@ export async function POST(req: Request) {
 
   } catch (error) {
     // logger.error('Error following/unfollowing:', {error});
-    Sentry.captureException(error)
+    const comment = "Error following/unfollowing:"
+    Sentry.captureException(error, { extra: { comment } });
     return new Response(JSON.stringify('Error' + error), { status: 500 });
     //res.status(500).json({ message: 'Internal server error' });
   }

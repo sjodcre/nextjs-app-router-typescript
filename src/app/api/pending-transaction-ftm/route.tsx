@@ -91,7 +91,8 @@ export  async function POST(req: Request) {
   } catch (error) {
   //  console.log("err:" + error)
     // logger.error('Error updating pending transaction ftm', {error})
-    Sentry.captureException(error)
+    const comment = "Error updating pending transaction ftm"
+    Sentry.captureException(error, { extra: { comment } });
     return new Response(JSON.stringify(error), { status: 500 });
     //res.status(500).json({ message: 'Internal server error' });
   }

@@ -58,7 +58,8 @@ export async function GET(req: Request) {
   } catch (error) {
     // logger.error('Error getting ohlc data sei', {error})
     // console.error('Error fetching data:', error);
-    Sentry.captureException(error)
+    const comment = "Error getting ohlc data sei"
+    Sentry.captureException(error, { extra: { comment } });
     return new Response(JSON.stringify('Internal Server Error'), { status: 500 });
   }
 }

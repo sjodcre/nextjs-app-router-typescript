@@ -63,7 +63,8 @@ export async function GET(req: Request) {
   } catch (error) {
     // console.log(error);
     // logger.error('Error initializing user profile', {error})
-    Sentry.captureException(error)
+    const comment = "Error initializing user profile"
+    Sentry.captureException(error, { extra: { comment } });
     return new Response(JSON.stringify(error), { status: 500 });
   }
 }

@@ -37,7 +37,8 @@ export async function GET(req: Request) {
   } catch (error) {
     // logger.error('Error fetching token info', {error})
     // console.error('Error fetching coin:', error);
-    Sentry.captureException(error)
+    const comment = "Error fetching token info"
+    Sentry.captureException(error, { extra: { comment } });
     return new Response(JSON.stringify('Internal Server Error'), { status: 500 });
   }
 }

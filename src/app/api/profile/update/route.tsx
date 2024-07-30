@@ -57,7 +57,8 @@ export async function POST(req: Request) {
 
   } catch (error) {
     // logger.error('error updating user profile', {error})
-    Sentry.captureException(error)
+    const comment = "error updating user profile"
+    Sentry.captureException(error, { extra: { comment } });
     return new Response(JSON.stringify('Error' + error), { status: 500 });
     //res.status(500).json({ message: 'Internal server error' });
   }

@@ -46,7 +46,8 @@ export async function GET(req: Request, route: { params: { id: string } }) {
   } catch (error) {
     // console.error('Failed to fetch latest data time:', error);
     // logger.error('Failed to fetch latest data time for chart ftm:', {error});
-    Sentry.captureException(error)
+    const comment = "Failed to fetch latest data time for chart ftm:"
+    Sentry.captureException(error, { extra: { comment } });
     return new Response(JSON.stringify('Internal Server Error'), { status: 500 });
   }
 }

@@ -33,8 +33,8 @@ export async function GET(req: Request, route: { params: { tokenAddress: string 
 
   } catch (error) {
     // logger.error('Error fetching top holders ftm', {error})
-    // console.error('Error fetching token:', error);
-    Sentry.captureException(error)
+    const comment = "Error fetching top holders ftm"
+    Sentry.captureException(error, { extra: { comment } });
     return new Response(JSON.stringify('Internal Server Error'), { status: 500 });
     // res.status(500).json({ message: 'Internal Server Error' });
 

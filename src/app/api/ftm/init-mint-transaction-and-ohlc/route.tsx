@@ -205,8 +205,9 @@ export  async function POST(req: Request) {
     
   } catch (error) {
 //    console.log(error)
-    Sentry.captureException(error)
-    // logger.error("Error initializing new token transaction and ohlc ftm", {error})
+    const comment = "Error initializing new token transaction and ohlc ftm"
+    Sentry.captureException(error, { extra: { comment } });
+// logger.error("Error initializing new token transaction and ohlc ftm", {error})
     return new Response(JSON.stringify('Error:' + error), { status: 500 });
     //res.status(500).json({ message: 'Internal server error' });
   }

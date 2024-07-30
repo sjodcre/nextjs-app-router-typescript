@@ -21,7 +21,8 @@ export async function POST(req: NextRequest) {
 
     } catch (error) {
         // logger.error('Error uploading image when deploy:', {error});
-        Sentry.captureException(error);
+        const comment = "Error uploading image when deploy"
+        Sentry.captureException(error, { extra: { comment } });
         return NextResponse.json (error, {status: 500});
     }
 }

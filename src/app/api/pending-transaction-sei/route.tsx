@@ -93,8 +93,9 @@ const result = await query(sql, [tokenAddress, tokenAddress]);
   } catch (error) {
   //  console.log("err:" + error)
   //  logger.error('Error updating pending transaction sei', {error})
-    Sentry.captureException(error)
-    return new Response(JSON.stringify(error), { status: 500 });
+  const comment = "Error updating pending transaction sei"
+  Sentry.captureException(error, { extra: { comment } });
+  return new Response(JSON.stringify(error), { status: 500 });
     //res.status(500).json({ message: 'Internal server error' });
   }
 }

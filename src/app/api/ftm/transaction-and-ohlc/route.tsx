@@ -196,7 +196,8 @@ export  async function POST(req: Request) {
   } catch (error) {
 //    console.log(error)
     // logger.error('Error updating transaction and ohlc data ftm', {error})
-    Sentry.captureException(error)
+    const comment = "Error updating transaction and ohlc data ftm"
+    Sentry.captureException(error, { extra: { comment } });
     return new Response(JSON.stringify('Error:' + error), { status: 500 });
     //res.status(500).json({ message: 'Internal server error' });
   }

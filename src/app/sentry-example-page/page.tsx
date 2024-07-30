@@ -82,7 +82,7 @@
 "use client";
 
 import Head from "next/head";
-import { logMessage } from "../_utils/sentryLogger";
+import { logSentryMessage } from "../_utils/sentryLogger";
 
 export default function Page() {
   return (
@@ -134,7 +134,9 @@ export default function Page() {
                 throw new Error("Sentry Example Frontend Error");
               }
             } catch (error) {
-              logMessage('error', error.message, { stack: error.stack });
+              const comment = "This is a test error generated for debugging purposes.";
+              logSentryMessage('error', error.message, { stack: error.stack }, comment);
+              // logMessage('error', error.message, { stack: error.stack });
             }
           }}
         >

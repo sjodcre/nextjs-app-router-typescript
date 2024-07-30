@@ -32,7 +32,8 @@ export async function GET(req: Request) {
   } catch (error) {
     // console.error('Failed to fetch latest data time:', error);
     // logger.error('failed to get trades', {error})
-    Sentry.captureException(error)
+    const comment = "failed to get trades"
+    Sentry.captureException(error, { extra: { comment } });
     return new Response(JSON.stringify('Internal Server Error'+ error ), { status: 500 });
   }
 }

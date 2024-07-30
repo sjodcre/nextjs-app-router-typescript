@@ -35,8 +35,8 @@ export async function GET(req: Request, route: { params: { id: string } }) {
   } catch (error) {
     // logger.error('Error fetching user profile', {error})
     // console.error('Error fetching profile:', error);
-    // If an error occurs during fetching, return a 500 status code
-    Sentry.captureException(error)
-    return new Response(JSON.stringify('Internal Server Error'), { status: 500 });
+    const comment = "Error fetching user profile"
+    Sentry.captureException(error, { extra: { comment } });
+      return new Response(JSON.stringify('Internal Server Error'), { status: 500 });
   }
 }

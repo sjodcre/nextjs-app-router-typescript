@@ -6,7 +6,8 @@ import { useEffect } from "react";
 
 export default function GlobalError({ error }: { error: Error & { digest?: string } }) {
   useEffect(() => {
-    Sentry.captureException(error);
+    const comment = "Testing global error sentry:"
+    Sentry.captureException(error, { extra: { comment } });
   }, [error]);
 
   return (

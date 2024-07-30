@@ -19,7 +19,8 @@ export async function GET(req: Request) {
   } catch (error) {
     // console.error('Error fetching coin:', error);
     // logger.error('Error fetching pending transactions sei', {error})
-    Sentry.captureException(error)
+    const comment = "Error fetching pending transactions sei"
+    Sentry.captureException(error, { extra: { comment } });
     return new Response(JSON.stringify('Internal Server Error'), { status: 500 });
   }
 }

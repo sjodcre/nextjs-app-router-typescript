@@ -30,7 +30,8 @@ export  async function POST(req: Request) {
     
   } catch (error) {
     // logger.error('error updating failed transaction sei', {error})
-    Sentry.captureException(error)
+    const comment = "error updating failed transaction sei"
+    Sentry.captureException(error, { extra: { comment } });
     return new Response(JSON.stringify('Error'), { status: 500 });
     //res.status(500).json({ message: 'Internal server error' });
   }

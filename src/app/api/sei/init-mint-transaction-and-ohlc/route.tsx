@@ -204,7 +204,8 @@ export  async function POST(req: Request) {
     
   } catch (error) {
     // logger.error("Error initializing new token transaction and ohlc sei", {error})
-    Sentry.captureException(error)    
+    const comment = "Error initializing new token transaction and ohlc sei"
+    Sentry.captureException(error, { extra: { comment } });
     return new Response(JSON.stringify('Error:' + error), { status: 500 });
     //res.status(500).json({ message: 'Internal server error' });
   }

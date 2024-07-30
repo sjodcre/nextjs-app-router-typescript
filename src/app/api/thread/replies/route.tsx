@@ -38,7 +38,8 @@ export async function GET(req: Request) {
   } catch (error) {
     // logger.error('Error getting thread data', {error})
     // console.error('Error fetching coin:', error);
-    Sentry.captureException(error)
+    const comment = "Error getting thread data"
+    Sentry.captureException(error, { extra: { comment } });
     return new Response(JSON.stringify('Internal Server Error'), { status: 500 });
   }
 }

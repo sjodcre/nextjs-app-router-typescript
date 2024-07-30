@@ -58,8 +58,9 @@ try {
 
         })
     } catch (error) {
-        Sentry.captureException(error)
-        return new Response(JSON.stringify(error), { status: 500 });
+        const comment = "failed to get top token"
+        Sentry.captureException(error, { extra: { comment } });
+            return new Response(JSON.stringify(error), { status: 500 });
     }
 
 }

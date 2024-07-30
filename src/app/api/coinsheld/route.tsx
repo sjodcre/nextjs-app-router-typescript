@@ -51,7 +51,8 @@ export async function GET(req: Request, route: { params: { id: string } }) {
   } catch (error) {
     // console.error('Error fetching Coin:', error);
     // logger.error('Error fetching coins held:', {error});
-    Sentry.captureException(error);
+    const comment = "Error fetching coins held"
+    Sentry.captureException(error, { extra: { comment } });
     return new Response(JSON.stringify('Internal Server Error'), { status: 500 });
   }
 }

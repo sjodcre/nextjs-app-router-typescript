@@ -40,7 +40,9 @@ export async function GET(req: Request, route: { params: { id: string } }) {
   } catch (error) {
     // console.error('Error fetching profile:', error);
     // logger.error('Error fetching follower/wee list:', {error});
-    Sentry.captureException(error)
+    const comment = "Error fetching follower/wee list"
+    Sentry.captureException(error, { extra: { comment } });
+    
     return new Response(JSON.stringify('Internal Server Error'), { status: 500 });
   }
 }
