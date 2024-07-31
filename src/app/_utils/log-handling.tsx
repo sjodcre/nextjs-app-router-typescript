@@ -1,7 +1,9 @@
 import { ethers } from 'ethers';
 import ERC20TestArtifact from '@/../artifacts/contracts/ERC20Lock.sol/ERC20Lock.json'
 import { postTransactionAndOHLC } from '../_services/db-write';
+
 import * as Sentry from '@sentry/nextjs';
+
 
 // Function to handle logs parsing and storing data
 const handleLogs = async (

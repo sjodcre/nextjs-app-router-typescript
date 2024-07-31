@@ -3,7 +3,6 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { getSocket } from '../../socket';  // Adjust the path as necessary
 import { LibrarySymbolInfo, ResolutionString, SubscribeBarsCallback } from 'public/static/charting_library/charting_library';
 import { calculatePrice, parseFullSymbol } from './helpers';
-// import { parseFullSymbol } from './helpers';
 const socket = getSocket();
 interface EventListener {
     event: string;
@@ -71,10 +70,10 @@ const useSocket = (listeners: EventListener[] = []) => {
       // const tradeTime = parseInt(tradeTimeStr);
       // const tradePrice = parseFloat(data.deposit) / parseFloat(data.amount);
       const tradePrice = data.bondingPrice;
-      console.log("timestamp given", data.timestamp)
+      // console.log("timestamp given", data.timestamp)
       // const tradePrice = calculatePrice()
       const tradeTime = parseInt(data.timestamp);
-      console.log("tradeTime", tradeTime)
+      // console.log("tradeTime", tradeTime)
 
       // const channelString = `0~${exchange}~${fromSymbol}~${toSymbol}`;
       let descriptionSnippet = data.token_description.substring(0, 10);
@@ -111,8 +110,6 @@ const useSocket = (listeners: EventListener[] = []) => {
       const tradeBarTime = getFiveMinuteBarStartTime(tradeTime);
 
       let bar: any = {};
-      console.log("tradeBarTime", tradeBarTime)
-      console.log("lastBar time", lastBar.time)
       if (tradeBarTime !== (lastBar.time/1000)) {
         bar = {
           time: tradeBarTime * 1000,
@@ -182,7 +179,7 @@ export function subscribeOnStream(
 )
 {
 
-  const parsedSymbol = parseFullSymbol(`${symbolInfo.exchange}:${symbolInfo.name}`);
+  // const parsedSymbol = parseFullSymbol(`${symbolInfo.exchange}:${symbolInfo.name}`);
   let descriptionSnippet = symbolInfo?.description.substring(0, 10);
 
   const channelString = `0~${symbolInfo?.ticker}~${symbolInfo?.name}~${descriptionSnippet}`;
