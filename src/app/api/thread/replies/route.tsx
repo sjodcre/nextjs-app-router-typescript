@@ -64,7 +64,9 @@ export async function POST(req: Request) {
   
     return new Response(JSON.stringify({ message: "Successful" }), { status: 200 });
   } catch (error) {
-    console.log(error)
+    // console.log(error)
+    const comment = "Error inserting thread data"
+    Sentry.captureException(error, { extra: { comment } });
     return new Response(JSON.stringify({ error: 'Failed to add reply' }), { status: 500 });
   }
 }

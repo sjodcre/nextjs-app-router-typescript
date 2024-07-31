@@ -1,5 +1,6 @@
 
 import { query } from "./db";
+import * as Sentry from '@sentry/nextjs';
 
 
 export async function GET(req: Request) {
@@ -23,6 +24,8 @@ export async function GET(req: Request) {
         } else if (sortBy === 'creationTime') {
             orderByClause = `ORDER BY tl.datetime ${order} NULLS LAST`;
         }
+
+    try {
         const queryResult = await query(`
 
         WITH latest_transactions AS (
@@ -74,19 +77,16 @@ export async function GET(req: Request) {
                     ${orderByClause}
                     `, []);
 
-
-
-
-
-
-
-
-
-
         return new Response(JSON.stringify(queryResult), {
             status: 200
 
         })
+    } catch (error) {
+        const comment = "failed to get main page filter"
+        Sentry.captureException(error, { extra: { comment } });
+            return new Response(JSON.stringify(error), { status: 500 });
+    }
+        
 
     }
 }

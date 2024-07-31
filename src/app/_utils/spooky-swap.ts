@@ -4,6 +4,7 @@ import ERC20TestArtifact from '@/../artifacts/contracts/ERC20Lock.sol/ERC20Lock.
 import PairABI from '@/../contracts/SpookySwapPairABI.json';
 const SPOOKYSWAP_ROUTER_ADDRESS = '0xF491e7B69E4244ad4002BC14e878a34207E38c29'; // SpookySwap router contract address
 const WFTM_ADDRESS = '0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83'; // Wrapped FTM address on Fantom
+import * as Sentry from '@sentry/nextjs';
 
 
 
@@ -51,7 +52,9 @@ const buyTokensWithFTM = async (
     const result = await tx.wait();
     return { result, txHash };
   } catch (error) {
-    console.error('Swap failed:', error);
+    const comment = "Swap buy token failed"
+    Sentry.captureException(error, { extra: { comment } });
+    // console.error('Swap failed:', error);
     throw error;
   }
 };
@@ -101,7 +104,9 @@ const sellTokensForFTM = async (
       const result = await tx.wait();
       return { result, txHash: tx.hash };
     } catch (error) {
-      console.error('Swap failed:', error);
+      // console.error('Swap failed:', error);
+      const comment = "Swap sell token failed"
+      Sentry.captureException(error, { extra: { comment } });  
       throw error;
 
     }
@@ -125,15 +130,6 @@ function calculateTokenPrice(reserves: { reserve0: number, reserve1: number }, w
   return priceTokenInUSD;
 }
 
-// Type guard to check if error is of type 'any' with message property
-function isErrorWithSimpleMessage(error: unknown): error is { message: string } {
-  return typeof error === 'object' && error !== null && 'message' in error;
-}
-
-// Type guard to check if error is of type 'any' with data and message properties
-function isErrorWithMessage(error: unknown): error is { data: { message: string } } {
-  return typeof error === 'object' && error !== null && 'data' in error && 'message' in (error as any).data;
-}
 
 
 

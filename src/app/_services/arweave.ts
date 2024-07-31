@@ -1,8 +1,9 @@
 import Arweave from 'arweave';
-import fs from 'fs';
 import dotenv from 'dotenv';
 import Transaction from 'arweave/node/lib/transaction';
 import crypto from "crypto"
+import * as Sentry from '@sentry/nextjs';
+
 // import logger from '../_utils/logger';
 
 
@@ -88,7 +89,8 @@ export const submitArTx = async (arweave: Arweave, tx: Transaction) => new Promi
             await uploader.uploadChunk()
         }
     } catch (err) {
-        // logger.error('Submit Arweave Tx error:', err);
+        const comment = "Submit Arweave Tx error"
+        Sentry.captureException(err, { extra: { comment } });
         if (uploader.lastResponseStatus > 0) {
             return reject({
                 status: uploader.lastResponseStatus,
@@ -123,8 +125,7 @@ export const uploadImage = async (file: Buffer, fileName: string): Promise<strin
 
     } catch (e) {
         // console.log("Failed to upload image: "+ e)
-        // logger.error('Failed to upload image:', e);
-        // throw new Error('File upload failed:'+ e);
+        throw new Error(`File upload failed: ${e.message}`);
         // res.status(500).json({ error: 'Failed to upload to Arweave' });
     }
  
@@ -139,11 +140,3 @@ export const uploadImage = async (file: Buffer, fileName: string): Promise<strin
     //         }
 
 }
-
-// Example usage
-// uploadFileToArweave('./loner69.webp').then(url => {
-//     // Here you might want to save the URL to your backend database
-// }).catch(console.error);
-// uploadImage('./loner69.webp').then(url => {
-//         // Here you might want to save the URL to your backend database
-//     }).catch(console.error);

@@ -227,16 +227,14 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
           })
           .catch(error => {
-            // Error handling
-            // console.log("fail to fetch user balance:", error)
+            console.error("fail to fetch user balance:", error)
 
           });
         fetchLockedTokens(ethersProvider, params.tokenInfo[1])
         .then(lockedTokens => {
           setLockedTokens(lockedTokens)
         }) .catch(error => {
-          // Error handling
-          // console.log("fail to fetch locked tokens:", error)
+          console.error("fail to fetch locked tokens:", error)
         });
 
         
@@ -429,8 +427,8 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
       let marketCap = 0;
       if (!isPhaseTwo) {
         marketCap = tradesData[0].sum_token * tradesData[0].price_per_token * nativeTokenPrice / 1E18;
-        console.log("marketcap from calculation", marketCap);
-        console.log("marketcap from db", tradesData[0].marketcap * nativeTokenPrice);
+        // console.log("marketcap from calculation", marketCap);
+        // console.log("marketcap from db", tradesData[0].marketcap * nativeTokenPrice);
       } else {
         try {
           const reservesData = await getReserves(dexUrl);
@@ -441,7 +439,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
             reservesData.reserve1 * tokenPriceInUSD +
             reservesData.reserve0 * nativeTokenPrice;
         } catch (error) {
-          console.error("Error setting phase 2 market cap", error);
+          console.error("Error calculating market cap", error);
         }
       }
 
@@ -542,7 +540,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
       setIsLiquidityPoolSetup(liquidityPoolStatus)
 
     } catch (error) {
-      // console.log("error checking liquidity pool status", error);
+      console.error("error checking pause status", error);
     }
   }
 
@@ -565,7 +563,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
 
     } catch (error) {
       console.error("Failed to fetch token balance:", error);
-      throw error;  // or handle error appropriately
+      throw error; 
     }
   }
 
@@ -638,7 +636,6 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
         setTokenAmountToTrade(amountToSet.toString()); // Convert to string to match your state expectation
       })
       .catch(error => {
-        // Handle error if network change fails
         console.error("Network change failed:", error);
       });
   };
@@ -808,7 +805,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
           chain = "ftm"
         } else {
           toast.error("Chain error! Using unsupported network")
-          setIsTrading(false); // Reset trading state on error
+          setIsTrading(false); 
           return
         }
         if (walletProvider) {
@@ -844,7 +841,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                   setTransactionDone(true);
                   setIsTrading(false); // Reset trading state after success
                 }).catch(error => {
-                  console.error('Error handling logs:', error);
+                  console.error('Error handling logs buy:', error);
                   setIsTrading(false);
 
                 });
@@ -907,11 +904,11 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                 postTransactionFailed(info).then(response => {
                   // console.log('Backend response:', response);
                 }).catch(error => {
-                  console.error('Error posting data to backend:', error);
+                  console.error('Error posting failed tx data to backend:', error);
                 });
 
               } else {
-                // console.log("transaction result not found")
+                console.error("transaction result not found")
                 // return 'Transaction not found or pending';
               }
               setTokenAmountToTrade('');
@@ -949,7 +946,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                   // console.log('Backend response:', response);
                   setIsTrading(false);
                 }).catch(error => {
-                  console.error('Error posting data to backend:', error);
+                  console.error('Error posting failed tx data to backend:', error);
                   setIsTrading(false);
                 });
                 setTransactionDone(false);
@@ -983,7 +980,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                   setTransactionDone(true);
                   setIsTrading(false); // Reset trading state after success
                 }).catch(error => {
-                  console.error('Error handling logs:', error);
+                  console.error('Error handling logs sell:', error);
                   setIsTrading(false);
 
                 });
@@ -1045,7 +1042,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                 postTransactionFailed(info).then(response => {
                   // console.log('Backend response:', response);
                 }).catch(error => {
-                  console.error('Error posting data to backend:', error);
+                  console.error('Error posting failed tx data to backend:', error);
                 });
               }  else {
                 // console.log("transaction result not found")
@@ -1087,7 +1084,7 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
                   // console.log('Backend response:', response);
                   setIsTrading(false);
                 }).catch(error => {
-                  console.error('Error posting data to backend:', error);
+                  console.error('Error posting failed tx data to backend:', error);
                   setIsTrading(false);
                 });
                 setTransactionDone(false);
@@ -1223,7 +1220,6 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
         console.error('Failed to upload image:', error);
         setIsAddingComment(false)
         return;
-        // Consider whether you want to continue or throw an error here
       }
   
     }
