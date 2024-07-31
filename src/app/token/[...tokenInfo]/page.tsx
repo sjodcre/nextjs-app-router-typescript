@@ -16,7 +16,6 @@ import TradeItem from "@/app/_ui/trade-list";
 import { calculatePrice, extractFirstSixCharac, formatMarketCap, formatTokenAmount, getAccountUrl } from "@/app/_utils/helpers";
 import { fetchNativeTokenPrice } from "@/app/_utils/native-token-pricing";
 import { useAppSelector } from "@/app/_redux/store";
-//import { socket } from "src/socket";
 import useSocket from "@/app/_utils/use-socket";
 import { burnToken, mintToken } from "@/app/_services/blockchain";
 import { checkPendingTx } from "@/app/_utils/check-pending-tx";
