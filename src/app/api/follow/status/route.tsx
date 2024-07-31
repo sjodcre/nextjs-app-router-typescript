@@ -1,9 +1,6 @@
+// import logger from '@/app/_utils/logger';
 import { query } from '../../db';
-
-
-
-
-
+import * as Sentry from '@sentry/nextjs';
 
 export async function GET(req: Request, route: { params: { id: string } }) {
   try {
@@ -14,6 +11,7 @@ export async function GET(req: Request, route: { params: { id: string } }) {
     const followee= url.searchParams.get("followee")
     const follower= url.searchParams.get("follower")
     const chain =url.searchParams.get("chain")
+    // logger.info('get following status', {followee,follower})
    // const id = route.params.id;
     // Check if profile is being followed by xxx
     const isfollow = await query(`
@@ -24,15 +22,19 @@ export async function GET(req: Request, route: { params: { id: string } }) {
 
     if (isfollow.length !== 0) {
        // If following
+      //  logger.info('user is following')
        return new Response(JSON.stringify({ message: 'Is Following'}), { status: 201 });
   
     }
       // If not followung, return a 404 status code
+      // logger.info('user is not following')
       return new Response(JSON.stringify({ message: 'Not Follower' }), { status: 202 });
     
   } catch (error) {
-    console.error('Error fetching profile:', error);
-    // If an error occurs during fetching, return a 500 status code
+    // console.error('Error fetching data whether user is following account:', error);
+    // logger.error('Error fetching data whether user is following account', {error})
+    const comment = "Error fetching data whether user is following account"
+    Sentry.captureException(error, { extra: { comment } });
     return new Response(JSON.stringify('Internal Server Error'), { status: 500 });
   }
 }
@@ -74,7 +76,9 @@ export async function POST(req: Request) {
 
 
   } catch (error) {
-
+    // logger.error('Error following/unfollowing:', {error});
+    const comment = "Error following/unfollowing:"
+    Sentry.captureException(error, { extra: { comment } });
     return new Response(JSON.stringify('Error' + error), { status: 500 });
     //res.status(500).json({ message: 'Internal server error' });
   }

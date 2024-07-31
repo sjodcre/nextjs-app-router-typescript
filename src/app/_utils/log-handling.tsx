@@ -2,10 +2,7 @@ import { ethers } from 'ethers';
 import ERC20TestArtifact from '@/../artifacts/contracts/ERC20Lock.sol/ERC20Lock.json'
 import { postTransactionAndOHLC } from '../_services/db-write';
 
-// Function to convert hex data to number
-const hexToNumber = (hex: string) => {
-  return parseInt(hex, 16);
-};
+import * as Sentry from '@sentry/nextjs';
 
 
 // Function to handle logs parsing and storing data
@@ -127,6 +124,8 @@ const handleLogs = async (
             });
           }
         } catch (error) {
+          const comment = "Error handling log  after transaction"
+          Sentry.captureException(error, { extra: { comment } });
           // This log was not from our contract
           console.error("Error parsing log:", error);
         }

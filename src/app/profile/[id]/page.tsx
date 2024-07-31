@@ -205,7 +205,7 @@ export default function Profile({ params }: { params: { id: string } }) {
       }
       setProfileExist(true);
     } catch (error) {
-      console.error('Error fetching token:', error);
+      console.error('Error fetching profile:', error);
     } finally {
       setLoading(false); // Ensure loading is set to false after fetch
     }
@@ -213,11 +213,11 @@ export default function Profile({ params }: { params: { id: string } }) {
 
   const fetchCoinHeld = async (currentChain: string) => {
     try {
-      console.log("chain before fetching coin held", currentChain)
+      // console.log("chain before fetching coin held", currentChain)
       const response = await fetch(`/api/coinsheld?id=${id}&chain=${currentChain}`);
-      console.log("response coin held", response)
+      // console.log("response coin held", response)
       if (!response.ok) {
-        throw new Error('Failed to fetch token');
+        throw new Error('Failed to fetch token held');
       }
       const data = await response.json();
       const mergedData = data.profiles.map((profile: { token_address: any; }) => ({
@@ -226,10 +226,10 @@ export default function Profile({ params }: { params: { id: string } }) {
       }));
 
       // console.log("Merged Coin Held Data", mergedData);
-      console.log("coin held displayed", mergedData)
+      // console.log("coin held displayed", mergedData)
       setCoinHeld(mergedData);
     } catch (error) {
-      console.error('Error fetching token:', error);
+      console.error('Error fetching token held:', error);
     }
   };
 
@@ -238,12 +238,12 @@ export default function Profile({ params }: { params: { id: string } }) {
     try {
       const response = await fetch(`/api/coinscreated?id=${id}&chain=${currentChain}`);
       if (!response.ok) {
-        throw new Error('Failed to fetch token');
+        throw new Error('Failed to fetch token created');
       }
       const coinCreatedData = await response.json();
       setCoinCreated(coinCreatedData);
     } catch (error) {
-      console.error('Error fetching token:', error);
+      console.error('Error fetching token created:', error);
     }
   };
 
@@ -333,7 +333,7 @@ export default function Profile({ params }: { params: { id: string } }) {
       // profileData.username = username.username;
     } catch (error) {
       alert(error);
-      console.error('Error updating token:', error);
+      console.error('Error updating profile:', error);
     }
   };
 
@@ -348,7 +348,7 @@ export default function Profile({ params }: { params: { id: string } }) {
 
       }
     } catch (error) {
-      console.error('Error fetching token:', error);
+      console.error('Error fetching follow status:', error);
     }
   };
 
@@ -366,7 +366,7 @@ export default function Profile({ params }: { params: { id: string } }) {
       setFolloweelist(data.followeelist);
 
     } catch (error) {
-      console.error('Error fetching token:', error);
+      console.error('Error fetching follow data:', error);
 
     };
   }
@@ -392,7 +392,7 @@ export default function Profile({ params }: { params: { id: string } }) {
       // profileData.username = username.username;
     } catch (error) {
       alert(error);
-      console.error('Error updating token:', error);
+      console.error('Error updating follow status:', error);
     }
   };
 
@@ -571,6 +571,7 @@ export default function Profile({ params }: { params: { id: string } }) {
                           src={coinData.image_url || "https://via.placeholder.com/150"}
                           alt="Token Image"
                           fill
+                          sizes="48px"
                           className="object-contain"
                         />
                       </div>
@@ -610,6 +611,7 @@ export default function Profile({ params }: { params: { id: string } }) {
                           src={coinData.image_url || "https://via.placeholder.com/150"}
                           alt="Token Image"
                           fill
+                          sizes="48px"
                           className="object-contain"
                         />
                       </div>

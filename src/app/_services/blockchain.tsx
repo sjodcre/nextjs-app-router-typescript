@@ -1,31 +1,19 @@
-import { BigNumber, Contract, ContractFactory, ethers } from 'ethers'
+import { BigNumber, Contract, ethers } from 'ethers'
 // import ERC20TestArtifact from '@/../artifacts/contracts/ERC20Test.sol/ERC20Test.json'
 import ERC20TestArtifact from '@/../artifacts/contracts/ERC20Lock.sol/ERC20Lock.json'
-
 import { DeployTokenResult, TokenListData, TokenParams } from '../_utils/types'
-// import { useWeb3ModalProvider } from '@web3modal/ethers/react'
 import { calculateMinReturnWithSlippage, calculateMinTokensWithSlippage, calculateRequiredDeposit, extractLogData } from '../_utils/helpers'
 import { postPendingData } from './db-write'
 import ManagerArtifact from '@/../artifacts/contracts/Manager.sol/Manager.json'
-// import logger from '../_utils/logger'
-// import { EventParams, EventStruct, TicketStruct } from '@/utils/type.dt'
-// import { globalActions } from '@/store/globalSlices'
-// import { store } from '@/store'
-
-
+import * as Sentry from '@sentry/nextjs';
 
 let tx: any
-// // const { walletProvider } = useWeb3ModalProvider()
-// const { setEvent, setTickets } = globalActions
-
 
 async function deployManager(walletProvider: any) {
   if (!walletProvider) {
     reportError('Please install/connect a browser provider')
     return Promise.reject(new Error('Browser provider not installed/not connected'))
   }
-
-  
 
   const provider = new ethers.providers.Web3Provider(walletProvider); // Use MetaMask provider
   const signer = provider.getSigner();
@@ -56,8 +44,10 @@ async function deployManager(walletProvider: any) {
 
       return ManagerContract.address;
   } catch (error) {
-      // logger.error('Error deploying Manager contract:', JSON.stringify(error,null,4));
-      console.error("Error deploying Manager contract:", JSON.stringify(error,null,4));
+      // console.error("Error deploying Manager contract:", JSON.stringify(error,null,4));
+      const comment = "Error deploying Manager contract";
+      Sentry.captureException(error, { extra: { comment } });
+      return Promise.reject(error);
       // throw error;
   }
 }
@@ -78,7 +68,7 @@ const deployToken = async (selectedChain: string, token: TokenParams, mintAmount
     // managerContractAddress = "0x08A675f4297Df156Fb32A4f0ec534E6D863e706e" //mainnet
   } else {
     console.error("incorrect chain network!");
-      throw new Error("incorrect chain network!");
+    throw new Error("incorrect chain network!");
   }
 
   const provider = new ethers.providers.Web3Provider(walletProvider)
@@ -120,8 +110,8 @@ const deployToken = async (selectedChain: string, token: TokenParams, mintAmount
      const contractAddress = deployedEvent.args.contractAddress;
      const txHash = receipt.transactionHash;
 
-     console.log("Contract deployed at:", contractAddress);
-     console.log("Transaction hash:", txHash);
+    //  console.log("Contract deployed at:", contractAddress);
+    //  console.log("Transaction hash:", txHash);
 
 
     const tokenListData: TokenListData = {
@@ -139,8 +129,9 @@ const deployToken = async (selectedChain: string, token: TokenParams, mintAmount
     return {tokenListData, logData}
 
 } catch (error) {
-    // reportError(error)
     // logger.error('Error deploying token:', error);
+    const comment = "Error deploying token";
+    Sentry.captureException(error, { extra: { comment, selectedChain, tokenName: token.name } });
     return Promise.reject(error)
   }
 }
@@ -239,9 +230,9 @@ const mintToken = async (
         // console.log('Backend response:', response);
         // txid = response.primaryKey;
       }).catch((error: any) => {
-        console.error('Error posting data to backend:', error);
-        // logger.error('Error posting data to backend:', error);
-
+        // console.error('Error posting data to backend:', error);
+        const comment = "Error posting data to backend buy";
+        Sentry.captureException(error, { extra: { comment } });
       });
 
       const result = await mintTx.wait();
@@ -251,8 +242,8 @@ const mintToken = async (
 
       // return Promise.resolve(tx)
     } catch (error) {
-      // reportError(error)
-      // logger.error('Error minting token:', error);
+      const comment = "Error minting token";
+      Sentry.captureException(error, { extra: { comment, tokenAddress, signerAddr } });
       return Promise.reject(error)
     }
   }
@@ -276,7 +267,8 @@ const mintToken = async (
       return tx
     } catch (error) {
       // logger.error('Error getting user balance:', error);
-      // reportError(error)
+      const comment = "Error getting user balance";
+      Sentry.captureException(error, { extra: { comment, tokenAddress, signerAddr } });
       return Promise.reject(error)
     }
   }
@@ -333,15 +325,17 @@ const mintToken = async (
         // console.log('Backend response: to update', response);
         // txid = response.primaryKey;
       }).catch((error: any) => {
-        // logger.error('Error posting data to backend:', error);
-        console.error('Error posting data to backend:', error);
+        const comment = "Error posting data to backend sell";
+        Sentry.captureException(error, { extra: { comment, tokenAddress, signerAddr } });  
+        // console.error('Error posting data to backend:', error);
       }); 
       const result = await burnTx.wait();
 
       return { result, txHash };
     } catch (error) {
       // logger.error('Error selling tokens:', error);
-      // reportError(error)
+      const comment = "Error burning token";
+      Sentry.captureException(error, { extra: { comment, tokenAddress, signerAddr } });
       return Promise.reject(error)
     }
   }

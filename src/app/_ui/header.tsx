@@ -54,7 +54,6 @@ const Header = () => {
         const ethersProvider = new ethers.providers.Web3Provider(walletProvider);
         fetchBalance(ethersProvider).then(balance => {
           setCurrentBalance(Number(balance))
-          console.log("balance?", Number(balance))
           dispatch(setNativeTokenBalance(Number(balance)));
         }).catch(error => {
           console.error("Failed to fetch balance:", error);
@@ -176,7 +175,7 @@ const Header = () => {
       const data = await response.json();
       dispatch(logIn(data.username)); // Use the returned username to log in
     } catch (error) {
-      console.error('Error init:', error);
+      console.error('Error initiating profile:', error);
     }
   };
   // const initProfile = useCallback(async () => {

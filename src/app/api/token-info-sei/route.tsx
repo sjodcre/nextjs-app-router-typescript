@@ -1,9 +1,11 @@
+// import logger from "@/app/_utils/logger";
 import { query } from "../db";
+import * as Sentry from '@sentry/nextjs';
 
 
 
 export async function GET(req: Request) {
-
+  // logger.info('getting token info sei')
   const url = new URL(req.url)
 
   const token_address = url.searchParams.get("token_address");
@@ -23,15 +25,19 @@ export async function GET(req: Request) {
        const rows = await query(sql,[token_address]); // Correctly passing the parameter
     if (rows.length > 0) {
           // If a token is found, return it as a JSON response with a 200 status code
-      return new Response(JSON.stringify(rows), { status: 200 });
+        // logger.info('token info found')
+        return new Response(JSON.stringify(rows), { status: 200 });
     } else {
+      // logger.info('token info not found')
       return new Response(JSON.stringify({ message: "No data found for the specified token address." }), { status: 400 });
        
     }
     
   } catch (error) {
-    console.error('Error fetching data:', error);
-    // If an error occurs during fetching, return a 500 status code
+    // console.error('Error fetching data:', error);
+    // logger.error('Error fetching token info', {error})
+    const comment = "Error fetching token info"
+    Sentry.captureException(error, { extra: { comment } });
     return new Response(JSON.stringify('Internal Server Error'), { status: 500 });
   }
 }

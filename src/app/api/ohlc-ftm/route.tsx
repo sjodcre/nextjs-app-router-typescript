@@ -1,4 +1,6 @@
+// import logger from "@/app/_utils/logger";
 import { query } from "../db";
+import * as Sentry from '@sentry/nextjs';
 
 type ResolutionMap = {
   '1': number;
@@ -13,6 +15,8 @@ export async function GET(req: Request) {
 
     const url = new URL(req.url)
     const token_address = url.searchParams.get("token_address");
+    // logger.info('getting ohlc data ftm', {token_address})
+
     const resolution = url.searchParams.get("resolution") || '';
     const from = url.searchParams.get("from") || '';
     const to = url.searchParams.get("to") || '';
@@ -52,7 +56,10 @@ export async function GET(req: Request) {
     const rows = await query(sql, queryParams);
     return new Response(JSON.stringify(rows), { status: 200 });
   } catch (error) {
-    console.error('Error fetching data:', error);
+    // logger.error('Error getting ohlc data ftm', {error})
+    // console.error('Error fetching data:', error);
+    const comment = "Error getting ohlc data ftm"
+    Sentry.captureException(error, { extra: { comment } });
     return new Response(JSON.stringify('Internal Server Error'), { status: 500 });
   }
 }

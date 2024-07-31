@@ -150,15 +150,15 @@ export default function Deploy() {
 				})
 				const result = await response.json();
 				if (response.ok) {
-					toast.success(`Contract deployed and image uploaded. Arweave URL: ${result}`);
+					toast.success(`Image uploaded. Arweave URL: ${result}`);
 					return result;
 				} else {
 				  throw new Error(result.error || 'Upload failed');
 				}
 
 			} catch (error: any) {
-				// console.error('Image upload error:', error);
-    			toast.error(`Error: ${error.message}`);
+				console.error('Image upload error:', error);
+    			// toast.error(`Error uploading: ${error.message}`);
 				return Promise.reject(new Error(error.message || 'Upload failed'));
 
 			}		
@@ -216,7 +216,7 @@ export default function Deploy() {
 	  }
 
 	async function deployTokenWithUIFeedback(tokenParams: TokenParams, mintAmount: number, walletProvider: any, file: File | undefined): Promise<{ chainid: string; token_address: string }> {
-		return handleChainChange()  // This promise's resolution starts the next steps
+		return handleChainChange() 
 			.then(async () => {
 				// Assuming chain change is successful, proceed with deployment
 				const { tokenListData, logData } = await deployToken(selectedChain, tokenParams, mintAmount, walletProvider);
@@ -226,7 +226,6 @@ export default function Deploy() {
 					// console.log('Uploaded Image URL:', url);
 				} catch (error) {
 					console.error('Failed to upload image:', error);
-					// Consider whether you want to continue or throw an error here
 				}
 				toast.success(`Contract deployed to: ${tokenListData.token_address}`);
 	
@@ -287,7 +286,7 @@ export default function Deploy() {
 			})
 			.catch((error) => {
 				console.error(`Error in deployment process: ${error}`);
-				throw error;  // Ensure this error propagates to reject the promise
+				throw error;
 			});
 	}
 
@@ -358,7 +357,7 @@ export default function Deploy() {
 			return;
 		}
 
-		if (file && file.size > 5 * 1024 * 1024) {  // Check if file size exceeds 7MB
+		if (file && file.size > 5 * 1024 * 1024) {  // Check if file size exceeds 5MB
 			toast.error('File size exceeds 5MB limit');
 			setIsDeploying(false);
 			return;

@@ -1,12 +1,6 @@
-// import { error } from "console";
 
 import { ethers } from "ethers";
 import { TokenHolder } from "../_utils/types";
-// import logger from "../_utils/logger";
-
-const normalizeValue = (value: number): number => {
-    return value / 1e18;
-};
 
 export const postTokenData = async (data: any) => {
     let url = '';
@@ -32,9 +26,6 @@ export const postTokenData = async (data: any) => {
         return await response.json();
     } catch (error) {
         console.error("Failed to post token data:", error);
-    //   logger.error('Failed to post token data:', error);
-
-        // Depending on the use case, you might want to return null or throw the error further up.
         return null; 
     }
 };
@@ -78,7 +69,6 @@ export const initOHLCData = async (selectedChain: string, tokenAddress: string, 
         }
         return await response.json();
     } catch (error) {
-        // logger.error('Failed to post transaction and OHLC data:', error);
         console.error("Failed to post transaction and OHLC data:", error);
         return null; 
     }
@@ -126,7 +116,6 @@ export const postPendingData = async (transactionData: any) => {
         }
         return await response.json();
     } catch (error) {
-        // logger.error('Failed to post transaction:', error);
         console.error("Failed to post transaction:", error);
         return null;
     }
@@ -185,7 +174,6 @@ export const postTransactionAndOHLC = async (transactionData: any, initialMint: 
         // console.log("response from POST transact", response)
         return await response.json();
     } catch (error) {
-        // logger.error('Failed to post transaction and OHLC data:', error);
         console.error("Failed to post transaction and OHLC data:", error);
         return null;
     }

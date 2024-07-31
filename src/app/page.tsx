@@ -57,8 +57,6 @@ const Home: React.FC = () => {
             setTokens(data);
         } catch (error) {
             console.error('Error fetching data:', error);
-            // logger.error('Error fetching data:', error);
-
         }
     };
 
@@ -66,32 +64,15 @@ const Home: React.FC = () => {
       try {
           const response = await fetch(`/api/getTopToken`);
           if (!response.ok) {
-              throw new Error('Failed to fetch tokens');
+              throw new Error('Failed to fetch top token');
           }
           const data = await response.json();
           //console.log("data", data)
           setTopTokens(data);
       } catch (error) {
           console.error('Error fetching data:', error);
-          // logger.error('Error fetching data:', error);
-
       }
   };
-
-    // const fetchTokens = useCallback(async () => {
-    //     try {
-    //       const response = await fetch(`/api?sortBy=${sortBy}&order=${order}&chain=${selectedChain}`);
-    //       if (!response.ok) {
-    //         throw new Error('Failed to fetch tokens');
-    //       }
-    //       const data = await response.json();
-    //       console.log("data", data);
-    //       setTokens(data);
-    //     } catch (error) {
-    //       console.error('Error fetching data:', error);
-    //     }
-    //   }, [sortBy, order, selectedChain]);
-
 
     useEffect(() => {
         dispatch(setChain(selectedChain));

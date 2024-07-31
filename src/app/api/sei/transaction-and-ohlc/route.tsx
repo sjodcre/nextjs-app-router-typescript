@@ -1,19 +1,18 @@
 import { ethers } from "ethers";
 import { query } from "../../db";
 import { calculatePrice } from "@/app/_utils/helpers";
-
-
-
-
-
+// import logger from "@/app/_utils/logger";
+import * as Sentry from '@sentry/nextjs';
 
 export  async function POST(req: Request) {
   const data = await req.json();
   const { tokenAddress, account, tx_status,token_amount, native_amount, time, price, volume,trade, tx_hash} = data;
-  console.log("transaction-and-ohlc database...")
+//   console.log("transaction-and-ohlc database...")
+//   logger.info('updating tx and ohlc database sei...', {tokenAddress, tx_hash})
 
   // Validate inputs
   if (!tx_hash || !tokenAddress || !account  || !tx_status  || !token_amount ||  !native_amount || typeof time !== 'number' || typeof price !== 'number' || typeof volume !== 'number' || (trade !== 'buy' && trade !== 'sell')) {
+    // logger.warn('invalid input data for tx and ohlc db update sei')
     return new Response(JSON.stringify({ error: 'Invalid input data'}), { status: 400});
    }
  // Define table names based on chain id
@@ -82,6 +81,7 @@ export  async function POST(req: Request) {
         // let result2 = await query(`UPDATE ${transactionTableName} SET sum_native = $1 ,sum_token = $2, tx_status = $3 , timestamp = $4 , token_amount = $5 , price_per_token = $6, marketcap = $7 WHERE tx_hash = $8 RETURNING txid` , [sum_native_str, sum_token_str, tx_status, time , token_amount, price, marketCapString, tx_hash]);
         let result2 = await query(`UPDATE ${transactionTableName} SET sum_native = $1 ,sum_token = $2, tx_status = $3 , timestamp = $4 , token_amount = $5 , price_per_token = $6, marketcap = $7 WHERE tx_hash = $8 RETURNING txid` , [sum_native_str, sum_token_str, tx_status, time , token_amount, bondingPrice, marketCapString, tx_hash]);
 
+        // logger.info('updated transaction data sei')
 
         const txid = result2[0].txid;
 
@@ -138,6 +138,7 @@ export  async function POST(req: Request) {
                         VALUES ($1, $2, $3, $4, $5, $6, $7)`, [tokenAddress, timeSlice, openPrice, bondingPrice, bondingPrice, bondingPrice, volume]);
         }
 
+        // logger.info('updated ohlc data sei')
 
 
         //token_balance table
@@ -196,11 +197,17 @@ export  async function POST(req: Request) {
         ON CONFLICT (account, token_address)
         DO UPDATE SET balance = EXCLUDED.balance
     `, [account, tokenAddress, newBalanceStr]);
+
+    // logger.info('updated user balance sei')
+
          
     return new Response(JSON.stringify({ message: 'Transaction and OHLC data updated successfully.' , txid, bondingPrice}), { status: 201});
     
   } catch (error) {
-   console.log(error)
+//    console.log(error)
+    // logger.error('Error updating transaction and ohlc data ftm', {error})
+    const comment = "Error updating transaction and ohlc data ftm"
+    Sentry.captureException(error, { extra: { comment } });
     return new Response(JSON.stringify('Error:' + error), { status: 500 });
     //res.status(500).json({ message: 'Internal server error' });
   }

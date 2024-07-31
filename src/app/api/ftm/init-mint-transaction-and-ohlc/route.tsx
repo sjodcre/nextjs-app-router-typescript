@@ -1,30 +1,35 @@
 import { ethers } from "ethers";
 import { query } from "../../db";
 import { calculatePrice } from "@/app/_utils/helpers";
+// import logger from "@/app/_utils/logger";
+import * as Sentry from '@sentry/nextjs';
+
 
 export  async function POST(req: Request) {
-  const data = await req.json();
-  const { tokenAddress, account, tx_status,token_amount, native_amount, time, price, volume,trade, tx_hash } = data;
-  console.log("init-mint-transac-and-ohlc database...")
+     const data = await req.json();
+    const { tokenAddress, account, tx_status,token_amount, native_amount, time, price, volume,trade, tx_hash } = data;
+    //   console.log("init-mint-transac-and-ohlc database...")
+    // logger.info("updating initial mint token transaction and ohlc ftm", {tokenAddress})
 
-  // Validate inputs
-//   if (!tx_hash || !tokenAddress || !account  || !tx_status  || typeof token_amount !== 'number' || typeof native_amount !== 'number' || typeof time !== 'number' || typeof price !== 'number' || typeof volume !== 'number' || (trade !== 'buy' && trade !== 'sell')) {
+    // Validate inputs
+    //   if (!tx_hash || !tokenAddress || !account  || !tx_status  || typeof token_amount !== 'number' || typeof native_amount !== 'number' || typeof time !== 'number' || typeof price !== 'number' || typeof volume !== 'number' || (trade !== 'buy' && trade !== 'sell')) {
     if (!tx_hash || !tokenAddress || !account  || !tx_status  || !token_amount || !native_amount || typeof time !== 'number' || typeof price !== 'number' || typeof volume !== 'number' || (trade !== 'buy' && trade !== 'sell')) {
-    return new Response(JSON.stringify({ error: 'Invalid input data'}), { status: 400});
+        // logger.warn('Invalid input data initial mint token tx and ohlc ftm');
+        return new Response(JSON.stringify({ error: 'Invalid input data'}), { status: 400});
    }
- // Define table names based on chain id
-//  const transactionTableName = 'transaction_history_ftm';
- const transactionTableName = 'ftm_transaction_history';
- const ohlcTableName = 'ohlc_ftm';
+    // Define table names based on chain id
+    //  const transactionTableName = 'transaction_history_ftm';
+    const transactionTableName = 'ftm_transaction_history';
+    const ohlcTableName = 'ohlc_ftm';
 
 
 
-  try {
-    const sql = `
-            SELECT 
-                (SELECT sum_token FROM ${transactionTableName} WHERE token_address = $1 ORDER BY timestamp DESC LIMIT 1) AS sum_token,
-                (SELECT sum_native FROM ${transactionTableName} WHERE token_address = $2 ORDER BY timestamp DESC LIMIT 1) AS sum_native
-        `;
+    try {
+        const sql = `
+                SELECT 
+                    (SELECT sum_token FROM ${transactionTableName} WHERE token_address = $1 ORDER BY timestamp DESC LIMIT 1) AS sum_token,
+                    (SELECT sum_native FROM ${transactionTableName} WHERE token_address = $2 ORDER BY timestamp DESC LIMIT 1) AS sum_native
+            `;
 
         const result = await query(sql, [tokenAddress, tokenAddress]);
 
@@ -79,7 +84,7 @@ export  async function POST(req: Request) {
         //     result2 = await query(`UPDATE ${transactionTableName} SET sum_native = $1 ,sum_token = $2, tx_status = $3 , timestamp = $4 , token_amount = $5 WHERE tx_hash = $6 RETURNING txid` , [sum_native, sum_token, tx_status, time , token_amount, tx_hash]);
         // }
         // let result2 = await query(`UPDATE ${transactionTableName} SET sum_native = $1 ,sum_token = $2, tx_status = $3 , timestamp = $4 , token_amount = $5 WHERE tx_hash = $6 RETURNING txid` , [sum_native, sum_token, tx_status, time , token_amount, tx_hash]);
-
+        // logger.info("inserted transaction ftm")
         // transaction_history table
         const txid = result2[0].txid;
                           
@@ -116,6 +121,7 @@ export  async function POST(req: Request) {
             };
             await query(`UPDATE ${ohlcTableName} SET high = $1, low = $2, close = $3, volume = $4 WHERE chartid = $5`, 
                 [updatedOHLC.high, updatedOHLC.low, updatedOHLC.close, updatedOHLC.volume, existing[0].chartid]);
+
         } else {
             // Fetch the most recent close price within a reasonable range
             const recentClose = await query(`
@@ -134,7 +140,7 @@ export  async function POST(req: Request) {
             await query(`INSERT INTO ${ohlcTableName} (token_address, time, open, high, low, close, volume)
                         VALUES ($1, $2, $3, $4, $5, $6, $7)`, [tokenAddress, timeSlice, openPrice, bondingPrice, bondingPrice, bondingPrice, volume]);
         }
-
+        // logger.info("inserted ohlc data ftm")
 
 
         //token_balance table
@@ -192,11 +198,16 @@ export  async function POST(req: Request) {
         ON CONFLICT (account, token_address)
         DO UPDATE SET balance = EXCLUDED.balance
     `, [account, tokenAddress, newBalanceStr]);
+
+    // logger.info("inserted user balance ftm")
          
     return new Response(JSON.stringify({ message: 'Transaction and OHLC data updated successfully.' , txid, bondingPrice}), { status: 201});
     
   } catch (error) {
-   console.log(error)
+//    console.log(error)
+    const comment = "Error initializing new token transaction and ohlc ftm"
+    Sentry.captureException(error, { extra: { comment } });
+// logger.error("Error initializing new token transaction and ohlc ftm", {error})
     return new Response(JSON.stringify('Error:' + error), { status: 500 });
     //res.status(500).json({ message: 'Internal server error' });
   }
