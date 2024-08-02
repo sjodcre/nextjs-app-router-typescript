@@ -19,6 +19,19 @@ Sentry.init({
   // in development and sample at a lower rate in production
   replaysSessionSampleRate: 0.1,
 
+  beforeSend(event) {
+    // Check if the error is the one you want to ignore
+    if (event.exception && event.exception.values) {
+      const errorMessage = event.exception.values.map(e => e.value).join(" ");
+      if (errorMessage.includes("user rejected transaction")) {
+        // If the error message matches, return null to drop the event
+        return null;
+      }
+    }
+    // Otherwise, return the event to continue sending it
+    return event;
+  },
+
   // You can remove this option if you're not planning to use the Sentry Session Replay feature:
   // integrations: [
   //   Sentry.replayIntegration({

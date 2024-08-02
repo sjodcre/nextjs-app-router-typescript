@@ -15,5 +15,17 @@ Sentry.init({
 
   // Uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: process.env.NODE_ENV === 'development',
+  beforeSend(event) {
+    // Check if the error is the one you want to ignore
+    if (event.exception && event.exception.values) {
+      const errorMessage = event.exception.values[0].value;
+      if (errorMessage && errorMessage.includes("user rejected transaction")) {
+        // If the error message matches, return null to drop the event
+        return null;
+      }
+    }
+    // Otherwise, return the event to continue sending it
+    return event;
+  },
   
 });
