@@ -66,6 +66,7 @@ export async function fetchNativeTokenPrice(chain: string): Promise<number> {
 export async function fetchAndCachePrice(chain: string): Promise<void> {
     const cacheKey = `nativeTokenPrice_${chain}`;
     const price = await fetchNativeTokenPrice(chain);
-    await redis.set(cacheKey, JSON.stringify(price), { ex: 14500 }); // Cache for 4 hours
+    // await redis.set(cacheKey, JSON.stringify(price), { ex: 14500 }); // Cache for 4 hours
+    await redis.set(cacheKey, JSON.stringify(price), { ex: 86400 }); // Cache for 24 hours
     console.log(`Price for ${chain} updated and cached: ${price}`);
 }
