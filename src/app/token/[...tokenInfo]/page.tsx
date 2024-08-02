@@ -14,7 +14,6 @@ import { useSwitchNetwork, useWeb3ModalAccount, useWeb3ModalProvider } from "@we
 import { toast } from "react-toastify";
 import TradeItem from "@/app/_ui/trade-list";
 import { calculatePrice, extractFirstSixCharac, formatMarketCap, formatTokenAmount, getAccountUrl } from "@/app/_utils/helpers";
-import { fetchNativeTokenPrice } from "@/app/_utils/native-token-pricing";
 import { useAppSelector } from "@/app/_redux/store";
 import useSocket from "@/app/_utils/use-socket";
 import { burnToken, mintToken } from "@/app/_services/blockchain";
@@ -184,10 +183,20 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
   useEffect(() => {
     const updatePrice = async () => {
       try {
-        const fetchedPrice = await fetchNativeTokenPrice(params.tokenInfo[0]);
-        // console.log("native token price", fetchedPrice)
-        setNativeTokenPrice(fetchedPrice);
-        setIsTokenPriceFetched(true);
+        // const fetchedPrice = await fetchNativeTokenPrice(params.tokenInfo[0]);
+        // // console.log("native token price", fetchedPrice)
+        // setNativeTokenPrice(fetchedPrice);
+        // setIsTokenPriceFetched(true);
+        const response = await fetch(`/api/getNativePrice?chain=${params.tokenInfo[0]}`);
+        const data = await response.json();
+
+        if (data.price) {
+          setNativeTokenPrice(data.price);
+          setIsTokenPriceFetched(true);
+          console.log("native token price from cache", data.price);
+        } else {
+          console.error('Error fetching native token price:', data.error);
+        }
       } catch (error) {
         console.error('Error getting native token price:', error)
       }
@@ -195,9 +204,9 @@ export default function TokenPage({ params }: { params: { tokenInfo: string } })
     };
 
     updatePrice(); // Initial fetch
-    const intervalId = setInterval(updatePrice, 86400000); // Update every 24 hours
+    // const intervalId = setInterval(updatePrice, 86400000); // Update every 24 hours
 
-    return () => clearInterval(intervalId); // Cleanup interval on component unmount
+    // return () => clearInterval(intervalId); // Cleanup interval on component unmount
   }, []);
 
   //wallet provider readiness
