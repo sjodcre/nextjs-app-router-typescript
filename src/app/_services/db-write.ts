@@ -6,8 +6,9 @@ export const postTokenData = async (data: any) => {
     let url = '';
     if (data.chainid === 'ftm'){
         url = '/api/ftm/deploytoken'
-    } else if (data.chainid === 'sei') {
-        url = '/api/sei/deploytoken'
+    // } else 
+    // if (data.chainid === 'sei') {
+    //     url = '/api/sei/deploytoken'
     } else {
         throw new Error('unsupported chain id!')
     }
@@ -50,9 +51,11 @@ export const initOHLCData = async (selectedChain: string, tokenAddress: string, 
         let url = ''
         if (selectedChain === 'ftm'){
             url = '/api/initialize-ohlc-ftm'
-        } else if ( selectedChain ==='sei') {
-            url = '/api/initialize-ohlc-sei'
-        } else {
+        } 
+        // else if ( selectedChain ==='sei') {
+        //     url = '/api/initialize-ohlc-sei'
+        // } 
+        else {
             throw new Error('incorrect chain id!')
         }
 
@@ -84,9 +87,11 @@ export const postPendingData = async (transactionData: any) => {
     let url = '';
     if (selectedChain ==='ftm'){
         url = '/api/pending-transaction-ftm'
-    } else if (selectedChain === 'sei') {
-        url = '/api/pending-transaction-sei'
-    } else {
+    } 
+    // else if (selectedChain === 'sei') {
+    //     url = '/api/pending-transaction-sei'
+    // } 
+    else {
         throw new Error("incorrect chain id!")
     }
 
@@ -137,13 +142,17 @@ export const postTransactionAndOHLC = async (transactionData: any, initialMint: 
     let url = '';
     if (selectedChain ==='ftm' && initialMint === false){
         url = '/api/ftm/transaction-and-ohlc'
-    } else if (selectedChain === 'sei' && initialMint === false) {
-        url = '/api/sei/transaction-and-ohlc'
-    } else if (selectedChain === 'ftm' && initialMint === true) {
+    } 
+    // else if (selectedChain === 'sei' && initialMint === false) {
+    //     url = '/api/sei/transaction-and-ohlc'
+    // } 
+    else if (selectedChain === 'ftm' && initialMint === true) {
         url = '/api/ftm/init-mint-transaction-and-ohlc'
-    }else if (selectedChain === 'sei' && initialMint === true) {
-        url = '/api/sei/init-mint-transaction-and-ohlc'
-    }else {
+    }
+    // else if (selectedChain === 'sei' && initialMint === true) {
+    //     url = '/api/sei/init-mint-transaction-and-ohlc'
+    // }
+    else {
         throw new Error("incorrect chain id!")
     }
 
@@ -194,9 +203,11 @@ export const postTransactionFailed = async (transactionData: any) => {
     let url = '';
     if (selectedChain ==='ftm'){
         url = '/api/ftm/transaction-fail'
-    } else if (selectedChain === 'sei') {
-        url = '/api/sei/transaction-fail'
-    } else {
+    } 
+    // else if (selectedChain === 'sei') {
+    //     url = '/api/sei/transaction-fail'
+    // } 
+    else {
         throw new Error("incorrect chain id!")
     }
 
@@ -227,9 +238,11 @@ export const getTokenTrades = async (chainId: string, tokenAddress: string, ) =>
     let url = '';
     if (chainId === 'ftm') {
         url = `/api/get-trades-ftm?token_address=${tokenAddress}`
-    } else if (chainId === 'sei') {
-        url = `/api/get-trades-sei?token_address=${tokenAddress}`
-    } else {
+    } 
+    // else if (chainId === 'sei') {
+    //     url = `/api/get-trades-sei?token_address=${tokenAddress}`
+    // } 
+    else {
         throw new Error('incorrect chain id!')
     }
 
@@ -253,9 +266,11 @@ export const fetchTokenInfo = async (chainId: string, tokenAddress: string) => {
     let url = ''
     if (chainId === 'ftm') {
         url = `/api/token-info-ftm?token_address=${tokenAddress}`
-    } else if (chainId ==='sei') {
-        url = `/api/token-info-sei?token_address=${tokenAddress}`
-    } else {
+    } 
+    // else if (chainId ==='sei') {
+    //     url = `/api/token-info-sei?token_address=${tokenAddress}`
+    // } 
+    else {
         throw new Error('incorrect chain id!')
     }
     try {
@@ -278,9 +293,11 @@ export const fetchTokenInfo = async (chainId: string, tokenAddress: string) => {
     let url = ''
     if (chainId ==='ftm') {
         url = `/api/ftm/top-holders/${tokenAddress}`
-    } else if (chainId ==='sei') {
-        url = `/api/sei/top-holders/${tokenAddress}`
-    } else {
+    } 
+    // else if (chainId ==='sei') {
+    //     url = `/api/sei/top-holders/${tokenAddress}`
+    // } 
+    else {
         throw new Error('incorrect chain id!')
     }
 
@@ -294,9 +311,10 @@ export const fetchTokenInfo = async (chainId: string, tokenAddress: string) => {
 
 export const getPendingTransactions = async (chainId: string, tokenAddress: string): Promise<any[]> => {
     let url = '';
-    if (chainId === 'sei') {
-        url = `/api/sei/pending-transactions?token_address=${tokenAddress}`;
-    } else if (chainId ==='ftm') {
+    // if (chainId === 'sei') {
+    //     url = `/api/sei/pending-transactions?token_address=${tokenAddress}`;
+    // } else 
+    if (chainId ==='ftm') {
         url = `/api/ftm/pending-transactions?token_address=${tokenAddress}`
     }else {
         throw new Error('Unsupported chain ID or functionality not yet implemented for this chain!');

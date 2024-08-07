@@ -15,13 +15,13 @@ const EthMainnet = {
   rpcUrl: 'https://cloudflare-eth.com'
 }
 
-const SeiEVM = {
-  chainId: 713715,
-  name: 'SEI',
-  currency: 'SEI',
-  explorerUrl: 'https://seistream.app/',
-  rpcUrl: 'https://evm-rpc-arctic-1.sei-apis.com/'
-}
+// const SeiEVM = {
+//   chainId: 713715,
+//   name: 'SEI',
+//   currency: 'SEI',
+//   explorerUrl: 'https://seistream.app/',
+//   rpcUrl: 'https://evm-rpc-arctic-1.sei-apis.com/'
+// }
 
 // const FtmEVM = {
 //   chainId: 64165,
@@ -66,7 +66,7 @@ interface Props {
 // 5. Create a Web3Modal instance
 createWeb3Modal({
   ethersConfig,
-  chains: [EthMainnet, SeiEVM, FtmMainnet],
+  chains: [EthMainnet, FtmMainnet],
   projectId,
   enableAnalytics: true, // Optional - defaults to your Cloud configuration
   enableOnramp: true, // Optional - false as default

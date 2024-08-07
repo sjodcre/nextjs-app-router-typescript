@@ -7,9 +7,10 @@ export async function POST(req: Request) {
   const data = await req.json();
   const { chainid, token_address, token_ticker, token_name, token_description, image_url, creator, twitter, telegram, website, datetime } = data;
   // logger.info('storing deployed token data ftm', {token_address})
-  if (chainid !== 'ftm' && chainid !== 'sei') {
+  // if (chainid !== 'ftm' && chainid !== 'sei') {
+  if (chainid !== 'ftm') {
     // logger.warn('Invalid chain ID. Must be either "ftm" or "sei".');
-    throw new Error('Invalid chain ID. Must be either "ftm" or "sei".');
+    throw new Error('Invalid chain ID. Must be "ftm"');
   }
   // Define table names based on chain id
   // Define table names based on chain id

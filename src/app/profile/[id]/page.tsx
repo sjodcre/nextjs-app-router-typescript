@@ -128,7 +128,7 @@ export default function Profile({ params }: { params: { id: string } }) {
 
   //popup model
   const [showModal, setShowModal] = useState(false);
-  const SEI_CHAIN_ID = 713715;
+  // const SEI_CHAIN_ID = 713715;
   // const FTM_CHAIN_ID = 64165;
   const FTM_CHAIN_ID = 250;
 

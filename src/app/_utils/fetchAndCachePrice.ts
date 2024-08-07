@@ -6,6 +6,7 @@ export async function fetchNativeTokenPrice(): Promise<number> {
     let url = '';
     // if (chain === "sei") {
     //     url = 'https://api.coingecko.com/api/v3/simple/price?ids=sei-network&vs_currencies=usd';
+
     // } else if (chain === "ftm") {
         url = 'https://api.coingecko.com/api/v3/simple/price?ids=fantom&vs_currencies=usd';
     // } else {
