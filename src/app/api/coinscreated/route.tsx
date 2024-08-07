@@ -13,10 +13,13 @@ export async function GET(req: Request, route: { params: { id: string } }) {
     const id= url.searchParams.get("id")
     // logger.info("fetching coins created by user", {id})
     let tableName ='';
-    if (chain ==="sei"){
-      tableName = 'token_list_sei'
-    } else if (chain ==="ftm") {
+    // if (chain ==="sei"){
+    //   tableName = 'token_list_sei'
+    // } else 
+    if (chain ==="ftm") {
       tableName = 'token_list_ftm'
+    } else {
+      throw new Error('Invalid chain ID. Must be "ftm"');
     }
    // const id = route.params.id;
     // Fetch token data based on the ID from the database using parameterized query

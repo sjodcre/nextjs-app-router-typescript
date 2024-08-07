@@ -14,14 +14,17 @@ export async function GET(req: Request, route: { params: { id: string } }) {
     // logger.info("getting coins held by user", {id})
     let tableName ='';
     let detailsTable = '';
-    if (chain ==="sei"){
-      // tableName = 'token_balances_sei'
-      tableName = 'sei_users_balance'
-      detailsTable = 'token_list_sei'
-    } else if (chain ==="ftm") {
+    // if (chain ==="sei"){
+    //   // tableName = 'token_balances_sei'
+    //   tableName = 'sei_users_balance'
+    //   detailsTable = 'token_list_sei'
+    // } else 
+    if (chain ==="ftm") {
       // tableName = 'token_balances_ftm'
       tableName = 'ftm_users_balance'
       detailsTable = 'token_list_ftm'
+    } else {
+      throw new Error('Invalid chain ID. Must be "ftm" ');
     }
    // const id = route.params.id;
     // Fetch token data based on the ID from the database using parameterized query

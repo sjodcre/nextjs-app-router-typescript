@@ -12,7 +12,7 @@ type ChainState = {
 }
 const initialState = {
     value: {
-       chainType:"sei",
+       chainType:"ftm",
 
     } as ChainState,
 } as InitialState;

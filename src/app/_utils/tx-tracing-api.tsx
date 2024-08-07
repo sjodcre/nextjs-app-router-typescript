@@ -73,9 +73,11 @@ import { ethers } from "ethers";
     if (chainId === 'ftm'){
         // url = 'https://rpc.sonic.fantom.network/'
         url = 'https://fantom-rpc.publicnode.com/'
-    } else if ( chainId ==='sei') {
-        url = 'https://evm-rpc-arctic-1.sei-apis.com/'
-    } else {
+    } 
+    // else if ( chainId ==='sei') {
+    //     url = 'https://evm-rpc-arctic-1.sei-apis.com/'
+    // } 
+    else {
         throw new Error('incorrect chain id!')
     }
     const provider = new ethers.providers.JsonRpcProvider(url);

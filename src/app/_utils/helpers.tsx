@@ -259,8 +259,8 @@ export function getAccountUrl(chainid: string, holderAccount: string) {
     switch (chainid) {
         case 'ftm':
             return `https://ftmscan.com/address/${holderAccount}`;
-        case 'sei':
-            return `https://seitrace.com/address/${holderAccount}`;
+        // case 'sei':
+        //     return `https://seitrace.com/address/${holderAccount}`;
         default:
             return ''; // No link in case of other networks
     }

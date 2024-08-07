@@ -27,7 +27,7 @@ const Header = () => {
   const { address, chainId, isConnected } = useWeb3ModalAccount()
   const { walletProvider } = useWeb3ModalProvider();
   const [userName, setUserName] = useState('');
-  const SEI_CHAIN_ID = 713715;
+  // const SEI_CHAIN_ID = 713715;
   // const FTM_CHAIN_ID = 64165;
   const FTM_CHAIN_ID = 250;
   

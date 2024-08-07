@@ -59,8 +59,8 @@ const TradeItem = ({ trade, networkType }: { trade: TradeData, networkType: stri
         switch (networkType) {
             case 'ftm':
                 return `https://public-sonic.fantom.network/tx/${trade.tx_hash}`;
-            case 'sei':
-                return `https://seitrace.com/tx/${trade.tx_hash}`;
+            // case 'sei':
+            //     return `https://seitrace.com/tx/${trade.tx_hash}`;
             default:
                 return ''; // No link if no valid network type is specified
         }

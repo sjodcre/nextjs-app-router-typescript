@@ -58,11 +58,12 @@ const deployToken = async (selectedChain: string, token: TokenParams, mintAmount
     return Promise.reject(new Error('Browser provider not installed'))
   }
   let managerContractAddress = '';
-  if (selectedChain === "sei"){
-    // managerContractAddress = "0xF55f799E94F2908bd4482C875223fB827961C1E4"
-    managerContractAddress = "0x4f37dbac5910A3463a9EF18B083b579B5Fa57D03" //test bug
+  // if (selectedChain === "sei"){
+  //   // managerContractAddress = "0xF55f799E94F2908bd4482C875223fB827961C1E4"
+  //   managerContractAddress = "0x4f37dbac5910A3463a9EF18B083b579B5Fa57D03" //test bug
 
-  } else if (selectedChain === "ftm"){
+  // } else 
+  if (selectedChain === "ftm"){
     managerContractAddress = "0xdb9c41485C8C08B5ad216CB7d5A5Aa3cAD186aFC" //mainnet spooky
     // managerContractAddress = "0xceA6cEC23F5B1a18A97fFae0a8c06B26775Abc64" //testnet
     // managerContractAddress = "0x08A675f4297Df156Fb32A4f0ec534E6D863e706e" //mainnet
